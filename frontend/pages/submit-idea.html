@@ -159,6 +159,12 @@
                             <input id="fullName" type="hidden"/>
                             <input id="employeeCode" type="hidden"/>
                             <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Đơn vị *</label>
+                                <select id="unitId" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all appearance-none" required>
+                                    <option value="">Chọn đơn vị</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
                                 <label class="font-label-md text-on-surface-variant px-1">Số điện thoại</label>
                                 <input id="phone" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập số điện thoại liên hệ" type="tel"/>
                             </div>
@@ -169,14 +175,6 @@
                             <div class="space-y-2">
                                 <label class="font-label-md text-on-surface-variant px-1">Chức vụ</label>
                                 <input id="position" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Chức vụ hiện tại" type="text"/>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
-                            <div class="space-y-2">
-                                <label class="font-label-md text-on-surface-variant px-1">Đơn vị *</label>
-                                <select id="unitId" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all appearance-none" required>
-                                    <option value="">Chọn đơn vị</option>
-                                </select>
                             </div>
                         </div>
                     </section>
