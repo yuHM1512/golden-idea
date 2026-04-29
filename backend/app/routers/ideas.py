@@ -135,7 +135,7 @@ async def upload_attachment(
 ):
     """
     Upload image/video attachment to idea
-    Max 10MB, allowed: jpg, jpeg, png, gif, mp4, avi, mov
+    Max 300MB, allowed: jpg, jpeg, png, gif, mp4, avi, mov
     """
     idea = db.query(Idea).filter(Idea.id == idea_id).first()
     if idea is None:

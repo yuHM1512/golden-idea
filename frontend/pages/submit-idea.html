@@ -236,8 +236,11 @@
         </div>
     </main>
 
-    <script src="../js/api.js?v=20260428-participants"></script>
+    <script src="../js/api.js?v=20260429-upload-debug"></script>
     <script>
+        const MAX_FILE_SIZE_MB = 300;
+        const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+        const ALLOWED_FILE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov'];
         let participantRowId = 0;
 
         function participantInputClass() {
@@ -328,6 +331,38 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function formatFileSize(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) {
+                return '0 MB';
+            }
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        function getFileExtension(filename = '') {
+            const parts = filename.split('.');
+            return parts.length > 1 ? parts.pop().toLowerCase() : '';
+        }
+
+        function validateIncomingFiles(files) {
+            const acceptedFiles = [];
+            const rejectedMessages = [];
+
+            Array.from(files || []).forEach((file) => {
+                const extension = getFileExtension(file.name);
+                if (!ALLOWED_FILE_EXTENSIONS.includes(extension)) {
+                    rejectedMessages.push(`${file.name}: định dạng không được hỗ trợ`);
+                    return;
+                }
+                if (file.size > MAX_FILE_BYTES) {
+                    rejectedMessages.push(`${file.name}: vượt quá ${MAX_FILE_SIZE_MB}MB (${formatFileSize(file.size)})`);
+                    return;
+                }
+                acceptedFiles.push(file);
+            });
+
+            return { acceptedFiles, rejectedMessages };
+        }
+
         // Load units on page load
         window.addEventListener('DOMContentLoaded', async () => {
             resetParticipants();
@@ -386,7 +421,7 @@
             if (!participants) {
                 return;
             }
-            showLoading(true);
+            showLoading(true, 'Đang tạo phiếu...');
 
             try {
                 const formData = {
@@ -406,15 +441,29 @@
                 const result = await api.submitIdea(formData);
 
                 // Upload attachments (if any)
+                const uploadFailures = [];
                 if (selectedFiles && selectedFiles.length) {
-                    for (const f of selectedFiles) {
-                        await api.uploadAttachment(result.id, f);
+                    for (const [index, f] of selectedFiles.entries()) {
+                        showLoading(true, `Đang tải file ${index + 1}/${selectedFiles.length}: ${f.name}`);
+                        try {
+                            await api.uploadAttachment(result.id, f);
+                        } catch (uploadError) {
+                            uploadFailures.push(`${f.name}: ${uploadError.message}`);
+                        }
                     }
-                    selectedFiles = [];
-                    document.getElementById('fileList').innerHTML = '';
-                    document.getElementById('fileInput').value = '';
                 }
                 showLoading(false);
+                if (uploadFailures.length) {
+                    showNotification(`Ý tưởng đã được tạo nhưng ${uploadFailures.length} file tải lên lỗi. Kiểm tra chi tiết bên dưới.`, 'error');
+                    setTimeout(() => {
+                        alert(`Các file chưa tải được:\n- ${uploadFailures.join('\n- ')}`);
+                    }, 100);
+                    return;
+                }
+
+                selectedFiles = [];
+                document.getElementById('fileList').innerHTML = '';
+                document.getElementById('fileInput').value = '';
                 showNotification('✓ Ý tưởng đã được gửi thành công!', 'success');
 
                 // Reset form
@@ -460,8 +509,17 @@
         });
 
         function addFiles(newFiles) {
-            selectedFiles = [...selectedFiles, ...Array.from(newFiles || [])];
+            const { acceptedFiles, rejectedMessages } = validateIncomingFiles(newFiles);
+            if (acceptedFiles.length) {
+                selectedFiles = [...selectedFiles, ...acceptedFiles];
+            }
             renderFilePreviews();
+            if (rejectedMessages.length) {
+                setTimeout(() => {
+                    alert(`Một số file không được thêm:\n- ${rejectedMessages.join('\n- ')}`);
+                }, 100);
+                showNotification('Có file không hợp lệ hoặc vượt dung lượng cho phép', 'error');
+            }
         }
 
         function renderFilePreviews() {
