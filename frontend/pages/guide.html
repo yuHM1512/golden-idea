@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Hướng dẫn sử dụng - Ý tưởng vàng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              surface: "#f8f9fa",
+              background: "#f8f9fa",
+              primary: "#002b73",
+              "primary-container": "#0056d2",
+              secondary: "#435b9f",
+              "secondary-container": "#9cb4fe",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f1f3f4",
+              "surface-container": "#eceeef",
+              "surface-container-high": "#e7e8e9",
+              "surface-container-highest": "#e1e3e4",
+              "surface-variant": "#eeeeee",
+              "on-surface": "#191c1d",
+              "on-surface-variant": "#424654",
+              "outline-variant": "rgba(25, 28, 29, 0.2)",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+            },
+            fontFamily: {
+              manrope: ["Manrope"],
+              inter: ["Inter"],
+              "display-lg": ["Manrope"],
+              "headline-md": ["Manrope"],
+              "body-lg": ["Inter"],
+              "label-md": ["Inter"],
+            },
+            fontSize: {
+              "display-lg": ["56px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }],
+              "headline-md": ["28px", { lineHeight: "1.3", fontWeight: "600" }],
+              "body-lg": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+              "label-md": ["12px", { lineHeight: "1.0", letterSpacing: "0.01em", fontWeight: "500" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+      .editorial-gradient {
+        background: linear-gradient(135deg, #002b73 0%, #0056d2 100%);
+      }
+      .soft-panel {
+        box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05);
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-surface font-body-lg min-h-screen selection:bg-secondary-container selection:text-primary">
+    <header class="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="flex items-center justify-between w-full px-4 md:px-6 py-3 max-w-7xl mx-auto gap-4">
+        <div class="flex items-center gap-4">
+          <a href="/menu" class="block">
+            <div class="w-48 h-10 md:w-60 md:h-12 bg-transparent flex items-center justify-center overflow-hidden">
+              <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+            </div>
+          </a>
+        </div>
+        <nav class="hidden md:flex items-center gap-8">
+          <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/menu">Menu</a>
+          <a class="text-blue-800 font-bold font-manrope transition-colors" href="/pages/guide">Hướng dẫn</a>
+          <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/submit-idea">Đăng ký</a>
+          <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/library">Kho ý tưởng</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:block text-right">
+            <div class="text-[11px] uppercase tracking-widest text-slate-500">Tài khoản</div>
+            <div class="font-semibold" id="whoami">—</div>
+          </div>
+          <button class="px-4 py-2 rounded-xl hover:bg-slate-200/50 transition-colors text-blue-900 font-semibold" onclick="logout()">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="pt-28 md:pt-32 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+      <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
+        <div class="xl:col-span-8 editorial-gradient rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden soft-panel">
+          <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/10 blur-3xl"></div>
+          <div class="relative z-10">
+            <div class="text-xs uppercase tracking-[0.3em] text-white/70">Hướng dẫn sử dụng</div>
+            <h1 class="mt-4 text-3xl md:text-5xl font-black font-manrope leading-tight">
+              Nắm nhanh chức năng,
+              <br />
+              <span class="text-[#dbe1ff] italic">đúng quyền, đúng bước.</span>
+            </h1>
+            <p class="mt-5 max-w-3xl text-white/80 leading-relaxed">
+              Trang này giúp người dùng hiểu app có những gì, mỗi role được truy cập chức năng nào, và nên thao tác theo trình tự nào để gửi, duyệt, tra cứu và chi thưởng ý tưởng.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a href="/pages/submit-idea" class="inline-flex items-center gap-2 rounded-full bg-white text-primary px-5 py-3 font-semibold shadow-lg hover:opacity-95">
+                <span class="material-symbols-outlined text-[18px]">edit_note</span>
+                Gửi ý tưởng
+              </a>
+              <a href="/pages/menu" class="inline-flex items-center gap-2 rounded-full bg-white/15 text-white px-5 py-3 font-semibold hover:bg-white/20">
+                <span class="material-symbols-outlined text-[18px]">dashboard</span>
+                Về menu
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="xl:col-span-4 bg-surface-container-lowest rounded-[2rem] p-8 soft-panel">
+          <div class="text-xs uppercase tracking-[0.3em] text-on-surface-variant">Role hiện tại</div>
+          <div id="currentRoleName" class="mt-4 text-3xl font-black font-manrope text-primary">Đang tải...</div>
+          <p id="currentRoleDesc" class="mt-3 text-on-surface-variant leading-relaxed">
+            Hệ thống sẽ hiển thị mô tả ngắn và những module bạn có thể truy cập theo role đang đăng nhập.
+          </p>
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
+            <div class="rounded-[1.5rem] bg-surface-container-low p-5">
+              <div class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Module truy cập</div>
+              <div id="currentRoleModules" class="mt-3 flex flex-wrap gap-2"></div>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-low p-5">
+              <div class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Hành động nên làm đầu tiên</div>
+              <div id="currentRoleFirstStep" class="mt-3 text-lg font-semibold text-primary">Đăng nhập để xem gợi ý.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-on-surface-variant">Tính năng chính</div>
+            <h2 class="mt-2 text-3xl md:text-4xl font-black font-manrope text-primary">App gồm những module nào?</h2>
+          </div>
+          <p class="max-w-2xl text-on-surface-variant">
+            Đây là 5 nhóm chức năng chính đang có trên hệ thống. Tùy role mà người dùng sẽ thấy hoặc không thấy một số module trong menu.
+          </p>
+        </div>
+        <div id="featureGrid" class="mt-8 flex flex-wrap justify-center gap-6"></div>
+      </section>
+
+      <section class="mt-16 grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div class="xl:col-span-5 bg-surface-container-lowest rounded-[2rem] p-8 soft-panel">
+          <div class="text-xs uppercase tracking-widest text-on-surface-variant">Luồng xử lý</div>
+          <h2 class="mt-2 text-3xl font-black font-manrope text-primary">Ý tưởng đi qua những bước nào?</h2>
+          <p class="mt-3 text-on-surface-variant">
+            Từ lúc người dùng gửi form đến lúc được duyệt và chi thưởng, hệ thống ghi lại toàn bộ trạng thái để các bên theo dõi minh bạch.
+          </p>
+          <div id="workflowSteps" class="mt-8 space-y-4"></div>
+        </div>
+        <div class="xl:col-span-7 bg-surface-container-low rounded-[2rem] p-8">
+          <div class="text-xs uppercase tracking-widest text-on-surface-variant">Cách dùng nhanh</div>
+          <h2 class="mt-2 text-3xl font-black font-manrope text-primary">Người dùng nên thao tác theo góc nhìn nào?</h2>
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-[1.5rem] bg-surface-container-lowest p-6 soft-panel">
+              <div class="w-12 h-12 rounded-2xl editorial-gradient text-white flex items-center justify-center">
+                <span class="material-symbols-outlined">person</span>
+              </div>
+              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn là người gửi ý tưởng</h3>
+              <p class="mt-3 text-on-surface-variant">Vào mục Đăng ký, điền form, đính kèm minh chứng nếu có, rồi theo dõi trạng thái trong quá trình duyệt.</p>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-lowest p-6 soft-panel">
+              <div class="w-12 h-12 rounded-2xl bg-surface-container text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined">task</span>
+              </div>
+              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn là người duyệt</h3>
+              <p class="mt-3 text-on-surface-variant">Vào Phê duyệt, lọc phiếu cần xử lý, xem hồ sơ, chấm điểm hoặc ra quyết định theo đúng cấp của bạn.</p>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-lowest p-6 soft-panel">
+              <div class="w-12 h-12 rounded-2xl bg-surface-container text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined">inventory_2</span>
+              </div>
+              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn muốn học hỏi / tra cứu</h3>
+              <p class="mt-3 text-on-surface-variant">Vào Kho ý tưởng để xem dữ liệu đã duyệt, lọc theo đơn vị hoặc lĩnh vực và tham khảo sáng kiến đã làm.</p>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-lowest p-6 soft-panel">
+              <div class="w-12 h-12 rounded-2xl bg-surface-container text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined">payments</span>
+              </div>
+              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn phụ trách chi thưởng</h3>
+              <p class="mt-3 text-on-surface-variant">Vào Chi thưởng để xem phiếu đủ điều kiện, xác nhận đã chi và xuất danh sách phục vụ đối soát.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-16">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-on-surface-variant">Theo role</div>
+            <h2 class="mt-2 text-3xl md:text-4xl font-black font-manrope text-primary">Mỗi role dùng app ra sao?</h2>
+          </div>
+          <p class="max-w-2xl text-on-surface-variant">
+            Danh sách dưới đây dùng để training user nội bộ: mỗi role sẽ biết mục nào xuất hiện trên menu, mục tiêu sử dụng của họ là gì, và thứ tự thao tác nên làm.
+          </p>
+        </div>
+        <div id="roleGuideGrid" class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+      </section>
+    </main>
+
+    <script src="../js/api.js?v=20260428-actual-benefit"></script>
+    <script>
+      const FEATURE_CARDS = [
+        {
+          title: "Đăng ký ý tưởng",
+          icon: "edit_note",
+          href: "/pages/submit-idea",
+          summary: "Điền form, thêm người cùng tham gia, tải ảnh/video minh chứng và gửi ý tưởng về đơn vị.",
+          audience: "Tất cả nhân viên",
+        },
+        {
+          title: "Kho ý tưởng vàng",
+          icon: "inventory_2",
+          href: "/pages/library",
+          summary: "Tra cứu ý tưởng đã duyệt, xem dashboard tổng quan và học hỏi sáng kiến giữa các đơn vị.",
+          audience: "Tất cả user",
+        },
+        {
+          title: "Phê duyệt",
+          icon: "fact_check",
+          href: "/pages/approvals",
+          summary: "Xem phiếu chờ xử lý, chấm điểm, phê duyệt, từ chối hoặc in phiếu nhận tiền theo đúng cấp.",
+          audience: "Role quản lý / duyệt",
+        },
+        {
+          title: "Chi thưởng",
+          icon: "payments",
+          href: "/pages/rewards",
+          summary: "Quản lý phiếu đủ điều kiện, xác nhận đã chi và lập đợt thưởng theo quý / năm.",
+          audience: "Thủ quỹ / Admin",
+        },
+        {
+          title: "Cài đặt",
+          icon: "settings",
+          href: "/pages/settings",
+          summary: "Quản lý user, đơn vị, bộ tiêu chí chấm điểm và cấu hình phục vụ vận hành.",
+          audience: "Admin / BCT",
+        },
+      ];
+
+      const WORKFLOW_STEPS = [
+        { status: "Đã gửi ý tưởng", title: "Người dùng gửi ý tưởng", desc: "Form được lưu thành hồ sơ chính thức và sẵn sàng cho bước xem xét ban đầu." },
+        { status: "Đang xem xét / chấm điểm", title: "Cấp đầu nhận xét / chấm điểm", desc: "Người phụ trách đầu tiên kiểm tra nội dung, minh chứng và chấm K1/K2/K3 nếu cần." },
+        { status: "Đơn vị đã phê duyệt", title: "Trưởng đơn vị phê duyệt", desc: "Phiếu đủ điều kiện sẽ được xác nhận ở cấp đơn vị trước khi chuyển tiếp." },
+        { status: "BCT đang xem xét", title: "BCT xem xét", desc: "Ban cải tiến đánh giá sâu hơn trước khi trình lãnh đạo." },
+        { status: "Lãnh đạo đang xem xét", title: "Lãnh đạo duyệt cuối", desc: "Phiếu được ra quyết định cuối cùng: duyệt hoặc không duyệt." },
+        { status: "Đã duyệt / đã chi thưởng", title: "Hoàn tất và chi thưởng", desc: "Phiếu đã duyệt có thể in giấy nhận tiền, xác nhận đã chi và vào thư viện tra cứu." },
+      ];
+
+      const ROLE_GUIDES = {
+        employee: {
+          name: "Nhân viên",
+          desc: "Role gửi ý tưởng, theo dõi tình trạng xử lý và tham khảo kho ý tưởng.",
+          modules: ["Đăng ký", "Kho ý tưởng"],
+          firstStep: "Vào Đăng ký để điền form và gửi sáng kiến.",
+          tasks: [
+            "Điền thông tin ý tưởng, người tham gia, mô tả và minh chứng.",
+            "Theo dõi trạng thái duyệt của ý tưởng đã gửi.",
+            "Tra cứu kho ý tưởng để học hỏi sáng kiến đã được áp dụng.",
+          ],
+        },
+        sub_dept_manager: {
+          name: "Phó phòng / Phó GĐ XN",
+          desc: "Role duyệt cấp đầu, đánh giá nội dung và chấm điểm ý tưởng.",
+          modules: ["Kho ý tưởng", "Phê duyệt"],
+          firstStep: "Vào Phê duyệt và lọc danh sách phiếu cần xử lý.",
+          tasks: [
+            "Xem phiếu mới gửi, kiểm tra minh chứng và tính khả thi.",
+            "Chấm điểm theo bộ tiêu chí và ghi nhận xét.",
+            "Chuyển tiếp, yêu cầu bổ sung hoặc từ chối theo đúng nghiệp vụ.",
+          ],
+        },
+        dept_manager: {
+          name: "Trưởng bộ phận / GĐ Xưởng",
+          desc: "Role phê duyệt cấp đơn vị và xử lý các phiếu liên quan đơn vị phụ trách.",
+          modules: ["Kho ý tưởng", "Phê duyệt"],
+          firstStep: "Xem các phiếu đã qua bước đánh giá ban đầu trong Phê duyệt.",
+          tasks: [
+            "Xem kết quả chấm điểm, hồ sơ và minh chứng của ý tưởng.",
+            "Ra quyết định phê duyệt cấp đơn vị hoặc từ chối.",
+            "In phiếu nhận tiền cho ý tưởng thuộc đơn vị khi đủ điều kiện.",
+          ],
+        },
+        unit_represent: {
+          name: "Đại diện đơn vị",
+          desc: "Role hỗ trợ thao tác phiếu nhận tiền cho đơn vị, không chấm điểm duyệt.",
+          modules: ["Kho ý tưởng", "Phê duyệt"],
+          firstStep: "Vào Phê duyệt để tìm các phiếu đủ điều kiện in giấy nhận tiền.",
+          tasks: [
+            "Xem danh sách phiếu đã đủ điều kiện chi thưởng của đơn vị.",
+            "Mở / in phiếu nhận tiền phục vụ quy trình nội bộ.",
+            "Theo dõi trạng thái phiếu liên quan đơn vị mình.",
+          ],
+        },
+        ie_manager: {
+          name: "Ban cải tiến (BCT)",
+          desc: "Role xem xét cấp công ty và có quyền truy cập một phần cấu hình hệ thống.",
+          modules: ["Kho ý tưởng", "Phê duyệt", "Cài đặt"],
+          firstStep: "Vào Phê duyệt để xử lý các ý tưởng chờ BCT.",
+          tasks: [
+            "Đánh giá hồ sơ đã qua cấp đơn vị và quyết định đạt / không đạt chuẩn hóa.",
+            "Chuyển ý tưởng phù hợp lên lãnh đạo hoặc dừng với lý do rõ ràng.",
+            "Quản lý một số cấu hình / tiêu chí cần thiết trong phần Cài đặt.",
+          ],
+        },
+        bod_manager: {
+          name: "Lãnh đạo công ty",
+          desc: "Role phê duyệt cuối cùng trước khi ý tưởng đủ điều kiện chi thưởng.",
+          modules: ["Kho ý tưởng", "Phê duyệt"],
+          firstStep: "Vào Phê duyệt để xem danh sách chờ lãnh đạo quyết định cuối.",
+          tasks: [
+            "Xem hồ sơ, nhận xét và toàn bộ lịch sử duyệt trước đó.",
+            "Phê duyệt cuối hoặc từ chối với lý do cụ thể.",
+            "Theo dõi bức tranh tổng quan qua dữ liệu đã duyệt trong Kho ý tưởng.",
+          ],
+        },
+        treasurer: {
+          name: "Thủ quỹ",
+          desc: "Role phụ trách xác nhận chi thưởng và quản lý các đợt thưởng.",
+          modules: ["Kho ý tưởng", "Chi thưởng"],
+          firstStep: "Vào Chi thưởng để xem phiếu đã đủ điều kiện thanh toán.",
+          tasks: [
+            "Xem danh sách phiếu đã được duyệt hoàn toàn.",
+            "Xác nhận đã chi, cập nhật trạng thái và tải dữ liệu xuất Excel.",
+            "Phối hợp đối soát cùng các bộ phận liên quan.",
+          ],
+        },
+        admin: {
+          name: "Admin",
+          desc: "Role toàn quyền, vừa vận hành dữ liệu vừa theo dõi các nghiệp vụ chính.",
+          modules: ["Đăng ký", "Kho ý tưởng", "Phê duyệt", "Chi thưởng", "Cài đặt"],
+          firstStep: "Kiểm tra Cài đặt và các module vận hành chính trên Menu.",
+          tasks: [
+            "Quản lý user, đơn vị, tiêu chí chấm điểm và tham số hệ thống.",
+            "Can thiệp các module duyệt / thưởng khi cần hỗ trợ vận hành.",
+            "Theo dõi tổng thể toàn bộ dữ liệu và luồng hoạt động của app.",
+          ],
+        },
+      };
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function createFeatureCards() {
+        const wrap = document.getElementById("featureGrid");
+        wrap.innerHTML = FEATURE_CARDS.map((item) => `
+          <a href="${item.href}" class="group relative flex w-full max-w-[24rem] min-h-[18rem] flex-col rounded-[1.5rem] bg-surface-container-lowest p-8 soft-panel transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary overflow-hidden">
+            <div class="absolute top-0 right-0 w-28 h-28 rounded-full bg-primary/5 -mr-12 -mt-12"></div>
+            <div class="relative z-10 w-14 h-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-white/15 group-hover:text-white">
+              <span class="material-symbols-outlined text-[30px]">${item.icon}</span>
+            </div>
+            <h3 class="relative z-10 mt-6 text-[1.65rem] leading-tight font-bold font-manrope text-primary group-hover:text-white">${item.title}</h3>
+            <p class="relative z-10 mt-4 text-on-surface-variant text-base leading-relaxed group-hover:text-white/80">${item.summary}</p>
+            <div class="relative z-10 mt-auto pt-8">
+              <span class="inline-flex rounded-full bg-surface-container px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase text-on-surface-variant group-hover:bg-white/15 group-hover:text-white">${item.audience}</span>
+            </div>
+          </a>
+        `).join("");
+      }
+
+      function createWorkflowSteps() {
+        const wrap = document.getElementById("workflowSteps");
+        wrap.innerHTML = WORKFLOW_STEPS.map((item, index) => `
+          <div class="flex gap-4">
+            <div class="flex flex-col items-center">
+              <div class="w-11 h-11 rounded-full editorial-gradient text-white flex items-center justify-center font-bold">${index + 1}</div>
+              ${index < WORKFLOW_STEPS.length - 1 ? '<div class="w-px flex-1 bg-slate-300 mt-2"></div>' : ""}
+            </div>
+            <div class="pb-6">
+              <div class="text-xs uppercase tracking-[0.22em] text-on-surface-variant">${item.status}</div>
+              <div class="mt-1 text-xl font-bold font-manrope text-primary">${item.title}</div>
+              <p class="mt-2 text-on-surface-variant">${item.desc}</p>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function createRoleGuides(activeRole) {
+        const wrap = document.getElementById("roleGuideGrid");
+        wrap.innerHTML = Object.entries(ROLE_GUIDES).map(([key, role]) => {
+          const isActive = key === activeRole;
+          const moduleTags = role.modules.map((module) => `<span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase ${isActive ? "bg-white/15 text-white" : "bg-surface-container text-on-surface-variant"}">${module}</span>`).join("");
+          const taskList = role.tasks.map((task) => `
+            <li class="flex gap-3">
+              <span class="material-symbols-outlined ${isActive ? "text-white" : "text-primary"}">check_circle</span>
+              <span>${task}</span>
+            </li>
+          `).join("");
+          return `
+            <section class="rounded-[1.75rem] p-7 ${isActive ? "editorial-gradient text-white shadow-[0px_28px_60px_rgba(0,43,115,0.18)]" : "bg-surface-container-lowest soft-panel"}">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.2em] ${isActive ? "text-white/70" : "text-on-surface-variant"}">${key}</div>
+                  <h3 class="mt-2 text-2xl font-black font-manrope">${role.name}</h3>
+                </div>
+                ${isActive ? '<span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em]">Role hiện tại</span>' : ""}
+              </div>
+              <p class="mt-4 ${isActive ? "text-white/80" : "text-on-surface-variant"}">${role.desc}</p>
+              <div class="mt-5 flex flex-wrap gap-2">${moduleTags}</div>
+              <div class="mt-5 rounded-[1.25rem] ${isActive ? "bg-white/10" : "bg-surface-container-low"} p-5">
+                <div class="text-xs uppercase tracking-[0.18em] ${isActive ? "text-white/70" : "text-on-surface-variant"}">Nên làm đầu tiên</div>
+                <div class="mt-2 text-lg font-semibold">${role.firstStep}</div>
+              </div>
+              <ul class="mt-5 space-y-3 ${isActive ? "text-white/90" : "text-on-surface-variant"}">${taskList}</ul>
+            </section>
+          `;
+        }).join("");
+      }
+
+      function renderCurrentRole(role, user) {
+        const fallbackRole = role && ROLE_GUIDES[role] ? role : "employee";
+        const guide = ROLE_GUIDES[fallbackRole];
+        document.getElementById("whoami").textContent = user
+          ? `${user.employee_code} • ${user.full_name || "Chưa có tên"}`
+          : `${(localStorage.getItem("employee_code") || "").trim().toUpperCase() || "?"} • ${guide.name}`;
+        document.getElementById("currentRoleName").textContent = guide.name;
+        document.getElementById("currentRoleDesc").textContent = guide.desc;
+        document.getElementById("currentRoleFirstStep").textContent = guide.firstStep;
+        document.getElementById("currentRoleModules").innerHTML = guide.modules
+          .map((item) => `<span class="inline-flex rounded-full bg-surface-container px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase text-on-surface-variant">${item}</span>`)
+          .join("");
+        createRoleGuides(fallbackRole);
+      }
+
+      async function init() {
+        createFeatureCards();
+        createWorkflowSteps();
+
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        let user = null;
+        try {
+          user = await api.getUserByCode(code);
+        } catch (error) {
+          user = null;
+        }
+        renderCurrentRole(user?.role || "employee", user);
+      }
+
+      init();
+    </script>
+  </body>
+</html>
