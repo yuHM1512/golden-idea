@@ -47,7 +47,8 @@ const api = {
       });
 
       if (!response.ok) {
-        throw new Error('L\u1ed7i khi t\u1ea3i file l\u00ean');
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `Lỗi khi tải file lên: ${file?.name || 'unknown file'}`);
       }
 
       return await response.json();
@@ -464,7 +465,7 @@ function showNotification(message, type = 'success') {
 }
 
 // Helper: Show loading
-function showLoading(show = true) {
+function showLoading(show = true, message = '\u0110ang x\u1eed l\u00fd...') {
   let loader = document.getElementById('loader');
   if (!loader && show) {
     loader = document.createElement('div');
@@ -473,10 +474,15 @@ function showLoading(show = true) {
     loader.innerHTML = `
       <div class="bg-white rounded-lg p-8 text-center">
         <div class="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p class="text-on-surface font-body-lg">\u0110ang x\u1eed l\u00fd...</p>
+        <p id="loaderMessage" class="text-on-surface font-body-lg">${message}</p>
       </div>
     `;
     document.body.appendChild(loader);
+  } else if (loader && show) {
+    const messageEl = document.getElementById('loaderMessage');
+    if (messageEl) {
+      messageEl.textContent = message;
+    }
   } else if (loader && !show) {
     loader.remove();
   }

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # File Upload
     UPLOAD_DIR: str = str(_BACKEND_DIR / "uploads")
-    MAX_FILE_SIZE_MB: int = 100
+    MAX_FILE_SIZE_MB: int = 300
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "gif", "mp4", "avi", "mov"]
 
     # CORS
