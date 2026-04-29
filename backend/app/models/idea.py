@@ -33,6 +33,7 @@ class Idea(Base):
     employee_code = Column(String(50), nullable=True)
     participants_json = Column(Text, nullable=True)
     phone_number = Column(String(20), nullable=True)
+    bo_phan = Column(String(255), nullable=True)  # Bộ phận
     position = Column(String(255), nullable=True)  # Chức vụ
     product_code = Column(String(100), nullable=True)  # Mã hàng
     category = Column(String(50), nullable=False)  # Nội dung ý tưởng liên quan

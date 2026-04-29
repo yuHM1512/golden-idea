@@ -163,6 +163,10 @@
                                 <input id="phone" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập số điện thoại liên hệ" type="tel"/>
                             </div>
                             <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Bộ phận</label>
+                                <input id="boPhan" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Ví dụ: Tổ 1" type="text"/>
+                            </div>
+                            <div class="space-y-2">
                                 <label class="font-label-md text-on-surface-variant px-1">Chức vụ</label>
                                 <input id="position" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Chức vụ hiện tại" type="text"/>
                             </div>
@@ -392,6 +396,7 @@
                     employee_code: document.getElementById('employeeCode').value,
                     participants,
                     phone_number: document.getElementById('phone').value,
+                    bo_phan: document.getElementById('boPhan').value,
                     position: document.getElementById('position').value,
                     product_code: document.getElementById('productCode').value,
                     category: document.getElementById('category').value,
@@ -420,6 +425,7 @@
                 document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
                     input.checked = false;
                 });
+                localStorage.removeItem('ideaDraft');
                 resetParticipants();
 
                 // Redirect after 2 seconds
@@ -515,6 +521,7 @@
                 employee_code: document.getElementById('employeeCode').value,
                 participants,
                 phone_number: document.getElementById('phone').value,
+                bo_phan: document.getElementById('boPhan').value,
                 position: document.getElementById('position').value,
                 product_code: document.getElementById('productCode').value,
                 category: document.getElementById('category').value,

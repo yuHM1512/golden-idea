@@ -45,7 +45,7 @@ def _normalize_participants(idea: IdeaCreate) -> list[dict[str, str]]:
 async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
     """
     Submit a new idea (Phiếu đăng ký ý tưởng)
-    Captures: full_name, employee_code, phone, position, product_code,
+    Captures: full_name, employee_code, phone, bo_phan, position, product_code,
               category, description, is_anonymous, unit_id
     """
     try:
@@ -68,6 +68,7 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
             employee_code=_truncate(primary_employee_code, 50),
             participants_json=json.dumps(participants, ensure_ascii=False),
             phone_number=idea.phone_number,
+            bo_phan=_truncate(idea.bo_phan, 255),
             position=idea.position,
             product_code=idea.product_code,
             category=idea.category,

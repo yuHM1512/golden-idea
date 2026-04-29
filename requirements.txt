@@ -10,6 +10,7 @@ python-dotenv==1.0.0
 alembic==1.13.0
 weasyprint==60.1
 pillow==10.1.0
+email-validator
 
 # TODO: Uncomment when implementing password-based auth
 # python-jose[cryptography]==3.3.0

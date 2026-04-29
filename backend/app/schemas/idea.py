@@ -41,6 +41,7 @@ class IdeaCreate(BaseModel):
     employee_code: Optional[str] = Field(None, description="Mã Nhân Viên (optional)")
     participants: List[IdeaParticipant] = Field(default_factory=list, description="Danh sách người cùng đăng ký")
     phone_number: Optional[str] = Field(None, description="Số điện thoại")
+    bo_phan: Optional[str] = Field(None, description="Bộ phận")
     position: Optional[str] = Field(None, description="Chức vụ")
     product_code: Optional[str] = Field(None, description="Mã hàng")
     category: IdeaCategory = Field(..., description="Nội dung ý tưởng liên quan")
@@ -54,6 +55,7 @@ class IdeaUpdate(BaseModel):
     employee_code: Optional[str] = None
     participants: Optional[List[IdeaParticipant]] = None
     phone_number: Optional[str] = None
+    bo_phan: Optional[str] = None
     position: Optional[str] = None
     product_code: Optional[str] = None
     category: Optional[IdeaCategory] = None
@@ -67,6 +69,7 @@ class IdeaDetailResponse(BaseModel):
     employee_code: Optional[str]
     participants: List[IdeaParticipant] = Field(default_factory=list)
     phone_number: Optional[str]
+    bo_phan: Optional[str]
     position: Optional[str]
     product_code: Optional[str]
     category: IdeaCategory
