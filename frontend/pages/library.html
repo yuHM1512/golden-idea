@@ -1,0 +1,878 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Kho Ý tưởng vàng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,line-clamp"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container": "#eceeef",
+              "surface-container-low": "#f1f3f4",
+              "surface-container-lowest": "#ffffff",
+              "surface-variant": "#eeeeee",
+              "on-surface": "#191c1d",
+              "on-surface-variant": "#424654",
+              primary: "#002b73",
+              "primary-container": "#0040a1",
+              "secondary-container": "#9cb4fe",
+              "on-secondary-container": "#2a4486",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+            },
+            fontFamily: {
+              manrope: ["Manrope"],
+              inter: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+      .bg-signature-gradient {
+        background: linear-gradient(135deg, #002b73 0%, #0040a1 100%);
+      }
+    </style>
+  </head>
+
+  <body class="bg-[#f8f9fa] font-inter text-on-surface min-h-screen overflow-x-hidden">
+    <!-- Glass TopNav -->
+    <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-40 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="flex justify-between items-center w-full px-4 md:px-16 py-2 max-w-[1920px] mx-auto">
+        <a href="/pages/menu" class="flex items-center gap-3 text-slate-600 hover:text-slate-900">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span class="font-semibold">Menu</span>
+        </a>
+
+        <a href="/menu" class="block">
+          <div class="w-64 h-16 md:w-72 md:h-20 bg-transparent flex items-center justify-center overflow-hidden">
+            <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+          </div>
+        </a>
+
+        <div class="flex items-center gap-3">
+          <button class="px-4 py-2 rounded-xl text-slate-700 hover:bg-surface-container-low font-semibold" onclick="logout()">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 md:px-16 py-10">
+      <div class="max-w-7xl mx-auto space-y-10">
+        <!-- Heading -->
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-on-surface-variant">Kho Ý tưởng vàng</div>
+            <h1 class="mt-2 text-3xl md:text-5xl font-black tracking-tight font-manrope text-primary">
+              Dashboard & Kho dữ liệu
+            </h1>
+            <p class="mt-3 text-on-surface-variant max-w-2xl">
+              Theo dõi số lượng ý tưởng và truy xuất kho dữ liệu để học hỏi, áp dụng cho đơn vị của bạn.
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div class="group relative overflow-hidden bg-primary rounded-[1.75rem] p-7 min-h-44 shadow-[0px_28px_60px_rgba(0,43,115,0.18)] hover:-translate-y-1 transition-all duration-300">
+            <div class="absolute -right-10 -top-10 w-36 h-36 bg-white/15 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+            <div class="relative z-10 flex items-start justify-between gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-white/15 text-white flex items-center justify-center">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-white/15 text-white/90 text-[10px] uppercase tracking-widest font-bold">Tổng</span>
+            </div>
+            <div class="relative z-10 mt-6">
+              <div id="kpiTotal" class="text-5xl font-black font-manrope text-white">&#8212;</div>
+              <div class="mt-2 text-sm font-semibold text-white/90 uppercase tracking-wider">Tổng ý tưởng</div>
+              <div class="mt-4 text-sm text-white/70 leading-relaxed">Tất cả ý tưởng đã ghi nhận trên hệ thống.</div>
+            </div>
+          </div>
+
+          <div class="group bg-surface-container-lowest rounded-[1.75rem] p-7 min-h-44 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:-translate-y-1 hover:shadow-[0px_28px_60px_rgba(25,28,29,0.1)] transition-all duration-300">
+            <div class="flex items-start justify-between gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-[#e1e3e4] text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined">verified</span>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-[10px] uppercase tracking-widest font-bold">Cấp 3</span>
+            </div>
+            <div class="mt-6">
+              <div id="kpiApproved" class="text-5xl font-black font-manrope text-on-surface">&#8212;</div>
+              <div class="mt-2 text-sm font-semibold text-slate-500 uppercase tracking-wider">Được hội đồng công nhận</div>
+              <div class="mt-4 text-sm text-on-surface-variant leading-relaxed">Số ý tưởng đã qua đủ 3 cấp phê duyệt.</div>
+            </div>
+          </div>
+
+          <div class="group relative overflow-hidden bg-surface-container-lowest rounded-[1.75rem] p-7 min-h-44 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:-translate-y-1 hover:shadow-[0px_28px_60px_rgba(25,28,29,0.1)] transition-all duration-300">
+            <div class="absolute -right-10 -top-10 w-36 h-36 bg-[#e8f6ee] rounded-full blur-2xl opacity-70 group-hover:scale-125 transition-transform duration-500"></div>
+            <div class="relative z-10 flex items-start justify-between gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-[#e8f6ee] text-[#0f7a43] flex items-center justify-center group-hover:bg-[#0f7a43] group-hover:text-white transition-colors">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">attach_money</span>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-[10px] uppercase tracking-widest font-bold">Triệu VND</span>
+            </div>
+            <div class="relative z-10 mt-6">
+              <div id="kpiBenefitValue" class="text-5xl font-black font-manrope text-on-surface flex items-end gap-2">
+                <span id="kpiBenefitNumber">&#8212;</span>
+                <span class="text-base font-bold text-slate-500">Tri&#7879;u VN&#272;</span>
+              </div>
+              <div class="mt-2 text-sm font-semibold text-slate-500 uppercase tracking-wider">Tổng giá trị làm lợi</div>
+              <div class="mt-4 text-sm text-on-surface-variant leading-relaxed">Tổng số tiền tiết kiệm sau khi áp dụng.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Filters -->
+        <section class="bg-surface-container-lowest rounded-[2rem] p-6 md:p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="flex flex-col xl:flex-row xl:items-end gap-4">
+            <div class="xl:w-[30%]">
+              <label class="text-xs uppercase tracking-widest text-on-surface-variant">Tìm nhanh</label>
+              <div class="mt-2 bg-surface-container-low rounded-xl px-4 py-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-slate-400">search</span>
+                <input
+                  id="q"
+                  class="bg-transparent border-none focus:ring-0 text-sm w-full"
+                  placeholder="Mô tả / người gửi / đơn vị..."
+                  type="text"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+              <div>
+                <label class="text-xs uppercase tracking-widest text-on-surface-variant">Đơn vị</label>
+                <select id="filterUnitId" class="mt-2 w-full rounded-xl bg-surface-container-low border-none">
+                  <option value="">Tất cả</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-widest text-on-surface-variant">Lĩnh vực</label>
+                <select id="filterCategory" class="mt-2 w-full rounded-xl bg-surface-container-low border-none">
+                  <option value="">Tất cả</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex gap-3 xl:pb-0.5">
+              <button class="px-5 py-3 rounded-xl bg-signature-gradient text-white font-semibold shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:opacity-95" onclick="loadIdeas(true)">
+                Áp dụng
+              </button>
+              <button class="px-5 py-3 rounded-xl font-semibold text-primary hover:bg-surface-container-low" onclick="resetFilters()">
+                Reset
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
+          <div class="xl:col-span-7 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+            <div class="flex items-end justify-between gap-6 mb-6">
+              <div>
+                <div class="text-xs uppercase tracking-widest text-on-surface-variant">Biểu đồ</div>
+                <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng theo đơn vị</h2>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 mb-5">
+              <label class="text-xs uppercase tracking-widest text-on-surface-variant">
+                Tháng
+                <select id="unitChartMonth" class="ml-2 rounded-xl bg-surface-container-low border-none text-sm font-semibold">
+                  <option value="">Tất cả</option>
+                </select>
+              </label>
+              <label class="text-xs uppercase tracking-widest text-on-surface-variant">
+                Năm
+                <select id="unitChartYear" class="ml-2 rounded-xl bg-surface-container-low border-none text-sm font-semibold">
+                  <option value="">Tất cả</option>
+                </select>
+              </label>
+              <button class="px-4 py-2 rounded-xl bg-signature-gradient text-white font-semibold hover:opacity-95" onclick="refreshUnitChart()">
+                Xem dữ liệu
+              </button>
+            </div>
+            <div id="unitChartWrap" class="min-h-64 overflow-x-auto pb-2 pr-2"></div>
+          </div>
+
+          <div class="xl:col-span-5 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+            <div class="flex items-end justify-between gap-6 mb-6">
+              <div>
+                <div class="text-xs uppercase tracking-widest text-on-surface-variant">Tỷ trọng</div>
+                <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng theo lĩnh vực</h2>
+              </div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row items-center gap-8">
+              <div id="categoryDonut" class="relative w-56 h-56 rounded-full bg-surface-container-low flex-none"></div>
+              <div id="categoryDonutLegend" class="w-full grid grid-cols-1 gap-2 text-sm text-on-surface-variant"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Table -->
+        <section class="bg-surface-container-lowest rounded-[2rem] shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden">
+          <div class="px-8 py-6 flex items-center justify-between">
+            <div>
+              <div class="text-xs uppercase tracking-widest text-on-surface-variant">Kho dữ liệu</div>
+              <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Bảng ý tưởng</h2>
+              <p class="mt-2 text-sm text-on-surface-variant">Tên ý tưởng (tóm tắt), lĩnh vực, người gửi, mô tả, minh hoạ.</p>
+            </div>
+              <div class="text-sm text-on-surface-variant" id="tableMeta">&#8212;</div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-container-low text-on-surface-variant">
+                <tr>
+                  <th class="text-left px-8 py-4 font-semibold">Tên ý tưởng</th>
+                  <th class="text-left px-6 py-4 font-semibold">Lĩnh vực</th>
+                  <th class="text-left px-6 py-4 font-semibold">Người gửi</th>
+                  <th class="text-left px-6 py-4 font-semibold">Mô tả</th>
+                  <th class="text-center px-6 py-4 font-semibold">Minh hoạ</th>
+                </tr>
+              </thead>
+              <tbody id="ideasTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="px-8 py-5 bg-surface-variant flex items-center justify-between">
+            <button class="px-4 py-2 rounded-xl font-semibold text-primary hover:bg-surface-container-low" onclick="prevPage()">Trang trước</button>
+                <div class="text-sm text-on-surface-variant" id="pageInfo">&#8212;</div>
+            <button class="px-4 py-2 rounded-xl font-semibold text-primary hover:bg-surface-container-low" onclick="nextPage()">Trang sau</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="ideaModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4" onclick="closeIdeaModal()">
+      <div class="w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(25,28,29,0.22)]" onclick="event.stopPropagation()">
+        <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Chi tiết ý tưởng</div>
+            <h3 id="ideaModalTitle" class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng</h3>
+          </div>
+          <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full bg-surface-container-low" onclick="closeIdeaModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div id="ideaModalBody" class="space-y-6 px-6 py-6"></div>
+      </div>
+    </div>
+
+    <div id="unitChartModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4" onclick="closeUnitChartModal()">
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(25,28,29,0.22)]" onclick="event.stopPropagation()">
+        <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Thống kê</div>
+            <h3 id="unitChartModalTitle" class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng theo đơn vị</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="px-4 py-2 rounded-xl bg-surface-container-low text-primary font-semibold hover:opacity-90" onclick="downloadUnitChartExcel()">
+              Tải Excel
+            </button>
+            <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full bg-surface-container-low" onclick="closeUnitChartModal()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+        <div class="px-6 py-6 space-y-4">
+            <div id="unitChartModalMeta" class="text-sm text-on-surface-variant">&#8212;</div>
+          <div class="overflow-x-auto rounded-[1.5rem] border border-surface-variant">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface-container-low text-on-surface-variant">
+                <tr>
+                  <th class="text-left px-6 py-4 font-semibold">Đơn vị</th>
+                  <th class="text-left px-6 py-4 font-semibold">Khối</th>
+                  <th class="text-right px-6 py-4 font-semibold">Số ý tưởng</th>
+                </tr>
+              </thead>
+              <tbody id="unitChartModalBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js?v=20260428-unit-chart-filter"></script>
+    <script>
+      const CATEGORY_LABELS = {
+        TOOLS: "Công cụ",
+        PROCESS: "Phương pháp quy trình",
+        DIGITIZATION: "Số hoá",
+        OTHER: "Khác",
+      };
+      const STATUS_LABELS = {
+        DRAFT: "Nháp",
+        SUBMITTED: "Chờ duyệt cấp đơn vị",
+        UNDER_REVIEW: "Đang xem xét cấp đơn vị",
+        DEPT_APPROVED: "Đơn vị đã duyệt, chờ BCT",
+        COUNCIL_REVIEW: "BCT đang xem xét",
+        LEADERSHIP_REVIEW: "BCT đã duyệt, chờ lãnh đạo",
+        APPROVED: "Đã duyệt đủ 3 cấp",
+        REWARDED: "Đã in phiếu nhận tiền",
+        REJECTED: "Không duyệt",
+        CANCELLED: "Đã huỷ",
+      };
+      const PIE_PALETTE = ["#1E3A8A", "#1D4ED8", "#3B82F6", "#93C5FD", "#DBEAFE"];
+
+      let units = [];
+      let skip = 0;
+      const limit = 25;
+      let lastCount = 0;
+      let activeIdeaDetail = null;
+      let unitChartLastData = [];
+      let unitChartLastParams = { month: "", year: "" };
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function resetFilters() {
+        document.getElementById("q").value = "";
+        document.getElementById("filterUnitId").value = "";
+        document.getElementById("filterCategory").value = "";
+        skip = 0;
+        loadIdeas(true);
+      }
+
+      function safeText(text) {
+        return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
+      }
+
+      function formatVnd(value) {
+        const numberValue = Number(value || 0);
+        return numberValue.toLocaleString("vi-VN", { maximumFractionDigits: 0 });
+      }
+
+      function formatMillionVnd(value) {
+        const millionValue = Number(value || 0) / 1000000;
+        return millionValue.toLocaleString("vi-VN", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 1,
+        });
+      }
+
+      function closeUnitChartModal() {
+        const modal = document.getElementById("unitChartModal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function openUnitChartModal() {
+        const modal = document.getElementById("unitChartModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function downloadBlob(filename, blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      async function downloadUnitChartExcel() {
+        if (typeof ExcelJS === "undefined") {
+          alert("Ch\u01b0a t\u1ea3i \u0111\u01b0\u1ee3c th\u01b0 vi\u1ec7n Excel. H\u00e3y th\u1eed l\u1ea1i.");
+          return;
+        }
+
+        const monthLabel = unitChartLastParams.month ? `T${unitChartLastParams.month}` : "TatCaThang";
+        const yearLabel = unitChartLastParams.year ? `Y${unitChartLastParams.year}` : "TatCaNam";
+        const filename = `ideas_by_unit_${monthLabel}_${yearLabel}.xlsx`;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Y tuong theo don vi", {
+          views: [{ state: "frozen", ySplit: 2 }],
+        });
+        const normalized = (unitChartLastData || [])
+          .map((x) => ({
+            unit_name: x.unit_name || "",
+            department: x.department || "",
+            idea_count: Number(x.idea_count || 0),
+          }))
+          .filter((x) => x.idea_count > 0)
+          .sort((a, b) => b.idea_count - a.idea_count);
+        const monthText = unitChartLastParams.month ? `Thang ${unitChartLastParams.month}` : "Tat ca thang";
+        const yearText = unitChartLastParams.year ? `Nam ${unitChartLastParams.year}` : "Tat ca nam";
+
+        worksheet.columns = [
+          { header: "Don vi", key: "unit_name", width: 36 },
+          { header: "Khoi", key: "department", width: 26 },
+          { header: "So y tuong", key: "idea_count", width: 14 },
+        ];
+        worksheet.spliceRows(1, 1);
+        worksheet.insertRow(1, [`Thong ke y tuong theo don vi - ${monthText} - ${yearText}`]);
+        worksheet.mergeCells("A1:C1");
+        worksheet.addRow(["Don vi", "Khoi", "So y tuong"]);
+
+        normalized.forEach((item) => {
+          worksheet.addRow([item.unit_name, item.department, item.idea_count]);
+        });
+
+        const titleCell = worksheet.getCell("A1");
+        titleCell.font = { name: "Calibri", size: 14, bold: true, color: { argb: "FFFFFFFF" } };
+        titleCell.alignment = { horizontal: "center", vertical: "middle" };
+        titleCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1F4E78" },
+        };
+        worksheet.getRow(1).height = 24;
+
+        const headerRow = worksheet.getRow(2);
+        headerRow.height = 22;
+        headerRow.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FF1F1F1F" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        headerRow.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFD9EAF7" },
+        };
+
+        worksheet.eachRow((row, rowNumber) => {
+          row.eachCell((cell, colNumber) => {
+            cell.border = {
+              top: { style: "thin", color: { argb: "FFB7C9D6" } },
+              left: { style: "thin", color: { argb: "FFB7C9D6" } },
+              bottom: { style: "thin", color: { argb: "FFB7C9D6" } },
+              right: { style: "thin", color: { argb: "FFB7C9D6" } },
+            };
+            if (rowNumber >= 2) {
+              cell.alignment = {
+                vertical: "middle",
+                horizontal: rowNumber === 2 ? "center" : colNumber === 3 ? "right" : "left",
+                wrapText: true,
+              };
+            }
+          });
+          if (rowNumber >= 3) {
+            row.height = 20;
+          }
+        });
+
+        worksheet.getColumn(3).numFmt = "#,##0";
+        worksheet.autoFilter = "A2:C2";
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        downloadBlob(filename, blob);
+      }
+
+      function renderUnitChartTable(data) {
+        const tbody = document.getElementById("unitChartModalBody");
+        tbody.innerHTML = "";
+        const normalized = (data || [])
+          .map((x) => ({
+            unit_name: x.unit_name || "",
+            department: x.department || "",
+            idea_count: Number(x.idea_count || 0),
+          }))
+          .filter((x) => x.idea_count > 0);
+
+        if (!normalized.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="3" class="px-6 py-8 text-center text-on-surface-variant">Chưa có dữ liệu.</td></tr>';
+          return;
+        }
+
+        normalized
+          .sort((a, b) => b.idea_count - a.idea_count)
+          .forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-t border-surface-variant";
+            tr.innerHTML = `
+              <td class="px-6 py-4">${safeText(row.unit_name)}</td>
+              <td class="px-6 py-4 text-on-surface-variant">${safeText(row.department)}</td>
+              <td class="px-6 py-4 text-right font-semibold text-primary">${row.idea_count}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+      }
+
+      async function refreshUnitChart() {
+        const month = document.getElementById("unitChartMonth").value;
+        const year = document.getElementById("unitChartYear").value;
+        unitChartLastParams = { month, year };
+
+        const data = await api.getIdeasByUnit({ month, year });
+        unitChartLastData = data || [];
+        renderUnitChart(unitChartLastData);
+
+        const meta = document.getElementById("unitChartModalMeta");
+        const monthText = month ? `Tháng ${month}` : "Tất cả tháng";
+        const yearText = year ? `Năm ${year}` : "Tất cả năm";
+        meta.textContent = `${monthText} • ${yearText}`;
+        renderUnitChartTable(unitChartLastData);
+        openUnitChartModal();
+      }
+
+      function formatFileSize(size) {
+        const value = Number(size || 0);
+        if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        if (value >= 1024) return `${Math.round(value / 1024)} KB`;
+        return `${value} B`;
+      }
+
+      function closeIdeaModal() {
+        const modal = document.getElementById("ideaModal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function renderIdeaAttachments(attachments = []) {
+        if (!attachments.length) {
+          return '<div class="rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest p-5 text-sm text-on-surface-variant">Chưa có file minh hoạ.</div>';
+        }
+
+        return `
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            ${attachments.map((file) => {
+              const type = String(file.file_type || "").toLowerCase();
+              const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
+              const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(type);
+              if (isVideo) {
+                return `
+                  <figure class="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest">
+                    <video class="max-h-96 w-full bg-slate-950" controls preload="metadata" src="${safeText(file.file_url)}"></video>
+                    <figcaption class="space-y-1 px-4 py-3">
+                      <div class="font-semibold text-on-surface">${safeText(file.original_filename)}</div>
+                      <div class="text-xs text-on-surface-variant">${formatFileSize(file.file_size)}</div>
+                    </figcaption>
+                  </figure>
+                `;
+              }
+              if (isImage) {
+                return `
+                  <figure class="overflow-hidden rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest">
+                    <img class="max-h-96 w-full object-contain bg-slate-50" src="${safeText(file.file_url)}" alt="${safeText(file.original_filename)}" />
+                    <figcaption class="space-y-1 px-4 py-3">
+                      <div class="font-semibold text-on-surface">${safeText(file.original_filename)}</div>
+                      <div class="text-xs text-on-surface-variant">${formatFileSize(file.file_size)}</div>
+                    </figcaption>
+                  </figure>
+                `;
+              }
+              return `
+                <a class="flex items-center justify-between rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest px-4 py-4 text-sm font-semibold text-primary hover:bg-surface-container-low" href="${safeText(file.file_url)}" target="_blank" rel="noopener">
+                  <span>${safeText(file.original_filename)}</span>
+                  <span class="text-xs text-on-surface-variant">${formatFileSize(file.file_size)}</span>
+                </a>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      function renderIdeaModal(detail) {
+        const modal = document.getElementById("ideaModal");
+        document.getElementById("ideaModalTitle").textContent = detail.title || "Ý tưởng";
+        document.getElementById("ideaModalBody").innerHTML = `
+          <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <div class="text-xs uppercase tracking-widest text-on-surface-variant">Đơn vị</div>
+              <div class="mt-2 font-semibold text-on-surface">${safeText(detail.unit_name || "—")}</div>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <div class="text-xs uppercase tracking-widest text-on-surface-variant">Người gửi</div>
+              <div class="mt-2 font-semibold text-on-surface">${safeText(detail.full_name || "Ẩn danh")}</div>
+              <div class="mt-1 text-xs text-on-surface-variant">${safeText(detail.employee_code || "")}</div>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <div class="text-xs uppercase tracking-widest text-on-surface-variant">Lĩnh vực</div>
+              <div class="mt-2 font-semibold text-on-surface">${safeText(CATEGORY_LABELS[detail.category] || detail.category || "Khác")}</div>
+            </div>
+            <div class="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <div class="text-xs uppercase tracking-widest text-on-surface-variant">Ngày ghi nhận</div>
+              <div class="mt-2 font-semibold text-on-surface">${new Date(detail.submitted_at).toLocaleString("vi-VN")}</div>
+            </div>
+          </section>
+          <section class="rounded-[1.75rem] border border-slate-100 bg-surface-container-lowest p-6">
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Mô tả chi tiết</div>
+            <div class="mt-4 whitespace-pre-line leading-7 text-on-surface">${safeText(detail.description || "")}</div>
+          </section>
+          <section class="space-y-4">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Minh hoạ</div>
+                <h4 class="mt-2 text-xl font-black font-manrope text-primary">Tư liệu tham khảo từ ý tưởng</h4>
+              </div>
+              <div class="text-sm text-on-surface-variant">${detail.attachment_count || 0} file</div>
+            </div>
+            ${renderIdeaAttachments(detail.attachments || [])}
+          </section>
+        `;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      async function openIdeaModal(ideaId) {
+        activeIdeaDetail = await api.getLibraryIdeaDetail(ideaId);
+        renderIdeaModal(activeIdeaDetail);
+      }
+
+      function renderKpis(metrics) {
+        const total = metrics.total || 0;
+        const approved = metrics.council_recognized || 0;
+        const benefitValue = metrics.total_benefit_value || 0;
+
+        document.getElementById("kpiTotal").textContent = total;
+        document.getElementById("kpiApproved").textContent = approved;
+        const benefitNumberEl = document.getElementById("kpiBenefitNumber");
+        if (benefitNumberEl) benefitNumberEl.textContent = formatMillionVnd(benefitValue);
+        else document.getElementById("kpiBenefitValue").textContent = formatMillionVnd(benefitValue);
+      }
+
+      function renderUnitChart(data) {
+        const wrap = document.getElementById("unitChartWrap");
+        wrap.innerHTML = "";
+
+        const normalized = (data || [])
+          .map((x) => ({
+            label: x.unit_name || "Chưa có đơn vị",
+            count: x.idea_count || x.count || 0,
+          }))
+          .filter((x) => x.count > 0);
+        if (normalized.length === 0) {
+          wrap.innerHTML =
+            '<div class="w-full h-full flex items-center justify-center text-on-surface-variant">Chưa có dữ liệu theo đơn vị.</div>';
+          return;
+        }
+        const max = Math.max(1, ...normalized.map((x) => x.count));
+        const plot = document.createElement("div");
+        plot.className = "min-w-max mx-auto";
+        const barRow = document.createElement("div");
+        barRow.className = "h-44 flex items-end justify-center gap-7 px-4";
+        const labelRow = document.createElement("div");
+        labelRow.className = "mt-3 flex items-start justify-center gap-7 px-4";
+
+        normalized.slice(0, 16).forEach((item) => {
+          const height = Math.round((item.count / max) * 100);
+          const bar = document.createElement("div");
+          bar.className = "flex-none w-14 h-44 flex flex-col items-center justify-end gap-2";
+          bar.innerHTML = `
+            <div class="text-xs text-on-surface-variant">${item.count}</div>
+            <div class="w-9 rounded-2xl bg-surface-container-low overflow-hidden flex items-end h-40">
+              <div class="w-full bg-signature-gradient" style="height:${height}%"></div>
+            </div>
+          `;
+          barRow.appendChild(bar);
+
+          const label = document.createElement("div");
+          label.className = "flex-none w-14 text-[10px] text-on-surface-variant uppercase tracking-widest text-center leading-snug line-clamp-2";
+          label.textContent = item.label;
+          labelRow.appendChild(label);
+        });
+
+        plot.appendChild(barRow);
+        plot.appendChild(labelRow);
+        wrap.appendChild(plot);
+      }
+
+      function renderCategoryDonut(data) {
+        const donut = document.getElementById("categoryDonut");
+        const legend = document.getElementById("categoryDonutLegend");
+        donut.innerHTML = "";
+        legend.innerHTML = "";
+
+        const normalized = (data || [])
+          .map((x) => ({
+            category: (x.category || "").includes(".") ? (x.category.split(".").pop() || x.category) : x.category,
+            count: x.count || 0,
+          }))
+          .filter((x) => x.count > 0);
+        const total = normalized.reduce((sum, x) => sum + x.count, 0);
+
+        if (!total) {
+          donut.style.background = "";
+          donut.innerHTML =
+            '<div class="absolute inset-8 rounded-full bg-white flex items-center justify-center text-center text-sm text-on-surface-variant">Chưa có dữ liệu</div>';
+          return;
+        }
+
+        let current = 0;
+        const segments = normalized.map((item, index) => {
+          const start = current;
+          current += (item.count / total) * 100;
+          return `${PIE_PALETTE[index % PIE_PALETTE.length]} ${start}% ${current}%`;
+        });
+        donut.style.background = `conic-gradient(${segments.join(", ")})`;
+        donut.innerHTML = `
+          <div class="absolute inset-8 rounded-full bg-white flex flex-col items-center justify-center shadow-inner">
+            <div class="text-xs uppercase tracking-widest text-on-surface-variant">Tổng</div>
+            <div class="text-4xl font-black font-manrope text-primary">${total}</div>
+          </div>
+        `;
+
+        normalized.forEach((item, index) => {
+          const label = CATEGORY_LABELS[item.category] || item.category || "Khác";
+          const pct = Math.round((item.count / total) * 100);
+          const li = document.createElement("div");
+          li.className = "flex items-center justify-between bg-surface-container-low rounded-xl px-4 py-2";
+          li.innerHTML = `
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-3 h-3 rounded-full flex-none" style="background:${PIE_PALETTE[index % PIE_PALETTE.length]}"></span>
+              <span class="truncate">${safeText(label)}</span>
+            </div>
+            <div class="font-semibold text-primary flex-none">${item.count} · ${pct}%</div>
+          `;
+          legend.appendChild(li);
+        });
+      }
+
+      function renderIdeas(rows) {
+        const tbody = document.getElementById("ideasTbody");
+        tbody.innerHTML = "";
+        lastCount = rows.length;
+        document.getElementById("tableMeta").textContent = `${rows.length} dòng (hiển thị tối đa ${limit})`;
+        document.getElementById("pageInfo").textContent = `Trang: ${Math.floor(skip / limit) + 1}`;
+
+        rows.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.className = "cursor-pointer border-t border-surface-variant transition hover:bg-surface-container-low/60";
+          tr.onclick = () => openIdeaModal(r.id).catch((error) => {
+            console.error(error);
+            alert(error.message || "Không tải được chi tiết ý tưởng");
+          });
+
+          const cat = CATEGORY_LABELS[r.category] || r.category;
+          const unit = r.unit_name ? `${r.unit_name}` : "";
+          const statusLabel = STATUS_LABELS[r.status] || r.status || "\u2014";
+
+          tr.innerHTML = `
+            <td class="px-8 py-5 align-top">
+              <div class="font-semibold text-on-surface line-clamp-2">${safeText(r.title)}</div>
+              <div class="text-xs text-on-surface-variant mt-2">${safeText(unit)} · ${safeText(statusLabel)}</div>
+            </td>
+            <td class="px-6 py-5 align-top">
+              <span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[11px] font-bold tracking-widest uppercase">
+                ${safeText(cat)}
+              </span>
+            </td>
+            <td class="px-6 py-5 align-top">
+              <div class="font-semibold">${safeText(r.full_name)}${r.employee_code ? ` • <span class="font-mono text-on-surface-variant">${safeText(r.employee_code)}</span>` : ""}</div>
+              <div class="text-xs text-on-surface-variant mt-1">${new Date(r.submitted_at).toLocaleString()}</div>
+            </td>
+            <td class="px-6 py-5 align-top">
+              <div class="text-on-surface-variant line-clamp-3">${safeText(r.description)}</div>
+            </td>
+            <td class="px-6 py-5 align-top text-center">
+              <div class="inline-flex items-center justify-center gap-2 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-semibold">
+                <span class="material-symbols-outlined text-[18px]">attachment</span>
+                ${r.attachment_count}
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function buildParams() {
+        return {
+          q: document.getElementById("q").value.trim(),
+          unit_id: document.getElementById("filterUnitId").value,
+          category: document.getElementById("filterCategory").value,
+          skip,
+          limit,
+        };
+      }
+
+      async function loadIdeas(reset = false) {
+        if (reset) skip = 0;
+        const rows = await api.listLibraryIdeas(buildParams());
+        renderIdeas(rows);
+      }
+
+      function nextPage() {
+        if (lastCount < limit) return;
+        skip += limit;
+        loadIdeas(false);
+      }
+
+      function prevPage() {
+        skip = Math.max(0, skip - limit);
+        loadIdeas(false);
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        units = await api.getUnits();
+        const unitSel = document.getElementById("filterUnitId");
+        units.forEach((u) => {
+          const opt = document.createElement("option");
+          opt.value = u.id;
+          opt.textContent = u.department ? `${u.department} • ${u.name}` : u.name;
+          unitSel.appendChild(opt);
+        });
+
+        const cats = api.getCategories();
+        const catSel = document.getElementById("filterCategory");
+        cats.forEach((c) => {
+          const opt = document.createElement("option");
+          opt.value = c.value;
+          opt.textContent = c.label;
+          catSel.appendChild(opt);
+        });
+
+        const [metrics, unitChart, categoryChart] = await Promise.all([
+          api.getIdeaMetrics(),
+          api.getIdeasByUnit(),
+          api.getIdeasByCategory(),
+        ]);
+        renderKpis(metrics);
+        unitChartLastData = unitChart || [];
+        renderUnitChart(unitChartLastData);
+        renderCategoryDonut(categoryChart);
+        await loadIdeas(true);
+
+        const monthSel = document.getElementById("unitChartMonth");
+        for (let i = 1; i <= 12; i += 1) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = String(i);
+          monthSel.appendChild(opt);
+        }
+        const now = new Date();
+        const yearSel = document.getElementById("unitChartYear");
+        const currentYear = now.getFullYear();
+        for (let y = currentYear; y >= currentYear - 4; y -= 1) {
+          const opt = document.createElement("option");
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearSel.appendChild(opt);
+        }
+      }
+
+      init().catch((e) => {
+        console.error(e);
+        alert("Kho \u00fd t\u01b0\u1edfng: kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u. H\u00e3y restart backend v\u00e0 reload.");
+      });
+    </script>
+  </body>
+</html>

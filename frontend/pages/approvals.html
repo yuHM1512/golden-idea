@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Phê duyệt ý tưởng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries,line-clamp"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#002b73",
+              "primary-strong": "#0a43a7",
+              surface: "#f8f9fa",
+              "surface-low": "#eef2f4",
+              "surface-card": "#ffffff",
+              "text-main": "#191c1d",
+              "text-soft": "#5f6673",
+            },
+            fontFamily: {
+              display: ["Manrope"],
+              body: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+    </style>
+  </head>
+  <body class="bg-surface text-text-main font-body min-h-screen">
+    <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl shadow-[0px_18px_40px_rgba(25,28,29,0.06)]">
+      <div class="max-w-7xl mx-auto px-4 md:px-8 py-2 flex items-center justify-between gap-4">
+        <a href="/pages/menu" class="flex items-center gap-3 text-slate-700 hover:text-slate-900">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span class="font-semibold">Menu</span>
+        </a>
+        <a href="/menu" class="block">
+          <div class="w-48 h-10 md:w-56 md:h-12 bg-transparent flex items-center justify-center overflow-hidden">
+            <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+          </div>
+        </a>
+        <div class="flex items-center gap-3">
+          <div class="hidden md:flex items-center rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+            <span id="sessionInfo">&#272;ang t&#7843;i...</span>
+          </div>
+          <button class="px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold" onclick="logout()">
+            &#272;&#259;ng xu&#7845;t
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
+      <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
+        <div class="xl:col-span-8 bg-gradient-to-br from-primary to-primary-strong rounded-[2rem] p-8 md:p-10 text-white shadow-[0px_30px_70px_rgba(0,43,115,0.2)] relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/10 blur-3xl"></div>
+          <div class="relative z-10">
+            <div class="text-xs uppercase tracking-[0.3em] text-white/70">Phê duyệt theo cấp</div>
+            <h1 class="mt-4 text-3xl md:text-5xl font-black font-display leading-tight">Luồng duyệt ý tưởng vàng</h1>
+            <p id="roleHint" class="mt-4 max-w-3xl text-white/80 leading-relaxed">Đang tải quyền truy cập...</p>
+          </div>
+        </div>
+        <div class="xl:col-span-4 bg-surface-card rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="text-xs uppercase tracking-[0.3em] text-text-soft">Bộ lọc</div>
+          <div class="mt-4 space-y-4">
+            
+            <div>
+              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Trạng thái</label>
+              <select id="statusFilter" class="mt-2 w-full rounded-2xl border-none bg-surface-low">
+                <option value="">Tất cả</option>
+                <option value="SUBMITTED">Chờ duyệt cấp đơn vị</option>
+                <option value="DEPT_APPROVED">Đơn vị đã duyệt, chờ BCT</option>
+                <option value="LEADERSHIP_REVIEW">BCT đã duyệt, chờ lãnh đạo</option>
+                <option value="APPROVED">Đã duyệt đủ 3 cấp</option>
+                <option value="REJECTED">Không duyệt</option>
+              </select>
+            </div>
+            <button
+              class="w-full rounded-2xl bg-primary text-white font-semibold py-3 shadow-[0px_18px_36px_rgba(0,43,115,0.16)]"
+              onclick="loadQueue()"
+            >
+              Cập nhật danh sách
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-surface-card rounded-[1.75rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="flex items-center justify-between">
+            <div class="w-12 h-12 rounded-2xl bg-[#dbe7ff] text-primary flex items-center justify-center">
+              <span class="material-symbols-outlined">assignment</span>
+            </div>
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Phạm vi</span>
+          </div>
+          <div id="kpiTotal" class="mt-6 text-5xl font-black font-display text-primary">0</div>
+          <div class="mt-2 text-sm uppercase tracking-[0.25em] text-text-soft">Tổng ý tưởng</div>
+        </div>
+        <div class="bg-surface-card rounded-[1.75rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="flex items-center justify-between">
+            <div class="w-12 h-12 rounded-2xl bg-[#e8f6ee] text-[#0f7a43] flex items-center justify-center">
+              <span class="material-symbols-outlined">verified</span>
+            </div>
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Đã duyệt</span>
+          </div>
+          <div id="kpiApproved" class="mt-6 text-5xl font-black font-display text-[#0f7a43]">0</div>
+          <div class="mt-2 text-sm uppercase tracking-[0.25em] text-text-soft">Đã duyệt</div>
+        </div>
+        <div class="bg-surface-card rounded-[1.75rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="flex items-center justify-between">
+            <div class="w-12 h-12 rounded-2xl bg-[#fff3df] text-[#a55b00] flex items-center justify-center">
+              <span class="material-symbols-outlined">pending_actions</span>
+            </div>
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Chờ duyệt</span>
+          </div>
+          <div id="kpiPending" class="mt-6 text-5xl font-black font-display text-[#a55b00]">0</div>
+          <div class="mt-2 text-sm uppercase tracking-[0.25em] text-text-soft">Chưa duyệt</div>
+        </div>
+      </section>
+
+      <section class="bg-surface-card rounded-[2rem] shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden">
+        <div class="px-6 md:px-8 py-6 flex items-end justify-between gap-6">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-text-soft">Danh sách</div>
+            <h2 class="mt-2 text-2xl md:text-3xl font-black font-display text-primary">Phiếu ý tưởng trong phạm vi duyệt</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              id="pendingReviewToggle"
+              type="button"
+              class="inline-flex items-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)] transition hover:bg-primary-strong"
+              onclick="togglePendingReviewFilter()"
+            >
+              Lọc cần duyệt
+            </button>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
+              <input
+                id="queueSearch"
+                type="search"
+                class="w-64 max-w-[50vw] rounded-2xl border-none bg-surface-low pl-10 pr-4 py-2.5 text-sm placeholder:text-slate-400"
+                placeholder="T&#236;m ki&#7871;m..."
+                oninput="onQueueSearchInput()"
+              />
+            </div>
+            <div id="tableMeta" class="text-sm text-text-soft">0 phiếu</div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-surface-low text-text-soft uppercase tracking-[0.18em] text-[11px] font-bold border-b border-slate-200">
+              <tr>
+                <th class="text-left px-6 py-4 font-bold text-text-main">Ý tưởng</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Người gửi</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Lĩnh vực</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Điểm cấp 1</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Điểm BCT</th>
+                <th class="text-right px-4 py-4 font-bold text-text-main">In phiếu</th>
+                <th class="text-right px-6 py-4 font-bold text-text-main">Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="queueBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="printPreview" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center z-[70] p-4" onclick="closePrintPreview()">
+      <div class="w-full max-w-6xl h-[92vh] bg-white rounded-[2rem] shadow-[0px_35px_70px_rgba(0,0,0,0.22)] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-100 bg-white/95 backdrop-blur">
+          <div class="min-w-0">
+            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Xem tr&#432;&#7899;c</div>
+            <div class="mt-1 font-black font-display text-primary truncate">Phi&#7871;u nh&#7853;n ti&#7873;n</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-surface-low font-semibold" onclick="downloadPrintPreview()" title="M&#7903; file PDF">
+              <span class="material-symbols-outlined">open_in_new</span>
+              M&#7903; PDF
+            </button>
+            <button type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary text-white font-semibold shadow-[0px_14px_28px_rgba(0,43,115,0.18)]" onclick="printFromPreview()" title="In">
+              <span class="material-symbols-outlined">print</span>
+              In
+            </button>
+            <button type="button" class="w-11 h-11 rounded-full bg-surface-low flex items-center justify-center" onclick="closePrintPreview()" title="&#272;&#243;ng">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 bg-slate-100">
+          <iframe id="printPreviewFrame" class="w-full h-full" src="about:blank"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm hidden items-center justify-center z-50 p-4" onclick="closeModal()">
+      <div class="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-[2rem] shadow-[0px_35px_70px_rgba(25,28,29,0.22)]" onclick="event.stopPropagation()">
+        <div class="sticky top-0 bg-white/95 backdrop-blur border-b border-slate-100 px-6 md:px-8 py-5 flex items-start justify-between gap-4 z-10">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Chi tiết phê duyệt</div>
+            <h3 id="modalTitle" class="mt-2 text-2xl font-black font-display text-primary">Phiếu ý tưởng</h3>
+          </div>
+          <button class="w-11 h-11 rounded-full bg-surface-low flex items-center justify-center" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div id="modalBody" class="px-6 md:px-8 py-6 space-y-6"></div>
+
+        <div id="modalActions" class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-100 px-6 md:px-8 py-5 flex flex-wrap justify-end gap-3">
+          <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mediaViewer" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[60] p-4" onclick="closeMediaViewer()">
+      <div class="relative w-full max-w-6xl" onclick="event.stopPropagation()">
+        <button class="absolute right-0 -top-14 w-11 h-11 rounded-full bg-white/15 text-white border border-white/20 flex items-center justify-center" onclick="closeMediaViewer()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="rounded-[2rem] overflow-hidden bg-slate-950 shadow-[0px_35px_70px_rgba(0,0,0,0.35)]">
+          <div id="mediaViewerBody" class="flex items-center justify-center min-h-[320px] max-h-[82vh] bg-slate-950"></div>
+          <div id="mediaViewerCaption" class="px-6 py-4 bg-white text-text-main font-semibold"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js?v=20260428-print-dept"></script>
+    <script>
+      const CATEGORY_LABELS = {
+        TOOLS: "Công cụ",
+        PROCESS: "Phương pháp quy trình",
+        DIGITIZATION: "Số hoá",
+        OTHER: "Khác",
+      };
+      const STATUS_LABELS = {
+        SUBMITTED: "Chờ duyệt cấp đơn vị",
+        UNDER_REVIEW: "Đang xem xét cấp đơn vị",
+        DEPT_APPROVED: "Đơn vị đã duyệt, chờ BCT",
+        COUNCIL_REVIEW: "Đang duyệt BCT",
+        LEADERSHIP_REVIEW: "BCT đã duyệt, chờ lãnh đạo",
+        APPROVED: "Đã duyệt đủ 3 cấp",
+        REWARDED: "Đã in phiếu nhận tiền",
+        REJECTED: "Không duyệt",
+        CANCELLED: "Đã huỷ",
+      };
+      const SCORE_STAGE_LABELS = {
+        dept_manager: "Cấp đơn vị",
+        sub_dept_manager: "Cấp đơn vị",
+        ie_manager: "BCT",
+        bod_manager: "Lãnh đạo",
+        admin: "Admin",
+      };
+      const REVIEW_LEVEL_LABELS = {
+        DEPT_HEAD: "Duyệt cấp đơn vị",
+        COUNCIL: "Duyệt BCT",
+        LEADERSHIP: "Duyệt lãnh đạo",
+        TECHNICAL: "Kỹ thuật",
+      };
+      const REVIEW_ACTION_LABELS = {
+        APPROVE: "Duyệt",
+        REJECT: "Không duyệt",
+        REQUEST_INFO: "Yêu cầu bổ sung",
+        FORWARD: "Chuyển tiếp",
+      };
+      const K3_LABELS = {
+        TIME_SAVED: "Tiết kiệm thời gian",
+        COST_SAVED: "Tiết kiệm chi phí trực tiếp",
+        UNMEASURABLE: "Không đo lường được",
+      };
+      const FALLBACK_K1_LABELS = {
+        A1: "Ý tưởng hoàn toàn mới",
+        A2: "Có cải tiến bổ sung từ ý tưởng cũ",
+        A3: "Ý tưởng cũ",
+        COMPLETELY_NEW: "Ý tưởng hoàn toàn mới",
+        IMPROVEMENT: "Có cải tiến bổ sung từ ý tưởng cũ",
+        OLD: "Ý tưởng cũ",
+      };
+      const LEGACY_K1_CODES = {
+        COMPLETELY_NEW: "A1",
+        IMPROVEMENT: "A2",
+        OLD: "A3",
+      };
+      const K2_TYPE_LABELS = {
+        EASY: "Dễ",
+        HARD: "Khó",
+        NORMAL_EASY: "Dễ",
+        NORMAL_HARD: "Khó",
+        DIGITAL_SELF_DEVELOPED: "Dễ",
+        DIGITAL_CO_DEVELOPED: "Dễ",
+        DIGITAL_OUTSOURCE: "Khó",
+      };
+      const DEFAULT_SCORE_CRITERIA = {
+        k1: [
+          { code: "A1", label: "Ý tưởng hoàn toàn mới", tooltip: "Chưa được đăng ký hoặc triển khai trong công ty.", note: "Có thể ứng dụng từ ngành khác cho ngành may.", score: 10 },
+          { code: "A2", label: "Có cải tiến bổ sung từ ý tưởng cũ", tooltip: "Trên cơ sở ý tưởng đã có tại công ty.", note: "Có thay đổi khá nhiều hoặc kết cấu phức tạp.", score: 5 },
+          { code: "A3", label: "Ý tưởng cũ", tooltip: "Đã có ở M29.", note: "Chỉ thay đổi thông số hoặc thay đổi kết cấu nhỏ.", score: 2 },
+        ],
+        k2: {
+          EASY: [
+            { code: "B1", label: "Các đơn vị trong công ty thực hiện được ý tưởng", score: 3 },
+            { code: "B2", label: "Thời gian triển khai nhanh, đơn giản (<= 2 ngày)", score: 3 },
+            { code: "B3", label: "Dễ đưa vào sản xuất, công nhân dễ thao tác, làm quen dụng cụ nhanh", note: "Có thể làm thành thạo trong 1 ngày.", score: 3 },
+          ],
+          HARD: [
+            { code: "B4", label: "Cần gia công bên ngoài, trong công ty không thực hiện được ý tưởng", score: 2 },
+            { code: "B5", label: "Thời gian triển khai ý tưởng lâu (> 2 ngày)", score: 2 },
+            { code: "B6", label: "Công nhân mất nhiều thời gian để làm quen công việc, dụng cụ", note: "Có thể làm thành thạo trong thời gian > 1 ngày.", score: 2 },
+          ],
+        },
+        k3: {
+          TIME_SAVED: [
+            { code: "C1", label: "80 - 100%", score: 60 },
+            { code: "C2", label: "60 - 80%", score: 40 },
+            { code: "C3", label: "40 - 60%", score: 20 },
+            { code: "C4", label: "20 - 40%", score: 10 },
+            { code: "C5", label: "Dưới 10%", score: 5 },
+          ],
+          COST_SAVED: [
+            { code: "C1", label: "Trên 10.000.000 VND", score: 100 },
+            { code: "C2", label: "5.000.000 - 10.000.000 VND", score: 60 },
+            { code: "C3", label: "3.000.000 - 5.000.000 VND", score: 40 },
+            { code: "C4", label: "1.500.000 - 3.000.000 VND", score: 20 },
+            { code: "C5", label: "Dưới 1.500.000 VND", score: 10 },
+          ],
+          UNMEASURABLE: [
+            { code: "C11", label: "Cải thiện đường chuyền, giúp cân bằng chuyền, giảm vốn tồn", score: 10 },
+            { code: "C12", label: "Đơn giản hóa công việc, giảm chồng chéo/lặp lại, rút ngắn thời gian làm việc, tăng hiệu suất", score: 10 },
+            { code: "C13", label: "Tăng chất lượng, hạn chế sự cố/sai sót", score: 10 },
+            { code: "C14", label: "Cải thiện khu vực sản xuất an toàn, thông thoáng", score: 10 },
+          ],
+        },
+      };
+
+      let currentUser = null;
+      let currentRole = "anonymous";
+      let queueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
+      let scoreCriteria = null;
+      let showPendingReviewOnly = false;
+      let queueSearchTerm = "";
+      let activeDetail = null;
+      let currentScoreStep = 1;
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function roleHint(role, queue) {
+        if (role === "dept_manager" || role === "sub_dept_manager") {
+          return `Bạn đang duyệt các phiếu thuộc đơn vị ${queue.unit_name || ""}. Cấp này bắt buộc chấm điểm trước khi duyệt. Bạn cũng có thể in phiếu nhận tiền cho các ý tưởng đã duyệt đủ 3 cấp.`;
+        }
+        if (role === "ie_manager") {
+          return "Bạn đang xác nhận đưa vào chuẩn hoá cho các ý tưởng đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
+        }
+        if (role === "bod_manager") {
+          return "Bạn đang xử lý các ý tưởng đã qua BCT. Cấp này ra quyết định duyệt cuối hoặc không duyệt.";
+        }
+        if (role === "admin") {
+          return "Admin đang xem toàn bộ queue. Hệ thống vẫn chỉ cho thao tác đúng bước trạng thái hiện tại.";
+        }
+        if (role === "unit_represent") {
+          return `Vai tr\u00f2 n\u00e0y xem c\u00f9ng ph\u1ea1m vi \u0111\u01a1n v\u1ecb ${queue.unit_name || ""}, nh\u01b0ng ch\u1ec9 \u0111\u01b0\u1ee3c xem v\u00e0 in phi\u1ebfu nh\u1eadn ti\u1ec1n cho c\u00e1c \u00fd t\u01b0\u1edfng \u0111\u00e3 duy\u1ec7t \u0111\u1ee7 3 c\u1ea5p.`;
+        }
+        return "Bạn không có quyền truy cập luồng duyệt.";
+      }
+
+      function safeText(text) {
+        return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
+      }
+
+      function formatDate(value) {
+        try {
+          return new Date(value).toLocaleString("vi-VN");
+        } catch {
+          return "—";
+        }
+      }
+
+      function renderKpis(metrics) {
+        document.getElementById("kpiTotal").textContent = metrics.total || 0;
+        document.getElementById("kpiApproved").textContent = metrics.approved || 0;
+        document.getElementById("kpiPending").textContent = metrics.pending || 0;
+      }
+
+      function renderSessionInfo() {
+        const el = document.getElementById("sessionInfo");
+        if (!el) return;
+        const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        if (!currentUser) {
+          const cachedName = localStorage.getItem("full_name") || "";
+          el.textContent = cachedName ? `${code || "?"} • ${cachedName}` : `${code || "?"}`;
+          return;
+        }
+        el.textContent = `${currentUser.employee_code} • ${currentUser.full_name || "Chưa có tên"}`;
+      }
+
+      function syncStatusFilterOptions() {
+        const statusFilter = document.getElementById("statusFilter");
+        if (!statusFilter) return;
+        const rejectedOption = Array.from(statusFilter.options).find((option) => option.value === "REJECTED");
+        if (!rejectedOption) return;
+
+        if (["ie_manager", "bod_manager"].includes(currentRole)) {
+          if (statusFilter.value === "REJECTED") {
+            statusFilter.value = "";
+          }
+          rejectedOption.remove();
+        }
+      }
+
+      function normalizeSearchText(value) {
+        return String(value ?? "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+      }
+
+      function onQueueSearchInput() {
+        const el = document.getElementById("queueSearch");
+        queueSearchTerm = el ? el.value : "";
+        renderQueue(getDisplayedQueueItems());
+      }
+
+      function getDisplayedQueueItems() {
+        const items = Array.isArray(queueData?.items) ? queueData.items : [];
+        const base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
+        const q = normalizeSearchText(queueSearchTerm);
+        if (!q) return base;
+
+        return base.filter((item) => {
+          const fields = [
+            item?.title,
+            item?.unit_name,
+            item?.full_name,
+            item?.employee_code,
+            CATEGORY_LABELS[item?.category] || item?.category,
+            STATUS_LABELS[item?.status] || item?.status,
+            item?.description,
+          ];
+          const hay = normalizeSearchText(fields.filter(Boolean).join(" "));
+          return hay.includes(q);
+        });
+      }
+
+      function renderPendingFilterButton() {
+        const button = document.getElementById("pendingReviewToggle");
+        if (!button) return;
+        if (currentRole === "unit_represent") {
+          button.classList.add("hidden");
+          return;
+        }
+        button.classList.remove("hidden");
+        button.className = showPendingReviewOnly
+          ? "inline-flex items-center rounded-2xl bg-primary-strong px-4 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.22)] transition hover:bg-primary"
+          : "inline-flex items-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)] transition hover:bg-primary-strong";
+        button.textContent = showPendingReviewOnly ? "B\u1ecf l\u1ecdc c\u1ea7n duy\u1ec7t" : "L\u1ecdc c\u1ea7n duy\u1ec7t";
+      }
+
+      function togglePendingReviewFilter() {
+        if (currentRole === "unit_represent") return;
+        showPendingReviewOnly = !showPendingReviewOnly;
+        renderPendingFilterButton();
+        renderQueue(getDisplayedQueueItems());
+      }
+
+      function scoreChip(score) {
+        if (!score) return '<span class="text-text-soft">—</span>';
+        return `<span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${score.total_score}</span>`;
+      }
+
+      function canPrintPaymentSlip(item) {
+        const printableRoles = ["unit_represent", "dept_manager", "sub_dept_manager"];
+        return printableRoles.includes(currentRole) && ["APPROVED", "REWARDED"].includes(item?.status || "");
+      }
+
+      let printPreviewUrl = "";
+
+      function openPaymentSlipPreview(ideaId) {
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const url = api.getPaymentSlipPdfUrl(ideaId, employeeCode);
+        printPreviewUrl = url;
+        const modal = document.getElementById("printPreview");
+        const frame = document.getElementById("printPreviewFrame");
+        if (!modal || !frame) return;
+        frame.src = url;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        document.body.classList.add("overflow-hidden");
+      }
+
+      function closePrintPreview() {
+        const modal = document.getElementById("printPreview");
+        const frame = document.getElementById("printPreviewFrame");
+        if (!modal || !frame) return;
+        frame.src = "about:blank";
+        printPreviewUrl = "";
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        document.body.classList.remove("overflow-hidden");
+      }
+
+      function downloadPrintPreview() {
+        if (!printPreviewUrl) return;
+        window.open(printPreviewUrl, "_blank", "noopener");
+      }
+
+      function printFromPreview() {
+        const frame = document.getElementById("printPreviewFrame");
+        if (!frame) return;
+        try {
+          frame.contentWindow.focus();
+          frame.contentWindow.print();
+        } catch {
+          downloadPrintPreview();
+        }
+      }
+
+      function renderQueue(items) {
+        const tbody = document.getElementById("queueBody");
+        tbody.innerHTML = "";
+        document.getElementById("tableMeta").textContent = `${items.length} phiếu`;
+        if (!items.length) {
+          const hasSearch = Boolean(normalizeSearchText(queueSearchTerm));
+          const msg = hasSearch ? "Kh\u00f4ng c\u00f3 k\u1ebft qu\u1ea3 ph\u00f9 h\u1ee3p." : "Kh\u00f4ng c\u00f3 phi\u1ebfu trong ph\u1ea1m vi hi\u1ec7n t\u1ea1i.";
+          tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">${msg}</td></tr>`;
+          return;
+        }
+
+        items.forEach((item) => {
+          const tr = document.createElement("tr");
+          const isRejected = item.status === "REJECTED";
+          const rowMutedClass = isRejected ? "opacity-55" : "";
+          const primaryTextClass = isRejected ? "text-slate-400" : "text-text-main";
+          const secondaryTextClass = isRejected ? "text-slate-300" : "text-text-soft";
+          const chipClass = isRejected
+            ? "inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-400 font-semibold"
+            : "inline-flex items-center px-3 py-1 rounded-full bg-surface-low text-text-main font-semibold";
+          tr.className = rowMutedClass;
+          tr.innerHTML = `
+            <td class="px-6 py-5 align-top">
+              <div class="font-semibold ${primaryTextClass} line-clamp-2">${safeText(item.title)}</div>
+              <div class="text-xs ${secondaryTextClass} mt-2">${formatDate(item.submitted_at)}</div>
+            </td>
+            <td class="px-4 py-5 align-top ${primaryTextClass}">${safeText(item.unit_name || "—")}</td>
+            <td class="px-4 py-5 align-top">
+              <div class="font-semibold ${primaryTextClass}">${safeText(item.full_name || "Ẩn danh")}</div>
+              <div class="text-xs ${secondaryTextClass} mt-1">${safeText(item.employee_code || "—")}</div>
+            </td>
+            <td class="px-4 py-5 align-top ${primaryTextClass}">${safeText(CATEGORY_LABELS[item.category] || item.category || "Khác")}</td>
+            <td class="px-4 py-5 align-top">
+              <span class="${chipClass}">${safeText(item.status === 'REWARDED' && item.employee_received ? 'Đã nhận tiền' : (STATUS_LABELS[item.status] || item.status))}</span>
+            </td>
+            <td class="px-4 py-5 align-top">${scoreChip(item.dept_score)}</td>
+            <td class="px-4 py-5 align-top">${scoreChip(item.ie_score)}</td>
+            <td class="px-4 py-5 align-top text-right">
+              ${
+                canPrintPaymentSlip(item)
+                  ? `<button class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#e8f6ee] text-[#0f7a43] font-semibold" onclick="openPaymentSlipPreview(${item.id})" title="In phi\u1ebfu nh\u1eadn ti\u1ec1n"><span class="material-symbols-outlined">print</span></button>`
+                  : '<span class="text-text-soft">&#8212;</span>'
+              }
+            </td>
+            <td class="px-6 py-5 align-top text-right">
+              <button class="px-4 py-2 rounded-xl ${item.can_review ? "bg-primary text-white" : isRejected ? "bg-slate-100 text-slate-400" : "bg-surface-low text-text-main"} font-semibold" onclick="openReviewModal(${item.id})">
+                ${item.can_review ? "Phê duyệt" : "Xem"}
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function criteriaRoot() {
+        return scoreCriteria || DEFAULT_SCORE_CRITERIA;
+      }
+
+      function getCriteriaGroup(groupKey) {
+        const root = criteriaRoot();
+        if (groupKey === "K1") return root.k1 || [];
+        if (groupKey === "K2_EASY") return root?.k2?.EASY || [];
+        if (groupKey === "K2_HARD") return root?.k2?.HARD || [];
+        if (groupKey === "K3_TIME_SAVED") return root?.k3?.TIME_SAVED || [];
+        if (groupKey === "K3_COST_SAVED") return root?.k3?.COST_SAVED || [];
+        if (groupKey === "K3_UNMEASURABLE") return root?.k3?.UNMEASURABLE || [];
+        return [];
+      }
+
+      function getCriteriaItem(groupKey, code) {
+        const normalizedCode = groupKey === "K1" ? (LEGACY_K1_CODES[code] || code) : code;
+        return getCriteriaGroup(groupKey).find((item) => item.code === normalizedCode) || null;
+      }
+
+      function getCriteriaLabel(groupKey, code) {
+        const normalizedCode = groupKey === "K1" ? (LEGACY_K1_CODES[code] || code) : code;
+        if (groupKey === "K1") {
+          return getCriteriaItem(groupKey, normalizedCode)?.label || FALLBACK_K1_LABELS[code] || FALLBACK_K1_LABELS[normalizedCode] || normalizedCode || "—";
+        }
+        return getCriteriaItem(groupKey, normalizedCode)?.label || normalizedCode || "—";
+      }
+
+      function renderTooltipMeta(item) {
+        const parts = [item.tooltip, item.note].filter(Boolean);
+        if (!parts.length) return "";
+        return `<div class="mt-1 text-xs text-text-soft leading-5">${safeText(parts.join(" • "))}</div>`;
+      }
+
+      function renderCriteriaCheckboxes(items, prefix) {
+        return items
+          .map(
+            (item) => `
+              <label class="block rounded-2xl bg-surface-low px-4 py-3 cursor-pointer">
+                <div class="flex items-start gap-3">
+                  <input id="${prefix}_${item.code}" type="checkbox" value="${item.code}" class="mt-1 rounded border-slate-300 text-primary focus:ring-primary" />
+                  <div class="flex-1">
+                    <div class="font-semibold text-sm text-text-main">${safeText(item.label)} <span class="text-primary">• ${safeText(item.score)}đ</span></div>
+                    ${renderTooltipMeta(item)}
+                  </div>
+                </div>
+              </label>
+            `
+          )
+          .join("");
+      }
+
+      function selectedCheckboxCodes(prefix) {
+        return Array.from(document.querySelectorAll(`input[id^="${prefix}_"]:checked`)).map((item) => item.value);
+      }
+
+      function selectedLabelString(groupKey, codes = []) {
+        if (!Array.isArray(codes) || !codes.length) return "—";
+        return codes.map((code) => getCriteriaLabel(groupKey, code)).join(" • ");
+      }
+
+      function normalizeK2TypeForDisplay(value) {
+        return K2_TYPE_LABELS[value] || value || "—";
+      }
+
+      function k2GroupKeyForScore(score) {
+        const value = score?.k2_type;
+        return ["HARD", "NORMAL_HARD", "DIGITAL_OUTSOURCE"].includes(value) ? "K2_HARD" : "K2_EASY";
+      }
+
+      function k2SelectionText(score) {
+        if (Array.isArray(score.k2_selected_codes) && score.k2_selected_codes.length) {
+          return selectedLabelString(k2GroupKeyForScore(score), score.k2_selected_codes);
+        }
+        const note = score.k2_score ? `Dữ liệu cũ, tổng ${score.k2_score} điểm` : "Dữ liệu cũ";
+        return note;
+      }
+
+      function inferCriteriaLabelByScore(groupKey, scoreValue) {
+        const matches = getCriteriaGroup(groupKey).filter((item) => Number(item.score) === Number(scoreValue));
+        if (!matches.length) return "—";
+        return matches.map((item) => item.label).join(" / ");
+      }
+
+      function k3SelectionText(score, groupKey) {
+        if (score.k3_measure_type === "UNMEASURABLE") {
+          return selectedLabelString(groupKey, score.k3_selected_codes);
+        }
+        if (score.k3_option_code) {
+          return getCriteriaLabel(groupKey, score.k3_option_code);
+        }
+        return inferCriteriaLabelByScore(groupKey, score.k3_score);
+      }
+
+      function latestIeScore(scores = []) {
+        return scores.find((score) => score.scorer_role === "ie_manager") || null;
+      }
+
+      function canEvaluateActualBenefit(detail, scores = []) {
+        const statusOk = ["LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(detail.status);
+        const score = latestIeScore(scores);
+        return ["ie_manager", "admin"].includes(currentRole)
+          && statusOk
+          && score
+          && ["TIME_SAVED", "COST_SAVED"].includes(score.k3_measure_type);
+      }
+
+      function formatVnd(value) {
+        return Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 0 });
+      }
+
+      function renderActualBenefitSection(detail, scores = []) {
+        if (!canEvaluateActualBenefit(detail, scores)) return "";
+        const item = detail.actual_benefit || {};
+        return `
+          <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Đánh giá sau áp dụng</div>
+                <h4 class="mt-2 text-xl font-black text-primary font-display">Giá trị làm lợi thực tế</h4>
+              </div>
+              ${item.evaluated_at ? `<div class="text-xs text-text-soft">Cập nhật: ${formatDate(item.evaluated_at)}</div>` : ""}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <label class="space-y-2">
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Trước cải tiến (giây)</span>
+                <input id="actualBeforeSeconds" type="number" min="0" step="0.01" value="${safeText(item.before_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+              </label>
+              <label class="space-y-2">
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Sau cải tiến (giây)</span>
+                <input id="actualAfterSeconds" type="number" min="0" step="0.01" value="${safeText(item.after_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+              </label>
+              <label class="space-y-2">
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Số lượng</span>
+                <input id="actualQuantity" type="number" min="0" step="1" value="${safeText(item.quantity ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+              </label>
+              <label class="space-y-2">
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Đơn giá giây CN</span>
+                <input id="actualLaborSecondPrice" type="number" min="0" step="0.01" value="${safeText(item.labor_second_price ?? 6.14)}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+              </label>
+              <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Hiệu suất cải thiện</div>
+                <div id="actualImprovementPreview" class="mt-2 text-2xl font-black text-primary">0%</div>
+              </div>
+              <div class="rounded-2xl bg-[#e8f6ee] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Giá trị làm lợi</div>
+                <div id="actualBenefitPreview" class="mt-2 text-2xl font-black text-[#0f7a43]">0 VND</div>
+              </div>
+            </div>
+            <label class="block space-y-2">
+              <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Ghi chú</span>
+              <textarea id="actualBenefitNote" class="w-full rounded-2xl border-none bg-surface-low" rows="3" placeholder="Ghi chú kiểm tra thực tế">${safeText(item.note || "")}</textarea>
+            </label>
+            <div class="flex justify-end">
+              <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="saveActualBenefit()">Lưu giá trị làm lợi</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderAttachments(attachments = []) {
+        if (!attachments.length) {
+          return '<div class="mt-5 rounded-2xl bg-white/70 border border-slate-100 p-4 text-sm text-text-soft">Chưa có file minh hoạ.</div>';
+        }
+        return `
+          <div class="mt-6">
+            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Minh hoạ người gửi</div>
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${attachments
+                .map((file) => {
+                  const type = String(file.file_type || "").toLowerCase();
+                  const name = safeText(file.original_filename || "File minh hoạ");
+                  const url = safeText(file.file_url || "#");
+                  const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
+                  const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(type);
+                  if (isVideo) {
+                    return `
+                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100">
+                        <div class="relative">
+                          <video class="w-full max-h-80 bg-slate-950" controls preload="metadata" src="${url}"></video>
+                          <button type="button" class="absolute top-3 right-3 inline-flex items-center gap-2 rounded-full bg-slate-950/70 text-white px-3 py-2 text-xs font-semibold hover:bg-slate-950/85" onclick="openMediaViewer('video', '${url}', '${name}')">
+                            <span class="material-symbols-outlined text-base">zoom_out_map</span>
+                            Xem lớn
+                          </button>
+                        </div>
+                        <figcaption class="px-4 py-3 flex items-center justify-between gap-3">
+                          <span class="text-sm font-semibold text-text-main">${name}</span>
+                          <button type="button" class="inline-flex items-center gap-2 rounded-full bg-[#eef4ff] text-primary px-3 py-2 text-xs font-semibold hover:bg-[#dfe9ff]" onclick="openMediaViewer('video', '${url}', '${name}')">
+                            <span class="material-symbols-outlined text-base">play_circle</span>
+                            Phóng to
+                          </button>
+                        </figcaption>
+                      </figure>
+                    `;
+                  }
+                  if (isImage) {
+                    return `
+                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100">
+                        <button type="button" class="block w-full bg-slate-50" onclick="openMediaViewer('image', '${url}', '${name}')">
+                          <img class="w-full max-h-80 object-contain bg-slate-50" src="${url}" alt="${name}" />
+                        </button>
+                        <figcaption class="px-4 py-3 flex items-center justify-between gap-3">
+                          <span class="text-sm font-semibold text-text-main">${name}</span>
+                          <button type="button" class="inline-flex items-center gap-2 rounded-full bg-[#eef4ff] text-primary px-3 py-2 text-xs font-semibold hover:bg-[#dfe9ff]" onclick="openMediaViewer('image', '${url}', '${name}')">
+                            <span class="material-symbols-outlined text-base">zoom_in</span>
+                            Zoom
+                          </button>
+                        </figcaption>
+                      </figure>
+                    `;
+                  }
+                  return `<a class="rounded-2xl bg-white border border-slate-100 px-4 py-4 text-sm font-semibold text-primary hover:bg-[#f6f8ff]" href="${url}" target="_blank" rel="noopener">${name}</a>`;
+                })
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderScoreResultTable(scores = []) {
+        if (!scores.length) {
+          return `
+            <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
+              <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bảng điểm kết quả</div>
+              <div class="mt-3 text-sm text-text-soft">Chưa có điểm chấm.</div>
+            </section>
+          `;
+        }
+
+        return `
+          <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bảng điểm kết quả</div>
+                <h4 class="mt-2 text-xl font-black text-primary font-display">Theo tiêu chí K1 - K2 - K3</h4>
+              </div>
+            </div>
+            <div class="mt-5 space-y-5">
+              ${scores
+                .map((score) => {
+                  const k2GroupKey = k2GroupKeyForScore(score);
+                  const k2TypeLabel = normalizeK2TypeForDisplay(score.k2_type);
+                  const k3GroupKey =
+                    score.k3_measure_type === "UNMEASURABLE"
+                      ? "K3_UNMEASURABLE"
+                      : score.k3_measure_type === "COST_SAVED"
+                        ? "K3_COST_SAVED"
+                        : "K3_TIME_SAVED";
+                  const k2Selection = k2SelectionText(score);
+                  const k3Selection = k3SelectionText(score, k3GroupKey);
+                  return `
+                    <div class="rounded-2xl overflow-hidden border border-slate-100">
+                      <div class="bg-surface-low px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                        <div class="font-semibold text-text-main">${safeText(SCORE_STAGE_LABELS[score.scorer_role] || "Người chấm")} • ${safeText(score.scorer_name)}</div>
+                        <div class="text-xs text-text-soft">${formatDate(score.scored_at)}</div>
+                      </div>
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                          <thead class="bg-white text-text-soft uppercase tracking-[0.18em] text-[11px]">
+                            <tr>
+                              <th class="text-left px-4 py-3">Tiêu chí</th>
+                              <th class="text-left px-4 py-3">Kết quả chọn</th>
+                              <th class="text-left px-4 py-3">Ghi chú</th>
+                              <th class="text-right px-4 py-3">Điểm</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-slate-100">
+                            <tr>
+                              <td class="px-4 py-3 font-semibold">K1. Tính sáng tạo, tính mới</td>
+                              <td class="px-4 py-3">${safeText(getCriteriaLabel("K1", score.k1_type))}</td>
+                              <td class="px-4 py-3 text-text-soft">${safeText(score.k1_note || "—")}</td>
+                              <td class="px-4 py-3 text-right font-bold text-primary">${safeText(score.k1_score)}</td>
+                            </tr>
+                            <tr>
+                              <td class="px-4 py-3 font-semibold">K2. Khả năng áp dụng</td>
+                              <td class="px-4 py-3">${safeText(`${k2TypeLabel} • ${k2Selection}`)}</td>
+                              <td class="px-4 py-3 text-text-soft">${safeText(score.k2_note || "—")}</td>
+                              <td class="px-4 py-3 text-right font-bold text-primary">${safeText(score.k2_score)}</td>
+                            </tr>
+                            <tr>
+                              <td class="px-4 py-3 font-semibold">K3. Hiệu quả</td>
+                              <td class="px-4 py-3">${safeText(`${K3_LABELS[score.k3_measure_type] || score.k3_measure_type} • ${k3Selection || "—"}`)}</td>
+                              <td class="px-4 py-3 text-text-soft">${safeText(score.k3_note || "—")}</td>
+                              <td class="px-4 py-3 text-right font-bold text-primary">${safeText(score.k3_score)}</td>
+                            </tr>
+                            <tr class="bg-[#f6f8ff]">
+                              <td class="px-4 py-3 font-black text-primary" colspan="3">Tổng điểm</td>
+                              <td class="px-4 py-3 text-right font-black text-primary text-lg">${safeText(score.total_score)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  `;
+                })
+                .join("")}
+            </div>
+          </section>
+        `;
+      }
+
+      function renderScoreForm() {
+        if (!activeDetail?.can_review || !["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return "";
+        const k1Options = getCriteriaGroup("K1");
+        const k2EasyOptions = getCriteriaGroup("K2_EASY");
+        const k2HardOptions = getCriteriaGroup("K2_HARD");
+        const k3UnmeasurableOptions = getCriteriaGroup("K3_UNMEASURABLE");
+
+        return `
+          <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-6">
+            <div>
+              <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Chấm điểm</div>
+              <div class="mt-2 text-sm text-text-soft">Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí.</div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <button type="button" id="scoreStepTab1" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(1)">Bước 1 • K1</button>
+              <button type="button" id="scoreStepTab2" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(2)">Bước 2 • K2</button>
+              <button type="button" id="scoreStepTab3" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(3)">Bước 3 • K3</button>
+            </div>
+            <div id="scoreStep1" class="rounded-[1.75rem] border border-slate-100 bg-white p-6 space-y-4">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bước 1</div>
+                  <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">K1. Tính sáng tạo, tính mới</div>
+                </div>
+                <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bắt buộc</div>
+              </div>
+              <div class="space-y-3">
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">K1. Tính sáng tạo, tính mới</label>
+                <select id="scoreK1" class="w-full rounded-2xl border-none bg-surface-low text-text-main" onchange="onK1Change()">
+                  ${k1Options.map((item) => `<option value="${item.code}">${safeText(item.code)} • ${safeText(item.label)} • ${safeText(item.score)}đ</option>`).join("")}
+                </select>
+                <div id="scoreK1Meta" class="rounded-2xl bg-[#f6f8ff] px-4 py-3 text-sm text-text-soft"></div>
+                <textarea id="scoreK1Note" class="w-full rounded-2xl border-none bg-surface-low text-text-main" rows="2" placeholder="Ghi chú K1 (nếu cần)"></textarea>
+              </div>
+              <div class="flex justify-end">
+                <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="goToScoreStep(2)">Tiếp sang K2</button>
+              </div>
+            </div>
+            <div id="scoreStep2" class="hidden rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bước 2</div>
+                  <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">K2. Khả năng áp dụng</div>
+                </div>
+                <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Tick theo thực tế</div>
+              </div>
+              <div class="space-y-3">
+                <select id="scoreK2Type" class="w-full rounded-2xl border-none bg-surface-low" onchange="onK2TypeChange()">
+                  <option value="EASY">Dễ</option>
+                  <option value="HARD">Khó</option>
+                </select>
+                <div id="scoreK2EasyGroup" class="space-y-3">${renderCriteriaCheckboxes(k2EasyOptions, "scoreK2Easy")}</div>
+                <div id="scoreK2HardGroup" class="hidden space-y-3">${renderCriteriaCheckboxes(k2HardOptions, "scoreK2Hard")}</div>
+                <textarea id="scoreK2Note" class="w-full rounded-2xl border-none bg-surface-low" rows="2" placeholder="Ghi chú K2"></textarea>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="goToScoreStep(1)">Quay lại K1</button>
+                <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="goToScoreStep(3)">Tiếp sang K3</button>
+              </div>
+            </div>
+            <div id="scoreStep3" class="hidden rounded-[1.75rem] border border-slate-100 bg-white p-6 space-y-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bước 3</div>
+                  <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">K3. Hiệu quả, giá trị làm lợi</div>
+                </div>
+                <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bước cuối</div>
+              </div>
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                <select id="scoreK3Type" class="w-full rounded-2xl border-none bg-surface-low" onchange="onK3TypeChange()">
+                  <option value="TIME_SAVED">Đo lường được • Tiết kiệm thời gian</option>
+                  <option value="COST_SAVED">Đo lường được • Tiết kiệm chi phí trực tiếp</option>
+                  <option value="UNMEASURABLE">Không đo lường được</option>
+                </select>
+                <div id="scoreK3MeasuredGroup" class="space-y-3">
+                  <select id="scoreK3OptionCode" class="w-full rounded-2xl border-none bg-surface-low"></select>
+                </div>
+                <div id="scoreK3UnmeasurableGroup" class="hidden space-y-3">${renderCriteriaCheckboxes(k3UnmeasurableOptions, "scoreK3Unmeasurable")}</div>
+                <textarea id="scoreK3Note" class="w-full rounded-2xl border-none bg-surface-low" rows="3" placeholder="Ghi chú / minh chứng K3"></textarea>
+              </div>
+              <div class="rounded-[1.5rem] bg-[#f6f8ff] p-5">
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Mốc tham chiếu</div>
+                <div id="scoreK3Meta" class="mt-3 text-sm text-text-soft leading-7"></div>
+              </div>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="goToScoreStep(2)">Quay lại K2</button>
+                <div class="text-sm text-text-soft">Hoàn tất K3 rồi dùng nút "Duyệt phiếu" phía dưới.</div>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderModal(detail) {
+        const body = document.getElementById("modalBody");
+        const actions = document.getElementById("modalActions");
+        const canApprove = detail.can_review && ["dept_manager", "sub_dept_manager", "ie_manager", "bod_manager", "admin"].includes(currentRole);
+        const isIeManager = currentRole === "ie_manager";
+        const reviews = Array.isArray(detail.reviews) ? detail.reviews : [];
+        const scores = Array.isArray(detail.scores) ? detail.scores : [];
+        const attachments = Array.isArray(detail.attachments) ? detail.attachments : [];
+        document.getElementById("modalTitle").textContent = detail.title;
+
+        body.innerHTML = `
+          <section class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            <div class="xl:col-span-7 rounded-[1.5rem] bg-surface-low p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span class="text-text-soft">Người gửi:</span> <span class="font-semibold">${safeText(detail.full_name || "Ẩn danh")}</span></div>
+                <div><span class="text-text-soft">Mã NV:</span> <span class="font-semibold">${safeText(detail.employee_code || "—")}</span></div>
+                <div><span class="text-text-soft">Đơn vị:</span> <span class="font-semibold">${safeText(detail.unit_name || "—")}</span></div>
+                <div><span class="text-text-soft">Lĩnh vực:</span> <span class="font-semibold">${safeText(CATEGORY_LABELS[detail.category] || detail.category)}</span></div>
+                <div><span class="text-text-soft">Trạng thái:</span> <span class="font-semibold">${safeText(detail.status === 'REWARDED' && detail.employee_received ? 'Đã nhận tiền' : (STATUS_LABELS[detail.status] || detail.status))}</span></div>
+                <div><span class="text-text-soft">Minh hoạ:</span> <span class="font-semibold">${detail.attachments_count} file</span></div>
+              </div>
+              <div class="mt-5">
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Mô tả</div>
+                <div class="mt-2 text-[15px] leading-7 text-text-main whitespace-pre-wrap">${safeText(detail.description || "—")}</div>
+              </div>
+              ${renderAttachments(attachments)}
+              ${detail.rejection_reason ? `<div class="mt-5 rounded-2xl bg-[#fff3f1] p-4 text-sm text-[#9a3215]"><div class="font-semibold">Lý do không duyệt gần nhất</div><div class="mt-2">${safeText(detail.rejection_reason)}</div></div>` : ""}
+            </div>
+            <div class="xl:col-span-5 space-y-4">
+              <div class="rounded-[1.5rem] bg-surface-low p-5">
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Lịch sử review</div>
+                <div class="mt-3 space-y-3 max-h-56 overflow-y-auto">
+                  ${
+                    reviews.length
+                      ? reviews
+                          .map(
+                            (review) => `
+                        <div class="rounded-2xl bg-white px-4 py-3 border border-slate-100">
+                          <div class="flex items-center justify-between gap-3">
+                            <div class="font-semibold">${safeText(review.reviewer_name)}</div>
+                            <div class="text-xs text-text-soft">${formatDate(review.reviewed_at)}</div>
+                          </div>
+                          <div class="mt-1 text-sm text-text-soft">${safeText(REVIEW_LEVEL_LABELS[review.level] || review.level)} • ${safeText(REVIEW_ACTION_LABELS[review.action] || review.action)}</div>
+                          ${review.comment ? `<div class="mt-2 text-sm">${safeText(review.comment)}</div>` : ""}
+                          ${review.recommend_unit_reward ? '<div class="mt-2 inline-flex items-center rounded-full bg-[#fff5dc] px-3 py-1 text-xs font-semibold text-[#9a6400]">Đề nghị đơn vị tự khen thưởng</div>' : ""}
+                        </div>
+                      `
+                          )
+                          .join("")
+                      : '<div class="text-sm text-text-soft">Chưa có lịch sử duyệt.</div>'
+                  }
+                </div>
+              </div>
+            </div>
+          </section>
+          ${renderScoreResultTable(scores)}
+          ${renderActualBenefitSection(detail, scores)}
+          ${renderScoreForm()}
+          ${
+            canApprove
+              ? `
+            <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
+              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">${isIeManager ? "Ghi chú / lý do không đạt chuẩn hoá" : "Ghi chú / lý do không duyệt"}</label>
+              <textarea id="reviewComment" class="mt-3 w-full rounded-2xl border-none bg-surface-low" rows="4" placeholder="${isIeManager ? "Nhập ghi chú xác nhận hoặc lý do không đạt" : "Nhập nhận xét, minh chứng hoặc lý do không duyệt"}"></textarea>
+              ${isIeManager ? `
+                <label class="mt-4 inline-flex items-start gap-3 rounded-2xl bg-[#fff8e9] px-4 py-3 cursor-pointer">
+                  <input id="recommendUnitReward" type="checkbox" class="mt-1 rounded border-slate-300 text-primary focus:ring-primary" />
+                  <span class="text-sm text-text-main"><span class="font-semibold">Đề nghị đơn vị tự khen thưởng</span><br /><span class="text-text-soft">Chỉ áp dụng khi chọn Không đạt.</span></span>
+                </label>
+              ` : ""}
+            </section>
+          `
+              : ""
+          }
+        `;
+
+        actions.innerHTML = `
+          <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>
+          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision('REJECT')">${isIeManager ? "Không đạt" : "Không duyệt"}</button>` : ""}
+          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Đạt • Đưa vào chuẩn hoá" : "Duyệt phiếu"}</button>` : ""}
+        `;
+      }
+
+      function openModal() {
+        const modal = document.getElementById("modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeModal() {
+        closeMediaViewer();
+        activeDetail = null;
+        const modal = document.getElementById("modal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function openMediaViewer(type, url, caption = "") {
+        const viewer = document.getElementById("mediaViewer");
+        const body = document.getElementById("mediaViewerBody");
+        const captionEl = document.getElementById("mediaViewerCaption");
+        if (!viewer || !body || !captionEl) return;
+        const safeUrl = safeText(url);
+        const safeCaption = safeText(caption);
+        body.innerHTML =
+          type === "video"
+            ? `<video class="w-full max-h-[82vh] bg-slate-950" controls autoplay preload="metadata" src="${safeUrl}"></video>`
+            : `<img class="max-w-full max-h-[82vh] object-contain bg-slate-950" src="${safeUrl}" alt="${safeCaption}" />`;
+        captionEl.textContent = caption || "Minh hoạ người gửi";
+        viewer.classList.remove("hidden");
+        viewer.classList.add("flex");
+        document.body.classList.add("overflow-hidden");
+      }
+
+      function closeMediaViewer() {
+        const viewer = document.getElementById("mediaViewer");
+        const body = document.getElementById("mediaViewerBody");
+        if (!viewer || !body) return;
+        body.innerHTML = "";
+        viewer.classList.add("hidden");
+        viewer.classList.remove("flex");
+        document.body.classList.remove("overflow-hidden");
+      }
+
+      function actualBenefitValues() {
+        const beforeSeconds = Number(document.getElementById("actualBeforeSeconds")?.value || 0);
+        const afterSeconds = Number(document.getElementById("actualAfterSeconds")?.value || 0);
+        const quantity = Number(document.getElementById("actualQuantity")?.value || 0);
+        const laborSecondPrice = Number(document.getElementById("actualLaborSecondPrice")?.value || 6.14);
+        const savedSeconds = Math.max(0, beforeSeconds - afterSeconds);
+        const improvementPercent = beforeSeconds > 0 ? (savedSeconds / beforeSeconds) * 100 : 0;
+        const benefitValue = savedSeconds * quantity * laborSecondPrice;
+        return { beforeSeconds, afterSeconds, quantity, laborSecondPrice, improvementPercent, benefitValue };
+      }
+
+      function updateActualBenefitPreview() {
+        const values = actualBenefitValues();
+        const improvement = document.getElementById("actualImprovementPreview");
+        const benefit = document.getElementById("actualBenefitPreview");
+        if (improvement) improvement.textContent = `${values.improvementPercent.toFixed(2)}%`;
+        if (benefit) benefit.textContent = `${formatVnd(values.benefitValue)} VND`;
+      }
+
+      async function saveActualBenefit() {
+        if (!activeDetail) return;
+        const values = actualBenefitValues();
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const payload = {
+          employee_code: employeeCode,
+          before_seconds: values.beforeSeconds,
+          after_seconds: values.afterSeconds,
+          quantity: Math.trunc(values.quantity),
+          labor_second_price: values.laborSecondPrice,
+          note: document.getElementById("actualBenefitNote")?.value.trim() || null,
+        };
+
+        showLoading(true);
+        try {
+          const saved = await api.saveActualBenefit(activeDetail.id, payload);
+          activeDetail.actual_benefit = saved;
+          renderModal(activeDetail);
+          updateActualBenefitPreview();
+          showNotification("Đã lưu giá trị làm lợi thực tế", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function onK1Change() {
+        const select = document.getElementById("scoreK1");
+        const meta = document.getElementById("scoreK1Meta");
+        if (!select || !meta) return;
+        const item = getCriteriaItem("K1", select.value);
+        if (!item) {
+          meta.textContent = "";
+          return;
+        }
+        const parts = [item.tooltip, item.note].filter(Boolean);
+        meta.textContent = parts.join(" • ") || "Không có ghi chú thêm.";
+      }
+
+      function applyScoreWizardState() {
+        [1, 2, 3].forEach((step) => {
+          const panel = document.getElementById(`scoreStep${step}`);
+          const tab = document.getElementById(`scoreStepTab${step}`);
+          const active = step === currentScoreStep;
+          if (panel) {
+            panel.classList.toggle("hidden", !active);
+          }
+          if (tab) {
+            tab.className = active
+              ? "rounded-2xl px-4 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.14)]"
+              : "rounded-2xl px-4 py-3 text-sm font-semibold transition-all bg-surface-low text-text-soft hover:text-text-main";
+          }
+        });
+      }
+
+      function goToScoreStep(step) {
+        currentScoreStep = Math.min(3, Math.max(1, Number(step) || 1));
+        applyScoreWizardState();
+      }
+
+      function onK2TypeChange() {
+        const select = document.getElementById("scoreK2Type");
+        const easy = document.getElementById("scoreK2EasyGroup");
+        const hard = document.getElementById("scoreK2HardGroup");
+        if (!select || !easy || !hard) return;
+        if (select.value === "HARD") {
+          easy.classList.add("hidden");
+          hard.classList.remove("hidden");
+        } else {
+          hard.classList.add("hidden");
+          easy.classList.remove("hidden");
+        }
+      }
+
+      function onK3TypeChange() {
+        const select = document.getElementById("scoreK3Type");
+        const measured = document.getElementById("scoreK3MeasuredGroup");
+        const option = document.getElementById("scoreK3OptionCode");
+        const unmeasurable = document.getElementById("scoreK3UnmeasurableGroup");
+        const meta = document.getElementById("scoreK3Meta");
+        if (!select || !measured || !option || !unmeasurable || !meta) return;
+
+        const groupKey = select.value === "UNMEASURABLE" ? "K3_UNMEASURABLE" : select.value === "COST_SAVED" ? "K3_COST_SAVED" : "K3_TIME_SAVED";
+        const items = getCriteriaGroup(groupKey);
+
+        if (select.value === "UNMEASURABLE") {
+          measured.classList.add("hidden");
+          unmeasurable.classList.remove("hidden");
+          meta.textContent = "Mỗi tiêu chí tick được cộng 10 điểm.";
+          return;
+        }
+
+        unmeasurable.classList.add("hidden");
+        measured.classList.remove("hidden");
+        option.innerHTML = items.map((item) => `<option value="${item.code}">${safeText(item.code)} • ${safeText(item.label)} • ${safeText(item.score)}đ</option>`).join("");
+        meta.textContent = items.map((item) => `${item.code}: ${item.label} = ${item.score}đ`).join(" | ");
+      }
+
+      async function openReviewModal(ideaId) {
+        const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        showLoading(true);
+        try {
+          currentScoreStep = 1;
+          activeDetail = await api.getApprovalDetail(ideaId, code);
+          renderModal(activeDetail);
+          openModal();
+          onK1Change();
+          onK2TypeChange();
+          onK3TypeChange();
+          applyScoreWizardState();
+          updateActualBenefitPreview();
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function buildScorePayload() {
+        if (!["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return null;
+        const k3Type = document.getElementById("scoreK3Type").value;
+        const k2Type = document.getElementById("scoreK2Type").value;
+        return {
+          k1_type: document.getElementById("scoreK1").value,
+          k1_note: document.getElementById("scoreK1Note").value.trim() || null,
+          k2_type: k2Type,
+          k2_selected_codes: k2Type === "HARD" ? selectedCheckboxCodes("scoreK2Hard") : selectedCheckboxCodes("scoreK2Easy"),
+          k2_note: document.getElementById("scoreK2Note").value.trim() || null,
+          k3_measure_type: k3Type,
+          k3_option_code: k3Type === "UNMEASURABLE" ? null : document.getElementById("scoreK3OptionCode").value || null,
+          k3_selected_codes: k3Type === "UNMEASURABLE" ? selectedCheckboxCodes("scoreK3Unmeasurable") : [],
+          k3_value: null,
+          k3_note: document.getElementById("scoreK3Note").value.trim() || null,
+        };
+      }
+
+      async function submitDecision(action) {
+        if (!activeDetail) return;
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const comment = document.getElementById("reviewComment")?.value.trim() || "";
+        const recommendUnitReward = currentRole === "ie_manager" && action === "REJECT"
+          ? Boolean(document.getElementById("recommendUnitReward")?.checked)
+          : false;
+        const payload = {
+          employee_code: employeeCode,
+          idea_id: activeDetail.id,
+          action,
+          comment: comment || null,
+          recommend_unit_reward: recommendUnitReward,
+        };
+        if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) {
+          payload.score = buildScorePayload();
+        }
+
+        showLoading(true);
+        try {
+          await api.submitApprovalReview(payload);
+          closeModal();
+          await loadQueue();
+          if (currentRole === "ie_manager") {
+            showNotification(action === "APPROVE" ? "Đã xác nhận đạt và chuyển lãnh đạo" : "Đã cập nhật kết quả không đạt", "success");
+          } else {
+            showNotification(action === "APPROVE" ? "Đã duyệt phiếu" : "Đã cập nhật không duyệt", "success");
+          }
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function loadQueue() {
+        const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const statusValue = document.getElementById("statusFilter").value;
+        showLoading(true);
+        try {
+          queueData = await api.getApprovalQueue(code, statusValue);
+          renderKpis(queueData.metrics || {});
+          renderPendingFilterButton();
+          renderQueue(getDisplayedQueueItems());
+          document.getElementById("roleHint").textContent = roleHint(currentRole, queueData);
+        } catch (error) {
+          renderQueue([]);
+          document.getElementById("roleHint").textContent = error.message;
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        currentUser = await api.getUserByCode(employeeCode).catch(() => null);
+        currentRole = currentUser?.role || "anonymous";
+        scoreCriteria = typeof api.getScoreCriteria === "function" ? await api.getScoreCriteria().catch(() => null) : null;
+        renderSessionInfo();
+        syncStatusFilterOptions();
+        renderPendingFilterButton();
+        document.getElementById("roleHint").textContent = roleHint(currentRole, {});
+
+        if (!["dept_manager", "sub_dept_manager", "ie_manager", "bod_manager", "admin", "unit_represent"].includes(currentRole)) {
+          document.getElementById("queueBody").innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">Bạn không có quyền sử dụng module phê duyệt.</td></tr>';
+          return;
+        }
+
+        await loadQueue();
+      }
+
+      init().catch((error) => {
+        document.getElementById("roleHint").textContent = error?.message || "Không tải được module phê duyệt";
+      });
+    </script>
+  </body>
+</html>
+
+

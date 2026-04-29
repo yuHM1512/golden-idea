@@ -1,0 +1,534 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#5d1900",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#b2c5ff",
+                        "primary-container": "#0056d2",
+                        "on-secondary-fixed": "#00184a",
+                        "primary": "#002b73",
+                        "outline": "#747784",
+                        "on-surface-variant": "#424654",
+                        "on-tertiary-fixed": "#390c00",
+                        "outline-variant": "#c3c6d4",
+                        "on-secondary-container": "#2a4486",
+                        "on-primary-container": "#98b3ff",
+                        "tertiary-container": "#822803",
+                        "surface-bright": "#f8f9fa",
+                        "on-secondary-fixed-variant": "#2a4385",
+                        "secondary-fixed-dim": "#b3c5ff",
+                        "tertiary-fixed": "#ffdbd0",
+                        "surface-container-low": "#f1f3f4",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#9cb4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#001848",
+                        "surface-tint": "#2c59ba",
+                        "on-tertiary-fixed-variant": "#822803",
+                        "surface-variant": "#eeeeee",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ff9c7a",
+                        "surface": "#f8f9fa",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#ffb59d",
+                        "surface-container-highest": "#e1e3e4",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1d",
+                        "inverse-surface": "#2e3132",
+                        "surface-dim": "#d8dadb",
+                        "inverse-on-surface": "#eff1f2",
+                        "background": "#f8f9fa",
+                        "secondary": "#435b9f",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1d",
+                        "primary-fixed": "#dae2ff",
+                        "inverse-primary": "#b2c5ff",
+                        "surface-container": "#eceeef",
+                        "surface-container-high": "#e7e8e9",
+                        "on-primary-fixed-variant": "#0040a1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "4": "1.5rem",
+                        "8": "2.75rem",
+                        "2": "0.5rem",
+                        "1": "0.25rem",
+                        "16": "5.5rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["28px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "display-lg": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ghost-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(0, 43, 115, 0.2);
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-lg text-on-background min-h-screen">
+    <!-- TopNavBar -->
+    <header class="bg-white/80 backdrop-blur-xl fixed top-0 z-50 w-full shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+        <div class="flex justify-between items-center w-full px-4 md:px-16 py-0 max-w-[1920px] mx-auto">
+            <a href="/menu" class="flex items-center gap-4">
+                <div class="w-48 h-10 md:w-56 md:h-12 bg-transparent flex items-center justify-center overflow-hidden" aria-label="Marex logo">
+                    <img
+                        src="../static/Marex.png"
+                        alt="Marex"
+                        class="block w-full h-full object-contain"
+                        onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=&quot;material-symbols-outlined text-primary&quot; style=&quot;font-variation-settings: \'FILL\' 1;&quot;>auto_awesome</span>'"
+                    />
+                </div>
+            </a>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-slate-500 hover:text-blue-800 transition-colors" onclick="logout()">
+                    <span class="material-symbols-outlined">logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-32 px-4 md:px-16 pb-16">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+                <div class="max-w-2xl">
+                    <span class="font-label-md text-primary uppercase tracking-widest mb-4 block">Gửi đề xuất mới</span>
+                    <h1 class="font-display-lg text-headline-md md:text-display-lg text-primary mb-4">Đăng ký Ý tưởng Vàng</h1>
+                    <p class="text-on-surface-variant max-w-lg">Mỗi ý tưởng của bạn là một bước tiến quan trọng cho sự phát triển của toàn công ty. Hãy mô tả chi tiết để chúng tôi có thể hiện thực hóa nó.</p>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="ideaForm" class="max-w-4xl space-y-12">
+                <div class="space-y-12">
+                    <!-- Section 1: Personal Info -->
+                    <section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+                        <div class="flex items-center gap-3 mb-8 rounded-xl bg-primary px-5 py-4 text-white shadow-[0px_12px_28px_rgba(0,43,115,0.18)]">
+                            <span class="material-symbols-outlined text-white">person</span>
+                            <h3 class="font-headline-md text-[20px] font-extrabold tracking-tight text-white">Thông tin cá nhân</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                            <div class="md:col-span-2 space-y-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+                                    <div>
+                                        <label class="font-label-md text-on-surface-variant">Người cùng đăng ký *</label>
+                                        <p class="text-sm text-slate-500 mt-1">Có thể thêm nhiều người cho cùng một sáng kiến.</p>
+                                    </div>
+                                    <button type="button" onclick="addParticipant()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/15 hover:bg-primary-container transition-all">
+                                        <span class="material-symbols-outlined text-[18px]">add</span>
+                                        Thêm +
+                                    </button>
+                                </div>
+                                <div id="participantsList" class="space-y-3"></div>
+                            </div>
+                            <input id="fullName" type="hidden"/>
+                            <input id="employeeCode" type="hidden"/>
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Số điện thoại</label>
+                                <input id="phone" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập số điện thoại liên hệ" type="tel"/>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Chức vụ</label>
+                                <input id="position" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Chức vụ hiện tại" type="text"/>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Đơn vị *</label>
+                                <select id="unitId" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all appearance-none" required>
+                                    <option value="">Chọn đơn vị</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 2: Idea Content -->
+                    <section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+                        <div class="flex items-center gap-3 mb-8 rounded-xl bg-primary px-5 py-4 text-white shadow-[0px_12px_28px_rgba(0,43,115,0.18)]">
+                            <span class="material-symbols-outlined text-white">psychology</span>
+                            <h3 class="font-headline-md text-[20px] font-extrabold tracking-tight text-white">Nội dung ý tưởng</h3>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div class="space-y-3">
+                                    <label class="font-label-md text-on-surface-variant px-1">Nội dung ý tưởng liên quan *</label>
+                                    <div id="categoryOptions" class="space-y-3 rounded-xl bg-surface-container-low p-4"></div>
+                                    <input id="category" type="hidden" required/>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="font-label-md text-on-surface-variant px-1">Mã hàng (nếu có)</label>
+                                    <input id="productCode" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập mã hàng/sản phẩm" type="text"/>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Mô tả ý tưởng *</label>
+                                <textarea id="description" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Trình bày chi tiết về ý tưởng của bạn..." rows="6" required></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 3: Media Upload -->
+                    <section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+                        <div class="flex items-center gap-3 mb-8 border-b border-surface-variant pb-4">
+                            <span class="material-symbols-outlined text-primary">attachment</span>
+                            <h3 class="font-headline-md text-[20px] text-primary">Hình ảnh / Video minh họa</h3>
+                        </div>
+                        <div id="uploadArea" class="border-2 border-dashed border-outline-variant rounded-xl p-12 flex flex-col items-center justify-center text-center bg-surface-container-low/30 hover:bg-surface-container-low transition-colors cursor-pointer group">
+                            <div class="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                            </div>
+                            <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp lên</h4>
+                            <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video minh họa tại đây (Tối đa 10MB)</p>
+                            <input id="fileInput" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                        </div>
+                        <div id="fileList" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
+                    </section>
+
+                    <!-- Buttons -->
+                    <div class="flex justify-end gap-4 pb-8">
+                        <button type="button" class="px-8 py-3 rounded-xl font-headline-md text-[16px] text-primary hover:bg-surface-container-low transition-all" onclick="saveDraft()">
+                            Lưu nháp
+                        </button>
+                        <button type="submit" class="px-10 py-3 rounded-xl font-headline-md text-[16px] text-white bg-gradient-to-br from-primary to-primary-container shadow-lg hover:shadow-primary/20 transition-all">
+                            Gửi ý tưởng
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <script src="../js/api.js?v=20260428-participants"></script>
+    <script>
+        let participantRowId = 0;
+
+        function participantInputClass() {
+            return 'w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all';
+        }
+
+        function addParticipant(data = {}) {
+            participantRowId += 1;
+            const list = document.getElementById('participantsList');
+            const row = document.createElement('div');
+            row.className = 'participant-row grid grid-cols-1 md:grid-cols-[1fr_220px_auto] gap-3 rounded-xl border border-surface-variant bg-white p-3 shadow-sm';
+            row.dataset.participantRow = 'true';
+            row.innerHTML = `
+                <div class="space-y-2">
+                    <label data-name-label class="font-label-md text-on-surface-variant px-1">Họ và tên ${participantRowId} *</label>
+                    <input data-participant-name class="${participantInputClass()}" placeholder="Nhập họ tên người ${participantRowId}" type="text" value="${escapeHtml(data.full_name || '')}"/>
+                </div>
+                <div class="space-y-2">
+                    <label data-code-label class="font-label-md text-on-surface-variant px-1">Mã nhân viên ${participantRowId}</label>
+                    <input data-participant-code class="${participantInputClass()}" placeholder="VD: H3724" type="text" value="${escapeHtml(data.employee_code || '')}"/>
+                </div>
+                <div class="flex md:items-end">
+                    <button type="button" class="remove-participant-btn w-full md:w-12 h-12 rounded-xl bg-surface-container-low text-slate-500 hover:bg-error-container hover:text-on-error-container transition-colors" onclick="removeParticipant(this)" title="Xóa người này">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+            `;
+            list.appendChild(row);
+            updateParticipantRemoveButtons();
+        }
+
+        function removeParticipant(button) {
+            button.closest('[data-participant-row="true"]').remove();
+            updateParticipantRemoveButtons();
+        }
+
+        function updateParticipantRemoveButtons() {
+            const rows = document.querySelectorAll('[data-participant-row="true"]');
+            rows.forEach((row, index) => {
+                const num = index + 1;
+                const button = row.querySelector('.remove-participant-btn');
+                button.classList.toggle('hidden', rows.length === 1);
+                row.querySelector('[data-participant-name]').placeholder = `Nhập họ tên người ${num}`;
+                row.querySelector('[data-participant-code]').placeholder = index === 0 ? 'VD: H3724' : `Mã người ${num}`;
+                row.querySelector('[data-name-label]').textContent = `Họ và tên ${num} *`;
+                row.querySelector('[data-code-label]').textContent = `Mã nhân viên ${num}`;
+            });
+        }
+
+        function readParticipants() {
+            return Array.from(document.querySelectorAll('[data-participant-row="true"]'))
+                .map((row) => ({
+                    full_name: row.querySelector('[data-participant-name]').value.trim(),
+                    employee_code: row.querySelector('[data-participant-code]').value.trim().toUpperCase(),
+                }))
+                .filter((participant) => participant.full_name || participant.employee_code);
+        }
+
+        function syncPrimaryParticipant(participants) {
+            const primary = participants[0] || { full_name: '', employee_code: '' };
+            document.getElementById('fullName').value = participants.map((participant) => participant.full_name).join('; ');
+            document.getElementById('employeeCode').value = primary.employee_code || '';
+        }
+
+        function validateParticipants() {
+            const participants = readParticipants();
+            if (!participants.length || participants.some((participant) => !participant.full_name)) {
+                showNotification('Vui lòng nhập đầy đủ họ tên cho người đăng ký', 'error');
+                return null;
+            }
+            syncPrimaryParticipant(participants);
+            return participants;
+        }
+
+        function resetParticipants() {
+            participantRowId = 0;
+            document.getElementById('participantsList').innerHTML = '';
+            addParticipant();
+            syncPrimaryParticipant([]);
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Load units on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            resetParticipants();
+            try {
+                const units = await api.getUnits();
+                const unitSelect = document.getElementById('unitId');
+                units.forEach(unit => {
+                    const option = document.createElement('option');
+                    option.value = unit.id;
+                    option.textContent = unit.name;
+                    unitSelect.appendChild(option);
+                });
+
+                renderCategoryOptions(api.getCategories());
+            } catch (error) {
+                showNotification('Lỗi: ' + error.message, 'error');
+            }
+        });
+
+        function renderCategoryOptions(categories) {
+            const wrap = document.getElementById('categoryOptions');
+            const hiddenInput = document.getElementById('category');
+            wrap.innerHTML = '';
+            hiddenInput.value = '';
+
+            categories.forEach((cat, index) => {
+                const item = document.createElement('label');
+                item.className = 'flex items-center gap-4 cursor-pointer';
+                item.innerHTML = `
+                    <input class="sr-only peer" type="radio" name="categoryOption" value="${cat.value}"/>
+                    <span class="w-7 h-7 rounded-md border border-outline bg-white flex items-center justify-center text-white peer-checked:bg-primary peer-checked:border-primary transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">check</span>
+                    </span>
+                    <span class="text-lg text-on-surface">${cat.label}</span>
+                `;
+                const input = item.querySelector('input');
+                input.addEventListener('change', () => {
+                    hiddenInput.value = input.value;
+                });
+                wrap.appendChild(item);
+            });
+        }
+
+        // Form submission
+        document.getElementById('ideaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!document.getElementById('unitId').value) {
+                showNotification('Vui l\u00f2ng ch\u1ecdn \u0111\u01a1n v\u1ecb', 'error');
+                return;
+            }
+            if (!document.getElementById('category').value) {
+                showNotification('Vui lòng chọn nội dung ý tưởng liên quan', 'error');
+                return;
+            }
+            const participants = validateParticipants();
+            if (!participants) {
+                return;
+            }
+            showLoading(true);
+
+            try {
+                const formData = {
+                    full_name: document.getElementById('fullName').value,
+                    employee_code: document.getElementById('employeeCode').value,
+                    participants,
+                    phone_number: document.getElementById('phone').value,
+                    position: document.getElementById('position').value,
+                    product_code: document.getElementById('productCode').value,
+                    category: document.getElementById('category').value,
+                    description: document.getElementById('description').value,
+                    is_anonymous: false,
+                    unit_id: parseInt(document.getElementById('unitId').value) || null,
+                };
+
+                const result = await api.submitIdea(formData);
+
+                // Upload attachments (if any)
+                if (selectedFiles && selectedFiles.length) {
+                    for (const f of selectedFiles) {
+                        await api.uploadAttachment(result.id, f);
+                    }
+                    selectedFiles = [];
+                    document.getElementById('fileList').innerHTML = '';
+                    document.getElementById('fileInput').value = '';
+                }
+                showLoading(false);
+                showNotification('✓ Ý tưởng đã được gửi thành công!', 'success');
+
+                // Reset form
+                document.getElementById('ideaForm').reset();
+                document.getElementById('category').value = '';
+                document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
+                    input.checked = false;
+                });
+                resetParticipants();
+
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/pages/menu';
+                }, 2000);
+            } catch (error) {
+                showLoading(false);
+                showNotification('L\u1ed7i: ' + error.message, 'error');
+            }
+        });
+
+        // File upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        let selectedFiles = [];
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('bg-surface-container-low');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('bg-surface-container-low');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            addFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            addFiles(e.target.files);
+            fileInput.value = '';
+        });
+
+        function addFiles(newFiles) {
+            selectedFiles = [...selectedFiles, ...Array.from(newFiles || [])];
+            renderFilePreviews();
+        }
+
+        function renderFilePreviews() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            selectedFiles.forEach((file, idx) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 group bg-surface-container-low flex items-center justify-center';
+
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileItem.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-full object-cover" />
+                            <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile(${idx})">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    fileItem.innerHTML = `
+                        <span class="material-symbols-outlined text-primary text-3xl">videocam</span>
+                        <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile(${idx})">
+                            <span class="material-symbols-outlined text-sm">close</span>
+                        </button>
+                    `;
+                }
+
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removeSelectedFile(idx) {
+            selectedFiles.splice(idx, 1);
+            renderFilePreviews();
+        }
+
+        function saveDraft() {
+            if (!document.getElementById('unitId').value) {
+                showNotification('Vui l\u00f2ng ch\u1ecdn \u0111\u01a1n v\u1ecb', 'error');
+                return;
+            }
+            if (!document.getElementById('category').value) {
+                showNotification('Vui lòng chọn nội dung ý tưởng liên quan', 'error');
+                return;
+            }
+            const participants = validateParticipants();
+            if (!participants) {
+                return;
+            }
+            const formData = {
+                full_name: document.getElementById('fullName').value,
+                employee_code: document.getElementById('employeeCode').value,
+                participants,
+                phone_number: document.getElementById('phone').value,
+                position: document.getElementById('position').value,
+                product_code: document.getElementById('productCode').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                unit_id: parseInt(document.getElementById('unitId').value) || null,
+            };
+            localStorage.setItem('ideaDraft', JSON.stringify(formData));
+            showNotification('✓ Đã lưu nháp', 'success');
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/pages/login';
+        }
+    </script>
+</body>
+</html>

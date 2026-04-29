@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Cài đặt</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+
+      [data-criteria-item] {
+        transform-origin: top center;
+      }
+
+      [data-criteria-item].is-entering {
+        animation: criteriaRowEnter 260ms cubic-bezier(0.22, 1, 0.36, 1), criteriaRowFlash 900ms ease-out;
+      }
+
+      [data-criteria-item].is-removing {
+        pointer-events: none;
+        animation: criteriaRowExit 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
+      }
+
+      [data-criteria-group].is-updated {
+        animation: criteriaGroupPulse 700ms ease-out;
+      }
+
+      @keyframes criteriaRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(18px) scale(0.985);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes criteriaRowFlash {
+        0%,
+        55% {
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16), 0 18px 36px rgba(16, 185, 129, 0.12);
+        }
+        100% {
+          box-shadow: 0 12px 24px rgba(25, 28, 29, 0.04);
+        }
+      }
+
+      @keyframes criteriaRowExit {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+          max-height: 1200px;
+          margin-bottom: 0;
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-10px) scale(0.98);
+          max-height: 0;
+          margin-bottom: -12px;
+        }
+      }
+
+      @keyframes criteriaGroupPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 43, 115, 0.22);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(0, 43, 115, 0.08);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 43, 115, 0);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        [data-criteria-item].is-entering,
+        [data-criteria-item].is-removing,
+        [data-criteria-group].is-updated {
+          animation: none !important;
+        }
+      }
+
+      #criteriaModal.is-expanded {
+        padding: 0;
+      }
+
+      #criteriaModal.is-expanded [data-modal-panel] {
+        max-width: 100vw;
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+      }
+
+      .editable-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .editable-label-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+        color: #2c59ba;
+        opacity: 0.9;
+        font-size: 0.95rem;
+      }
+
+      .editable-field {
+        border-color: #c9d7f3 !important;
+        background: linear-gradient(180deg, #f6f9ff 0%, #edf3ff 100%) !important;
+      }
+
+      .editable-field:focus,
+      .editable-field:focus-visible {
+        background: #fdfefe !important;
+      }
+
+      .editable-field-shell {
+        border-color: #c9d7f3 !important;
+        background: linear-gradient(180deg, #f6f9ff 0%, #edf3ff 100%) !important;
+      }
+
+      .criteria-tab {
+        border: 1px solid #d7deef;
+        background: #ffffff;
+        color: #53627f;
+        transition: all 160ms ease;
+      }
+
+      .criteria-tab:hover {
+        border-color: #aabce8;
+        color: #1f4aa4;
+      }
+
+      .criteria-tab.is-active {
+        border-color: #002b73;
+        background: linear-gradient(135deg, #002b73 0%, #2c59ba 100%);
+        color: #ffffff;
+        box-shadow: 0 14px 30px rgba(0, 43, 115, 0.18);
+      }
+    </style>
+  </head>
+  <body class="bg-[#f8f9fa] font-['Inter'] text-[#191c1d] min-h-screen">
+    <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-40 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="max-w-6xl mx-auto px-4 md:px-8 py-2 flex items-center justify-between">
+        <a href="/pages/menu" class="flex items-center gap-3 text-slate-700 hover:text-slate-900">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span class="font-semibold">Menu</span>
+        </a>
+        <a href="/menu" class="block">
+          <div class="w-48 h-10 md:w-56 md:h-12 bg-transparent flex items-center justify-center overflow-hidden">
+            <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+          </div>
+        </a>
+        <button class="px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold" onclick="logout()">
+          Đăng xuất
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-8 py-10 space-y-6">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-slate-500">Cài đặt</div>
+        <h1 id="pageTitle" class="text-3xl md:text-4xl font-black tracking-tight font-['Manrope']">Hệ thống</h1>
+        <p id="pageDesc" class="text-slate-600 mt-2">Các chức năng cấu hình và quản trị.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a
+          id="cardUsers"
+          href="/pages/admin-users"
+          class="hidden bg-white rounded-[1.5rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:-translate-y-0.5 transition-transform"
+        >
+          <div class="text-xl font-black font-['Manrope'] text-[#002b73]">Quản trị Users</div>
+          <div class="mt-2 text-slate-600">Thêm user, gán role, gán đơn vị và dept_manager.</div>
+        </a>
+
+        <section
+          id="cardCriteria"
+          class="bg-white rounded-[1.5rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]"
+        >
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div class="text-xl font-black font-['Manrope'] text-[#002b73]">Tiêu chí chấm điểm</div>
+              <div class="mt-2 text-slate-600">
+                Quản lý bộ tiêu chí, ngày áp dụng và số điểm cho từng dòng chấm điểm.
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-4 py-2 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]"
+              onclick="openCriteriaModal()"
+            >
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              Tạo bộ tiêu chí
+            </button>
+          </div>
+
+          <div id="criteriaSets" class="mt-6 space-y-4"></div>
+        </section>
+      </div>
+    </main>
+
+    <div
+      id="criteriaModal"
+      class="fixed inset-0 bg-slate-950/55 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+      onclick="closeCriteriaModal()"
+    >
+      <div
+        data-modal-panel
+        class="w-full max-w-5xl max-h-[92vh] overflow-hidden bg-white rounded-[2rem] shadow-[0px_35px_70px_rgba(0,0,0,0.2)] flex flex-col"
+        onclick="event.stopPropagation()"
+      >
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Biểu mẫu cấu hình</div>
+            <h2 id="criteriaModalTitle" class="mt-2 text-2xl font-black font-['Manrope'] text-[#002b73]">Bộ tiêu chí chấm điểm</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              id="criteriaExpandButton"
+              class="h-11 rounded-full bg-slate-100 px-4 inline-flex items-center gap-2 text-sm font-semibold text-slate-700"
+              onclick="toggleCriteriaModalExpand()"
+            >
+              <span id="criteriaExpandIcon" class="material-symbols-outlined text-[18px]">open_in_full</span>
+              <span id="criteriaExpandLabel">Toàn màn hình</span>
+            </button>
+            <button
+              type="button"
+              class="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center"
+              onclick="closeCriteriaModal()"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto px-6 py-6 space-y-6">
+          <section class="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-5 space-y-5">
+            <div>
+              <div class="text-lg font-black font-['Manrope'] text-[#002b73]">Thông tin bộ tiêu chí</div>
+              <p class="mt-1 text-sm text-slate-500">
+                Xác định tên bộ tiêu chí, ngày áp dụng và người cập nhật.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Tên bộ tiêu chí
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <input
+                  id="criteriaSetName"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+                  placeholder="Ví dụ: Bộ tiêu chí Quý 3/2026"
+                  type="text"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Ngày áp dụng
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <input
+                  id="criteriaEffectiveFrom"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+                  type="date"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Người cập nhật</label>
+                <input
+                  id="criteriaEmployeeCode"
+                  class="w-full rounded-xl border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-500"
+                  type="text"
+                  disabled
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div class="text-lg font-black font-['Manrope'] text-[#002b73]">Các dòng tiêu chí</div>
+                <p class="mt-1 text-sm text-slate-500">
+                  Nhập theo cấu trúc cha-con: K1 chứa A1, A2...; K2 chứa B1, B2...; K3 chứa C1, C2...
+                </p>
+              </div>
+              <div class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600">
+                Thêm mã mới trong từng nhóm K
+              </div>
+            </div>
+
+            <div id="criteriaTabs" class="flex flex-wrap gap-3"></div>
+            <div id="criteriaRows" class="space-y-4"></div>
+          </section>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+            onclick="closeCriteriaModal()"
+          >
+            Đóng
+          </button>
+          <button
+            type="button"
+            class="rounded-xl bg-[#002b73] px-5 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]"
+            onclick="saveCriteriaSet()"
+          >
+            Lưu bộ tiêu chí
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js?v=20260428-score-settings-v2"></script>
+    <script>
+      let currentUser = null;
+      let criteriaSets = [];
+      let editingCriteriaSetId = null;
+      let isCriteriaModalExpanded = false;
+      let activeCriteriaTab = "K1";
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "Chưa cập nhật";
+        try {
+          return new Date(value).toLocaleString("vi-VN");
+        } catch {
+          return value;
+        }
+      }
+
+      function safeText(value) {
+        return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function criterionIndexFromCode(code = "") {
+        const normalized = String(code || "").trim().toUpperCase();
+        const matched = normalized.match(/^([ABC])(\d+)$/);
+        if (!matched) return 0;
+        const groupWeight = { A: 1000, B: 2000, C: 3000 }[matched[1]] || 0;
+        return groupWeight + Number(matched[2] || 0);
+      }
+
+      function criterionSubtypeOptions(parentGroup = "K1", selected = "") {
+        const optionsByGroup = {
+          K1: [{ value: "K1", label: "Áp dụng cho K1" }],
+          K2: [
+            { value: "K2_EASY", label: "Dễ áp dụng" },
+            { value: "K2_HARD", label: "Khó áp dụng" },
+          ],
+          K3: [
+            { value: "K3_TIME_SAVED", label: "Đo lường được - Tiết kiệm thời gian" },
+            { value: "K3_COST_SAVED", label: "Đo lường được - Tiết kiệm chi phí" },
+            { value: "K3_UNMEASURABLE", label: "Không đo lường được" },
+          ],
+        };
+        const options = optionsByGroup[parentGroup] || optionsByGroup.K1;
+        return options
+          .map((item) => `<option value="${item.value}" ${item.value === selected ? "selected" : ""}>${item.label}</option>`)
+          .join("");
+      }
+
+      function inputTypeOptions(selected = "radio") {
+        const options = [
+          { value: "radio", label: "Chọn một" },
+          { value: "checkbox", label: "Chọn nhiều" },
+          { value: "select", label: "Danh sách chọn" },
+        ];
+        return options
+          .map((item) => `<option value="${item.value}" ${item.value === selected ? "selected" : ""}>${item.label}</option>`)
+          .join("");
+      }
+
+      function criterionGroupLabel(value = "") {
+        const map = {
+          K1: "K1 - Tính sáng tạo, tính mới",
+          K2_EASY: "K2 - Khả năng áp dụng (Dễ)",
+          K2_HARD: "K2 - Khả năng áp dụng (Khó)",
+          K3_TIME_SAVED: "K3 - Hiệu quả (Tiết kiệm thời gian)",
+          K3_COST_SAVED: "K3 - Hiệu quả (Tiết kiệm chi phí)",
+          K3_UNMEASURABLE: "K3 - Hiệu quả (Không đo lường được)",
+        };
+        return map[value] || value || "Chưa chọn nhóm";
+      }
+
+      function parentGroupForCriterion(value = "") {
+        if (value === "K1") return "K1";
+        if (value.startsWith("K2")) return "K2";
+        if (value.startsWith("K3")) return "K3";
+        return "K1";
+      }
+
+      function parentGroupForCode(code = "") {
+        const value = String(code || "").trim().toUpperCase();
+        if (value.startsWith("A")) return "K1";
+        if (value.startsWith("B")) return "K2";
+        if (value.startsWith("C")) return "K3";
+        return "";
+      }
+
+      function criterionGroupMeta(parentGroup = "K1") {
+        const map = {
+          K1: {
+            title: "K1. Tính sáng tạo, tính mới",
+            prefix: "A",
+            desc: "Nhập lần lượt các mã A1, A2, A3... thuộc nhóm K1.",
+            defaultCriterionKey: "K1",
+          },
+          K2: {
+            title: "K2. Khả năng áp dụng",
+            prefix: "B",
+            desc: "Nhập lần lượt các mã B1, B2, B3... thuộc nhóm K2.",
+            defaultCriterionKey: "K2_EASY",
+          },
+          K3: {
+            title: "K3. Hiệu quả, giá trị làm lợi",
+            prefix: "C",
+            desc: "Nhập lần lượt các mã C1, C2, C3... thuộc nhóm K3.",
+            defaultCriterionKey: "K3_TIME_SAVED",
+          },
+        };
+        return map[parentGroup] || map.K1;
+      }
+
+      function criteriaTabOrder() {
+        return ["K1", "K2", "K3"];
+      }
+
+      function codePrefixForGroup(value = "") {
+        return criterionGroupMeta(parentGroupForCriterion(value)).prefix;
+      }
+
+      function codePrefixForParent(parentGroup = "K1") {
+        return criterionGroupMeta(parentGroup).prefix;
+      }
+
+      function defaultCriterionKeyForParent(parentGroup = "K1") {
+        return criterionGroupMeta(parentGroup).defaultCriterionKey;
+      }
+
+      function codeHintForParent(parentGroup = "K1") {
+        const meta = criterionGroupMeta(parentGroup);
+        return `${parentGroup} sử dụng mã con bắt đầu bằng ${meta.prefix}, ví dụ ${meta.prefix}1, ${meta.prefix}2.`;
+      }
+
+      function codeHintForGroup(value = "") {
+        return codeHintForParent(parentGroupForCriterion(value));
+      }
+
+      function criteriaSortValue(item = {}) {
+        const code = String(item.code || "").toUpperCase();
+        const prefixRank = { A: 1, B: 2, C: 3 }[code.slice(0, 1)] || 9;
+        const numberRank = Number(code.replace(/^[ABC]/, "")) || 999;
+        return prefixRank * 1000 + numberRank;
+      }
+
+      function nextCodeForParent(parentGroup = "K1") {
+        const prefix = codePrefixForParent(parentGroup);
+        const rows = Array.from(document.querySelectorAll(`[data-criteria-item][data-parent-group="${parentGroup}"]`));
+        const usedNumbers = rows
+          .map((row) => row.querySelector('[data-field="code"]')?.value || "")
+          .map((value) => String(value).trim().toUpperCase())
+          .filter((value) => value.startsWith(prefix))
+          .map((value) => Number(value.replace(prefix, "")))
+          .filter((value) => Number.isFinite(value));
+        const nextNumber = usedNumbers.length ? Math.max(...usedNumbers) + 1 : 1;
+        return `${prefix}${nextNumber}`;
+      }
+
+      function groupRowsContainer(parentGroup = "K1") {
+        return document.querySelector(`[data-criteria-group="${parentGroup}"] [data-group-rows]`);
+      }
+
+      function groupSection(parentGroup = "K1") {
+        return document.querySelector(`[data-criteria-group="${parentGroup}"]`);
+      }
+
+      function pulseCriteriaGroup(parentGroup = "K1") {
+        const section = groupSection(parentGroup);
+        if (!section) return;
+        section.classList.remove("is-updated");
+        void section.offsetWidth;
+        section.classList.add("is-updated");
+      }
+
+      function renderCriteriaTabs() {
+        const tabsWrap = document.getElementById("criteriaTabs");
+        if (!tabsWrap) return;
+        tabsWrap.innerHTML = criteriaTabOrder()
+          .map((group) => {
+            const meta = criterionGroupMeta(group);
+            const isActive = activeCriteriaTab === group;
+            return `
+              <button
+                type="button"
+                class="criteria-tab ${isActive ? "is-active" : ""} inline-flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold"
+                data-criteria-tab="${group}"
+                onclick="setActiveCriteriaTab('${group}')"
+              >
+                <span class="rounded-full ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-[#002b73]"} px-2.5 py-1 text-xs font-black">${group}</span>
+                <span>${safeText(meta.title)}</span>
+              </button>
+            `;
+          })
+          .join("");
+      }
+
+      function syncCriteriaGroupVisibility() {
+        criteriaTabOrder().forEach((group) => {
+          const section = groupSection(group);
+          if (!section) return;
+          const isActive = group === activeCriteriaTab;
+          section.classList.toggle("hidden", !isActive);
+        });
+        renderCriteriaTabs();
+      }
+
+      function setActiveCriteriaTab(parentGroup = "K1") {
+        activeCriteriaTab = parentGroup;
+        syncCriteriaGroupVisibility();
+      }
+
+      function animateCriteriaRowEnter(row) {
+        if (!row) return;
+        row.classList.remove("is-entering");
+        void row.offsetWidth;
+        row.classList.add("is-entering");
+        window.setTimeout(() => row.classList.remove("is-entering"), 950);
+      }
+
+      function focusCriteriaRow(row) {
+        if (!row) return;
+        const preferredField =
+          row.querySelector('[data-field="label"]') ||
+          row.querySelector('[data-field="tooltip"]') ||
+          row.querySelector('[data-field="code"]');
+        if (preferredField && typeof preferredField.focus === "function") {
+          preferredField.focus({ preventScroll: true });
+          if (typeof preferredField.select === "function" && preferredField.tagName === "INPUT") {
+            preferredField.select();
+          }
+        }
+      }
+
+      function scrollCriteriaRowIntoView(row) {
+        if (!row) return;
+        const modalBody = document.querySelector("#criteriaModal .flex-1.overflow-auto");
+        if (!modalBody) {
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        const bodyRect = modalBody.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        const offset = rowRect.top - bodyRect.top - modalBody.clientHeight / 2 + rowRect.height / 2;
+        modalBody.scrollTo({
+          top: modalBody.scrollTop + offset,
+          behavior: "smooth",
+        });
+      }
+
+      function syncCriteriaModalExpandButton() {
+        const modal = document.getElementById("criteriaModal");
+        const icon = document.getElementById("criteriaExpandIcon");
+        const label = document.getElementById("criteriaExpandLabel");
+        if (!modal || !icon || !label) return;
+        modal.classList.toggle("is-expanded", isCriteriaModalExpanded);
+        icon.textContent = isCriteriaModalExpanded ? "close_fullscreen" : "open_in_full";
+        label.textContent = isCriteriaModalExpanded ? "Thu gọn" : "Toàn màn hình";
+      }
+
+      function toggleCriteriaModalExpand() {
+        isCriteriaModalExpanded = !isCriteriaModalExpanded;
+        syncCriteriaModalExpandButton();
+      }
+
+      function isExistingCriteriaItem(item = {}) {
+        return item.is_new !== true && Boolean(item.id || item.code);
+      }
+
+      function renderCriteriaSets() {
+        const wrap = document.getElementById("criteriaSets");
+        wrap.innerHTML = "";
+        if (!criteriaSets.length) {
+          wrap.innerHTML = '<div class="rounded-2xl bg-slate-50 px-5 py-6 text-sm text-slate-500 text-center">Chưa có bộ tiêu chí nào.</div>';
+          return;
+        }
+
+        criteriaSets.forEach((setItem) => {
+          const item = document.createElement("div");
+          item.className = "rounded-2xl border border-slate-200 bg-slate-50/60 p-5";
+          item.innerHTML = `
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div>
+                <div class="text-lg font-black font-['Manrope'] text-[#002b73]">${safeText(setItem.name || `Bộ tiêu chí #${setItem.id}`)}</div>
+                <div class="mt-2 text-sm text-slate-500">ID bộ: ${setItem.id} • Áp dụng từ: ${safeText(setItem.effective_from || "")}</div>
+                <div class="mt-1 text-sm text-slate-500">Cập nhật lần cuối: ${safeText(formatDateTime(setItem.updated_at || setItem.created_at))}</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-sm text-slate-500">${Array.isArray(setItem.items) ? setItem.items.length : 0} dòng</div>
+                <button
+                  type="button"
+                  class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200"
+                  onclick="openCriteriaModal(${setItem.id})"
+                >
+                  Chỉnh sửa
+                </button>
+              </div>
+            </div>
+          `;
+          wrap.appendChild(item);
+        });
+      }
+
+      function createCriteriaGroupMarkup(parentGroup = "K1") {
+        const meta = criterionGroupMeta(parentGroup);
+        return `
+          <section class="rounded-[1.75rem] border border-slate-200 bg-slate-50/70 overflow-hidden" data-criteria-group="${parentGroup}">
+            <div class="bg-[#002b73] text-white px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div class="text-xs uppercase tracking-[0.28em] text-white/70">Nhóm tiêu chí mẹ</div>
+                <div class="mt-1 text-xl font-black font-['Manrope']">${safeText(meta.title)}</div>
+                <div class="mt-1 text-sm text-white/75">${safeText(meta.desc)}</div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold text-white hover:bg-white/25"
+                onclick="addCriteriaRow('${parentGroup}')"
+              >
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                Thêm mã ${safeText(meta.prefix)}
+              </button>
+            </div>
+            <div class="p-4 space-y-4" data-group-rows></div>
+          </section>
+        `;
+      }
+
+      function renderCriteriaGroups() {
+        const wrap = document.getElementById("criteriaRows");
+        wrap.innerHTML = ["K1", "K2", "K3"].map((group) => createCriteriaGroupMarkup(group)).join("");
+        renderCriteriaTabs();
+        syncCriteriaGroupVisibility();
+      }
+
+      function createRowMarkup(item = {}, index = 0, parentGroup = "") {
+        const isExisting = isExistingCriteriaItem(item);
+        const groupValue = item.criterion_key || defaultCriterionKeyForParent(parentGroup || "K1");
+        const resolvedParentGroup = parentGroup || parentGroupForCode(item.code) || parentGroupForCriterion(groupValue);
+        const meta = criterionGroupMeta(resolvedParentGroup);
+        const codeValue = item.code || nextCodeForParent(resolvedParentGroup);
+        return `
+          <article class="rounded-[1.35rem] border border-slate-200 bg-white shadow-[0px_12px_24px_rgba(25,28,29,0.04)]" data-criteria-item data-parent-group="${resolvedParentGroup}" data-existing="${isExisting ? "true" : "false"}">
+            <div class="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div class="text-sm uppercase tracking-[0.24em] text-slate-500">${resolvedParentGroup} → mã ${safeText(meta.prefix)}</div>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                  <span class="text-lg font-black font-['Manrope'] text-[#002b73]">${safeText(codeValue || "Tiêu chí mới")}</span>
+                  <span class="rounded-full ${isExisting ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-700"} px-3 py-1 text-xs font-semibold">
+                    ${isExisting ? "Mã cố định" : "Tiêu chí thêm mới"}
+                  </span>
+                </div>
+                <div class="mt-1 text-sm text-slate-500">${safeText(meta.title)}</div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700"
+                onclick="removeCriteriaRow(this)"
+              >
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+                Xóa dòng
+              </button>
+            </div>
+
+            <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Nhóm mẹ</label>
+                <div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">${safeText(meta.title)}</div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Phân loại sử dụng
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                ${
+                  isExisting && resolvedParentGroup === "K1"
+                    ? `<div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">Áp dụng cho K1</div><input data-field="criterion_key" type="hidden" value="K1" />`
+                    : `<select data-field="criterion_key" class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]">
+                        ${criterionSubtypeOptions(resolvedParentGroup, groupValue)}
+                      </select>`
+                }
+              </div>
+
+              ${
+                isExisting
+                  ? `
+                    <div class="space-y-2 md:col-span-2">
+                      <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mã tiêu chí cố định</label>
+                      <div class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700">${safeText(codeValue)}</div>
+                      <input data-field="code" type="hidden" value="${safeText(codeValue)}" />
+                    </div>
+                  `
+                  : `
+                    <div class="space-y-2 md:col-span-2">
+                      <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                        Mã tiêu chí con
+                        <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                      </label>
+                      <div class="editable-field-shell flex rounded-xl border border-slate-200 bg-slate-50 focus-within:border-[#002b73] focus-within:ring-1 focus-within:ring-[#002b73]">
+                        <div data-code-prefix class="min-w-14 border-r border-slate-200 px-4 py-3 text-center text-sm font-black text-[#002b73]">${safeText(meta.prefix)}</div>
+                        <input
+                          data-field="code"
+                          class="editable-field w-full rounded-r-xl border-0 bg-transparent px-4 py-3 text-sm focus:ring-0"
+                          value="${safeText(codeValue)}"
+                          placeholder="Nhập mã ${safeText(meta.prefix)}..."
+                          oninput="normalizeNewCriteriaCode(this)"
+                        />
+                      </div>
+                      <div data-code-hint class="text-xs text-slate-500">${safeText(codeHintForParent(resolvedParentGroup))}</div>
+                    </div>
+                  `
+              }
+
+              <div class="space-y-2 md:col-span-1">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Nội dung hiển thị
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <input
+                  data-field="label"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+                  value="${safeText(item.label || "")}"
+                  placeholder="Ví dụ: Ý tưởng hoàn toàn mới"
+                />
+              </div>
+
+              <div class="space-y-2 md:col-span-1">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Giải thích / Tooltip
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <textarea
+                  data-field="tooltip"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[92px] focus:border-[#002b73] focus:ring-[#002b73]"
+                  placeholder="Ví dụ: Chưa được đăng ký hoặc triển khai trong công ty."
+                >${safeText(item.tooltip || "")}</textarea>
+              </div>
+
+              <div class="space-y-2 md:col-span-1">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Ghi chú
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <textarea
+                  data-field="note"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[92px] focus:border-[#002b73] focus:ring-[#002b73]"
+                  placeholder="Ví dụ: Có thể ứng dụng từ ngành khác cho ngành may."
+                >${safeText(item.note || "")}</textarea>
+              </div>
+
+              <div class="space-y-2 md:col-span-1">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Số điểm
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <input
+                  data-field="score"
+                  type="number"
+                  class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+                  value="${item.score ?? 0}"
+                />
+              </div>
+
+              <div class="space-y-2 md:col-span-1">
+                <label class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Kiểu nhập liệu
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </label>
+                <select data-field="input_type" class="editable-field w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]">
+                  ${inputTypeOptions(item.input_type || "radio")}
+                </select>
+              </div>
+
+              <label class="space-y-2 md:col-span-1">
+                <span class="editable-label text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Trạng thái sử dụng
+                  <span class="material-symbols-outlined editable-label-icon">edit_square</span>
+                </span>
+                <span class="editable-field-shell flex min-h-[52px] items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <input
+                    data-field="is_active"
+                    type="checkbox"
+                    class="w-5 h-5 rounded border-slate-300 text-[#002b73] focus:ring-[#002b73]"
+                    ${item.is_active === false ? "" : "checked"}
+                  />
+                  <span class="text-sm text-slate-700">Đang áp dụng cho bộ tiêu chí này</span>
+                </span>
+              </label>
+            </div>
+          </article>
+        `;
+      }
+
+      function renumberCriteriaRows() {
+        const items = Array.from(document.querySelectorAll("[data-criteria-item]"));
+        items.forEach((item, index) => {
+          const label = item.querySelector(".text-sm.uppercase");
+          const parentGroup = item.dataset.parentGroup || "K1";
+          const prefix = codePrefixForParent(parentGroup);
+          if (label) label.textContent = `${parentGroup} → mã ${prefix}`;
+        });
+      }
+
+      function normalizeCodeForParent(rawCode, parentGroup = "K1") {
+        const prefix = codePrefixForParent(parentGroup);
+        const code = String(rawCode || "").trim().toUpperCase();
+        if (!prefix || !code) return code;
+        if (/^\d+$/.test(code)) return `${prefix}${code}`;
+        return code;
+      }
+
+      function normalizeCodeForGroup(rawCode, groupValue) {
+        return normalizeCodeForParent(rawCode, parentGroupForCriterion(groupValue));
+      }
+
+      function normalizeNewCriteriaCode(input) {
+        const row = input.closest("[data-criteria-item]");
+        if (!row || row.dataset.existing === "true") return;
+        input.value = normalizeCodeForParent(input.value, row.dataset.parentGroup || "K1");
+      }
+
+      function addCriteriaRow(parentGroupOrItem = "K1", item = {}) {
+        try {
+          const isObjectArg = typeof parentGroupOrItem === "object" && parentGroupOrItem !== null;
+          const normalizedItem = isObjectArg ? parentGroupOrItem : item;
+          const parentGroup = isObjectArg
+            ? parentGroupForCode(normalizedItem.code) || parentGroupForCriterion(normalizedItem.criterion_key || "K1")
+            : parentGroupOrItem;
+
+          activeCriteriaTab = parentGroup;
+          syncCriteriaGroupVisibility();
+
+          let wrap = groupRowsContainer(parentGroup);
+          if (!wrap) {
+            renderCriteriaGroups();
+            wrap = groupRowsContainer(parentGroup);
+          }
+          if (!wrap) {
+            showNotification(`Không tìm thấy vùng nhập cho ${parentGroup}. Vui lòng tải lại trang.`, "error");
+            return;
+          }
+
+        const rowItem = Object.keys(normalizedItem || {}).length
+          ? normalizedItem
+          : {
+              criterion_key: defaultCriterionKeyForParent(parentGroup),
+              code: nextCodeForParent(parentGroup),
+              input_type: parentGroup === "K1" ? "radio" : "checkbox",
+              is_active: true,
+              is_new: true,
+            };
+          wrap.insertAdjacentHTML("beforeend", createRowMarkup(rowItem, wrap.children.length, parentGroup));
+          const insertedRow = wrap.lastElementChild;
+          renumberCriteriaRows();
+          animateCriteriaRowEnter(insertedRow);
+          pulseCriteriaGroup(parentGroup);
+          scrollCriteriaRowIntoView(insertedRow);
+          window.setTimeout(() => focusCriteriaRow(insertedRow), 180);
+        } catch (error) {
+          showNotification(error?.message || "Không thêm được dòng tiêu chí", "error");
+        }
+      }
+
+      function removeCriteriaRow(button) {
+        const row = button.closest("[data-criteria-item]");
+        if (!row) return;
+        const parentGroup = row.dataset.parentGroup || "K1";
+        row.classList.add("is-removing");
+        window.setTimeout(() => {
+          row.remove();
+          renumberCriteriaRows();
+          pulseCriteriaGroup(parentGroup);
+        }, 220);
+      }
+
+      function closeCriteriaModal() {
+        const modal = document.getElementById("criteriaModal");
+        isCriteriaModalExpanded = false;
+        syncCriteriaModalExpandButton();
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      async function openCriteriaModal(criteriaSetId = null) {
+        editingCriteriaSetId = criteriaSetId;
+        isCriteriaModalExpanded = false;
+        activeCriteriaTab = "K1";
+        renderCriteriaGroups();
+        syncCriteriaModalExpandButton();
+        document.getElementById("criteriaEmployeeCode").value = currentUser?.employee_code || "";
+        try {
+          const panel = document.getElementById("criteriaModal")?.querySelector("[data-modal-panel]");
+          if (panel) panel.addEventListener("click", (event) => event.stopPropagation());
+        } catch {}
+
+        if (criteriaSetId) {
+          const setItem = await api.getCriteriaSet(criteriaSetId, currentUser.employee_code);
+          document.getElementById("criteriaModalTitle").textContent = `Chỉnh sửa bộ #${setItem.id}`;
+          document.getElementById("criteriaSetName").value = setItem.name || "";
+          document.getElementById("criteriaEffectiveFrom").value = setItem.effective_from || "";
+          (setItem.items || []).slice().sort((a, b) => criteriaSortValue(a) - criteriaSortValue(b)).forEach((item) => addCriteriaRow(item));
+        } else {
+          document.getElementById("criteriaModalTitle").textContent = "Tạo bộ tiêu chí";
+          document.getElementById("criteriaSetName").value = "";
+          document.getElementById("criteriaEffectiveFrom").value = new Date().toISOString().slice(0, 10);
+          const latest = criteriaSets[0];
+          if (latest && Array.isArray(latest.items) && latest.items.length) {
+            latest.items.slice().sort((a, b) => criteriaSortValue(a) - criteriaSortValue(b)).forEach((item) => addCriteriaRow(item));
+          } else {
+            addCriteriaRow("K1");
+          }
+        }
+
+        const modal = document.getElementById("criteriaModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function collectCriteriaRows() {
+        const rows = Array.from(document.querySelectorAll("[data-criteria-item]"));
+        let hasInvalidRow = false;
+        const items = rows
+          .map((row) => {
+            const parentGroup = row.dataset.parentGroup || "K1";
+            const criterion_key = row.querySelector('[data-field="criterion_key"]').value.trim();
+            const code = normalizeCodeForParent(row.querySelector('[data-field="code"]').value, parentGroup);
+            const label = row.querySelector('[data-field="label"]').value.trim();
+            const hasAnyValue = Boolean(criterion_key || code || label);
+            if (!criterion_key || !code || !label) {
+              if (hasAnyValue) {
+                hasInvalidRow = true;
+                row.classList.add("ring-2", "ring-red-300");
+              }
+              return null;
+            }
+            const expectedPrefix = codePrefixForParent(parentGroup);
+            if (expectedPrefix && !code.startsWith(expectedPrefix)) {
+              hasInvalidRow = true;
+              row.classList.add("ring-2", "ring-red-300");
+              showNotification(`Mã ${code} không đúng nhóm. ${codeHintForParent(parentGroup)}`, "error");
+              return null;
+            }
+            if (parentGroupForCriterion(criterion_key) !== parentGroup) {
+              hasInvalidRow = true;
+              row.classList.add("ring-2", "ring-red-300");
+              showNotification(`Phân loại của ${code} phải nằm trong ${parentGroup}`, "error");
+              return null;
+            }
+            row.classList.remove("ring-2", "ring-red-300");
+            return {
+              criterion_key,
+              code,
+              label,
+              tooltip: row.querySelector('[data-field="tooltip"]').value.trim(),
+              note: row.querySelector('[data-field="note"]').value.trim(),
+              score: Number(row.querySelector('[data-field="score"]').value || 0),
+              input_type: row.querySelector('[data-field="input_type"]').value,
+              sort_order: criterionIndexFromCode(code),
+              is_active: row.querySelector('[data-field="is_active"]').checked,
+            };
+          })
+          .filter(Boolean);
+        if (hasInvalidRow) {
+          showNotification("Vui lòng kiểm tra các dòng tiêu chí đang được đánh dấu đỏ", "error");
+          return null;
+        }
+        return items;
+      }
+
+      async function saveCriteriaSet() {
+        const effectiveFrom = document.getElementById("criteriaEffectiveFrom").value;
+        const name = document.getElementById("criteriaSetName").value.trim();
+        const items = collectCriteriaRows();
+        if (!items) {
+          return;
+        }
+        if (!effectiveFrom) {
+          showNotification("Vui lòng nhập ngày áp dụng", "error");
+          return;
+        }
+        if (!items.length) {
+          showNotification("Bộ tiêu chí phải có ít nhất 1 dòng hợp lệ", "error");
+          return;
+        }
+
+        const payload = {
+          employee_code: currentUser.employee_code,
+          effective_from: effectiveFrom,
+          name,
+          items,
+        };
+
+        showLoading(true);
+        try {
+          if (editingCriteriaSetId) {
+            await api.updateCriteriaSet(editingCriteriaSetId, payload);
+          } else {
+            await api.createCriteriaSet(payload);
+          }
+          closeCriteriaModal();
+          await loadCriteriaSets();
+          showNotification("Đã lưu bộ tiêu chí", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được bộ tiêu chí", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function loadCriteriaSets() {
+        criteriaSets = await api.listCriteriaSets(currentUser.employee_code);
+        renderCriteriaSets();
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+        const code = (localStorage.getItem("employee_code") || "").trim();
+        currentUser = await api.getUserByCode(code).catch(() => null);
+        if (!currentUser || !["admin", "ie_manager"].includes(currentUser.role)) {
+          window.location.href = "/pages/menu";
+          return;
+        }
+
+        const isAdmin = currentUser.role === "admin";
+        document.getElementById("pageTitle").textContent = isAdmin ? "Admin" : "Tiêu chí chấm điểm";
+        document.getElementById("pageDesc").textContent = isAdmin
+          ? "Các chức năng cấu hình và quản trị."
+          : "Cập nhật bộ tiêu chí chuẩn để áp dụng cho các đợt chấm điểm.";
+        document.getElementById("cardUsers").classList.toggle("hidden", !isAdmin);
+
+        await loadCriteriaSets();
+      }
+
+      init().catch((error) => {
+        showNotification(error.message || "Không tải được trang cài đặt", "error");
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#5d1900",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "primary-container": "#0056d2",
+                    "on-secondary-fixed": "#00184a",
+                    "primary": "#002b73",
+                    "outline": "#747784",
+                    "on-surface-variant": "#424654",
+                    "on-tertiary-fixed": "#390c00",
+                    "outline-variant": "#c3c6d4",
+                    "on-secondary-container": "#2a4486",
+                    "on-primary-container": "#98b3ff",
+                    "tertiary-container": "#822803",
+                    "surface-bright": "#f8f9fa",
+                    "on-secondary-fixed-variant": "#2a4385",
+                    "secondary-fixed-dim": "#b3c5ff",
+                    "tertiary-fixed": "#ffdbd0",
+                    "surface-container-low": "#f1f3f4",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#9cb4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#001848",
+                    "surface-tint": "#2c59ba",
+                    "on-tertiary-fixed-variant": "#822803",
+                    "surface-variant": "#eeeeee",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#ff9c7a",
+                    "surface": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#ffb59d",
+                    "surface-container-highest": "#e1e3e4",
+                    "error": "#ba1a1a",
+                    "on-surface": "#191c1d",
+                    "inverse-surface": "#2e3132",
+                    "surface-dim": "#d8dadb",
+                    "inverse-on-surface": "#eff1f2",
+                    "background": "#f8f9fa",
+                    "secondary": "#435b9f",
+                    "secondary-fixed": "#dbe1ff",
+                    "on-primary": "#ffffff",
+                    "on-background": "#191c1d",
+                    "primary-fixed": "#dae2ff",
+                    "inverse-primary": "#b2c5ff",
+                    "surface-container": "#eceeef",
+                    "surface-container-high": "#e7e8e9",
+                    "on-primary-fixed-variant": "#0040a1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "4": "1.5rem",
+                    "8": "2.75rem",
+                    "2": "0.5rem",
+                    "1": "0.25rem",
+                    "16": "5.5rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Manrope"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["28px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-lg": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ghost-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(0, 43, 115, 0.2);
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-lg text-on-background min-h-screen">
+<!-- SideNavBar Shell -->
+<aside class="h-screen w-72 fixed left-0 top-0 flex flex-col bg-slate-50 dark:bg-slate-950 pt-24 pb-8 gap-8 z-40 hidden md:flex">
+<div class="px-8 mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+</div>
+<div>
+<h2 class="font-headline-md text-[18px] leading-tight text-primary">Golden Idea</h2>
+<p class="font-label-md text-slate-500">Innovation Portal</p>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-1 px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:translate-x-1 transition-transform hover:bg-blue-50 rounded-r-full font-manrope font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:translate-x-1 transition-transform hover:bg-blue-50 rounded-r-full font-manrope font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+<span>My Submissions</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-blue-800 bg-white rounded-r-full shadow-sm font-bold font-manrope text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span>Submit New Idea</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:translate-x-1 transition-transform hover:bg-blue-50 rounded-r-full font-manrope font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="verified">verified</span>
+<span>Review Queue</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:translate-x-1 transition-transform hover:bg-blue-50 rounded-r-full font-manrope font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span>Knowledge Base</span>
+</a>
+</nav>
+<div class="mt-auto px-4 flex flex-col gap-1">
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:bg-blue-50 rounded-r-full font-manrope text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-slate-500 hover:bg-blue-50 rounded-r-full font-manrope text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar Shell -->
+<header class="bg-white/80 backdrop-blur-xl fixed top-0 z-50 w-full shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<div class="flex justify-between items-center w-full px-4 md:px-16 py-6 max-w-[1920px] mx-auto">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black tracking-tighter text-blue-900 font-manrope">Ý tưởng vàng</span>
+</div>
+<div class="flex items-center gap-8">
+<div class="hidden lg:flex items-center bg-surface-container-low rounded-full px-6 py-2 w-96">
+<span class="material-symbols-outlined text-slate-400 mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full" placeholder="Tìm kiếm ý tưởng..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:text-blue-800 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:text-blue-800 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden ml-2 ring-2 ring-primary/10">
+<img alt="User profile" data-alt="professional portrait of a confident man in a business setting with soft natural window lighting and blurred background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAgsACTamU7JzygE7LWctrVA05dz6N0zJafI8vyVUGfU3-ihYR5w8Upya_bwb0EveZ86nXHUKZB0fc-TJ6Y5dyqjSe0TCxFmvM2mrVdWZYrv1Xg87Pwl9IZgVsWVyKfepNlOgxta-Y766FFuipdJPKDSLooavyo2r0Xqo9uuTUTO8jfbxUHhbh9YGG89dP06laMEkS9b0ncuiJwkhqS2IGgb_mYF8uzN5Et1NMcDU27LtTNs3nVw34FZi4okUw2g5FL3D5g8zRacde"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="md:ml-72 pt-32 px-4 md:px-16 pb-16">
+<div class="max-w-6xl mx-auto">
+<!-- Asymmetric Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+<div class="max-w-2xl">
+<span class="font-label-md text-primary uppercase tracking-widest mb-4 block">Gửi đề xuất mới</span>
+<h1 class="font-display-lg text-headline-md md:text-display-lg text-primary mb-4">Đăng ký Ý tưởng Sáng tạo</h1>
+<p class="text-on-surface-variant max-w-lg">Mỗi ý tưởng của bạn là một bước tiến quan trọng cho sự phát triển của toàn công ty. Hãy mô tả chi tiết để chúng tôi có thể hiện thực hóa nó.</p>
+</div>
+<div class="hidden md:block text-right">
+<p class="font-label-md text-slate-400 mb-1">Thời gian hoàn thành trung bình</p>
+<p class="font-headline-md text-primary">~ 5 phút</p>
+</div>
+</div>
+<!-- Main Form Section: Asymmetric Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Form Column -->
+<div class="lg:col-span-8 space-y-12">
+<!-- Section 1: Personal Info -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<div class="flex items-center gap-3 mb-8 border-b border-surface-variant pb-4">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+<h3 class="font-headline-md text-[20px] text-primary">Thông tin cá nhân</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Họ và tên</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập họ tên đầy đủ" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Mã Nhân Viên</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Ví dụ: NV001" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Số điện thoại</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập số điện thoại liên hệ" type="tel"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Chức vụ</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Chức vụ hiện tại" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Đơn vị</label>
+<select class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all appearance-none">
+<option>Chọn đơn vị</option>
+<option>Khối Văn phòng</option>
+<option>Khối Sản xuất</option>
+<option>Khối Kinh doanh</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Bộ phận</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Tên bộ phận/phòng ban" type="text"/>
+</div>
+</div>
+</section>
+<!-- Section 2: Idea Content -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<div class="flex items-center gap-3 mb-8 border-b border-surface-variant pb-4">
+<span class="material-symbols-outlined text-primary" data-icon="psychology">psychology</span>
+<h3 class="font-headline-md text-[20px] text-primary">Nội dung ý tưởng</h3>
+</div>
+<div class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Nội dung ý tưởng liên quan</label>
+<select class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all">
+<option>Chọn lĩnh vực liên quan</option>
+<option>Cải tiến quy trình</option>
+<option>Tiết kiệm chi phí</option>
+<option>An toàn lao động</option>
+<option>Công nghệ &amp; Số hóa</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Mã hàng (nếu có)</label>
+<input class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập mã hàng/sản phẩm" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-on-surface-variant px-1">Mô tả ý tưởng</label>
+<textarea class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Trình bày chi tiết về ý tưởng của bạn: Vấn đề hiện tại là gì? Giải pháp đề xuất là gì? Hiệu quả mong đợi..." rows="6"></textarea>
+</div>
+</div>
+</section>
+<!-- Section 3: Media Upload -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<div class="flex items-center gap-3 mb-8 border-b border-surface-variant pb-4">
+<span class="material-symbols-outlined text-primary" data-icon="attachment">attachment</span>
+<h3 class="font-headline-md text-[20px] text-primary">Hình ảnh / Video minh họa</h3>
+</div>
+<div class="border-2 border-dashed border-outline-variant rounded-xl p-12 flex flex-col items-center justify-center text-center bg-surface-container-low/30 hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp lên</h4>
+<p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video minh họa tại đây (Tối đa 50MB)</p>
+<input class="hidden" type="file"/>
+</div>
+<div class="mt-4 flex gap-4 overflow-x-auto pb-2">
+<div class="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 group">
+<img alt="Sketch" class="w-full h-full object-cover" data-alt="close up of technical engineering drawing on a tablet screen with high tech laboratory equipment in background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEW9tSjrsXg17FG6SsnRsdTKWDqnpaYpEzDinKHwWHf_oKQ5Tf3Y-NczpefHHuVyoY7HIrgKvyv9W0vPVe28w088qeI3DCwgxwuW45Gs_bLS3wTDM_25lQGQYV6eVXt0WAjdqybz5HMMPIpPyaewBuEo86ecCSRe1frw4Sw1nnglaa9sOO4NgKRgrNycEMvkErThAAS3tXrF4d6kL0zV0NnawRKR_vl9tPs9dMRf6XbAdeN-R3nvVRghOyG0o4Leu4WJ2mvDLDRHaV"/>
+<button class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+<div class="w-24 h-24 rounded-lg bg-surface-container-low flex items-center justify-center border border-dashed border-outline-variant flex-shrink-0">
+<span class="material-symbols-outlined text-slate-400" data-icon="add">add</span>
+</div>
+</div>
+</section>
+<div class="flex justify-end gap-4 pb-8">
+<button class="px-8 py-3 rounded-xl font-headline-md text-[16px] text-primary hover:bg-surface-container-low transition-all">
+                            Lưu nháp
+                        </button>
+<button class="px-10 py-3 rounded-xl font-headline-md text-[16px] text-white bg-gradient-to-br from-primary to-primary-container shadow-lg hover:shadow-primary/20 transition-all scale-95 active:opacity-80">
+                            Gửi ý tưởng
+                        </button>
+</div>
+</div>
+<!-- Side Sidebar Content -->
+<div class="lg:col-span-4 space-y-8">
+<div class="bg-primary text-white rounded-xl p-8 shadow-xl">
+<h3 class="font-headline-md text-[20px] mb-4">Lưu ý khi gửi ý tưởng</h3>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-secondary-container" data-icon="check_circle">check_circle</span>
+<span class="font-body-lg text-sm">Mô tả rõ ràng vấn đề và giải pháp thực tế.</span>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-secondary-container" data-icon="check_circle">check_circle</span>
+<span class="font-body-lg text-sm">Đính kèm hình ảnh thực tế sẽ giúp ý tưởng dễ được duyệt hơn.</span>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-secondary-container" data-icon="check_circle">check_circle</span>
+<span class="font-body-lg text-sm">Đảm bảo tính khả thi trong việc triển khai.</span>
+</li>
+</ul>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-surface-variant">
+<div class="flex items-center justify-between mb-4">
+<h4 class="font-headline-md text-[16px] text-primary">Thống kê cá nhân</h4>
+<span class="material-symbols-outlined text-primary" data-icon="trending_up">trending_up</span>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Ý tưởng đã gửi</span>
+<span class="font-bold">12</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Đã được duyệt</span>
+<span class="font-bold text-green-600">08</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-primary h-full w-[66%]"></div>
+</div>
+<p class="text-[10px] uppercase tracking-widest text-slate-400 mt-2">Tỷ lệ duyệt: 66%</p>
+</div>
+</div>
+<div class="relative rounded-xl overflow-hidden h-64 group">
+<img alt="Innovation" class="w-full h-full object-cover" data-alt="diverse group of creative professionals brainstorming in a modern bright office with glass walls and colorful sticky notes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNOY3bF69CkZPPoqSS9B6kns-Ew8b3AJlSmqhURVgxf_LO7i-dfPUOmf70OVKkzb7EhRGXrQDJNS8-f-vgvYQUKxDfrL2ylMXocaXRoiotMc4j1R_aWUwiMrFujeRsI6G4FTyJSKNasw8G2xa6x8nOFINvfUQqEOf5cdq7UrIEp9fHCljFZEzq6uxG64I9MF_xdqHu5RVaZw8TbEx_WUkDYooBP4KPENFEsZCR2B6TX-j-44_uvAmkSHT_bMTbmT-LLgrXkWtbZfHe"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex flex-col justify-end p-6">
+<p class="text-white font-headline-md text-[14px]">"Sáng tạo là chìa khóa của sự phát triển"</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shell (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-6 py-6 bg-white/90 backdrop-blur-2xl border-t border-white/20 shadow-[0px_-10px_30px_rgba(0,0,0,0.03)] rounded-t-[2rem]">
+<a class="flex flex-col items-center justify-center text-slate-400 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span class="font-manrope text-[10px] uppercase tracking-widest mt-1">Step 1</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="rate_review">rate_review</span>
+<span class="font-manrope text-[10px] uppercase tracking-widest mt-1">Step 2</span>
+</a>
+<a class="flex flex-col items-center justify-center text-blue-800 scale-110" href="#">
+<span class="material-symbols-outlined" data-icon="approval_delegation">approval_delegation</span>
+<span class="font-manrope text-[10px] uppercase tracking-widest mt-1">Step 3</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+<span class="font-manrope text-[10px] uppercase tracking-widest mt-1">Step 4</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span class="font-manrope text-[10px] uppercase tracking-widest mt-1">Step 5</span>
+</a>
+</nav>
+</body></html>

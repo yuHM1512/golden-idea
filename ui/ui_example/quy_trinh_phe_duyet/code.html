@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#5d1900",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "primary-container": "#0056d2",
+                    "on-secondary-fixed": "#00184a",
+                    "primary": "#002b73",
+                    "outline": "#747784",
+                    "on-surface-variant": "#424654",
+                    "on-tertiary-fixed": "#390c00",
+                    "outline-variant": "#c3c6d4",
+                    "on-secondary-container": "#2a4486",
+                    "on-primary-container": "#98b3ff",
+                    "tertiary-container": "#822803",
+                    "surface-bright": "#f8f9fa",
+                    "on-secondary-fixed-variant": "#2a4385",
+                    "secondary-fixed-dim": "#b3c5ff",
+                    "tertiary-fixed": "#ffdbd0",
+                    "surface-container-low": "#f1f3f4",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#9cb4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#001848",
+                    "surface-tint": "#2c59ba",
+                    "on-tertiary-fixed-variant": "#822803",
+                    "surface-variant": "#eeeeee",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#ff9c7a",
+                    "surface": "#f8f9fa",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#ffb59d",
+                    "surface-container-highest": "#e1e3e4",
+                    "error": "#ba1a1a",
+                    "on-surface": "#191c1d",
+                    "inverse-surface": "#2e3132",
+                    "surface-dim": "#d8dadb",
+                    "inverse-on-surface": "#eff1f2",
+                    "background": "#f8f9fa",
+                    "secondary": "#435b9f",
+                    "secondary-fixed": "#dbe1ff",
+                    "on-primary": "#ffffff",
+                    "on-background": "#191c1d",
+                    "primary-fixed": "#dae2ff",
+                    "inverse-primary": "#b2c5ff",
+                    "surface-container": "#eceeef",
+                    "surface-container-high": "#e7e8e9",
+                    "on-primary-fixed-variant": "#0040a1"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "4": "1.5rem",
+                    "8": "2.75rem",
+                    "2": "0.5rem",
+                    "1": "0.25rem",
+                    "16": "5.5rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Manrope"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["28px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-lg": ["56px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+      }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl docked full-width top-0 z-50 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] sticky">
+<div class="flex justify-between items-center w-full px-16 py-6 max-w-[1920px] mx-auto">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black tracking-tighter text-blue-900 dark:text-blue-200 font-manrope">Ý tưởng vàng</span>
+</div>
+<div class="flex items-center gap-8">
+<div class="hidden md:flex gap-8">
+<a class="text-slate-500 dark:text-slate-400 font-medium font-manrope hover:text-blue-700 dark:hover:text-blue-300 transition-colors" href="#">Dashboard</a>
+<a class="text-blue-800 dark:text-blue-400 font-bold border-b-2 border-blue-800 font-manrope" href="#">Review Queue</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium font-manrope hover:text-blue-700 dark:hover:text-blue-300 transition-colors" href="#">My Submissions</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer scale-95 active:opacity-80 transition-all">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer scale-95 active:opacity-80 transition-all">settings</span>
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img alt="User profile" data-alt="Close-up professional portrait of a business person in a modern office with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJvAuOBGYscGXCMNHtPJ2mEIKnwMxqmm98SoZbUT-i8BP2exlms22uF-0sEdvOzv7H1YWJ-GNYB862W1LWTWLiwf8iq4lE-ljsi2cfxFz9Bbtq_boOepdMyEj_ykNY3PUYkhfe2GrkwAdwDCIRxDdMiprLrzRLCU0e55EYbs3ai1x_hRMtVrJcWUDqGA8YP-fF-ohmzd4_XTtqy9D7pLIUGFR9thV_6fe2JDQi7fhPGk1h20brD5stAmctPxLwBb2RpWll18hwqyni"/>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-[1400px] mx-auto px-16 py-16">
+<!-- Header & Meta Section -->
+<header class="mb-16">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+<div class="max-w-3xl">
+<span class="inline-block px-3 py-1 mb-4 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md">ID: GOLD-2024-082</span>
+<h1 class="font-headline-md text-headline-md text-on-surface mb-2">Hệ thống tối ưu hóa tiêu thụ điện năng tại khu vực sản xuất B1</h1>
+<p class="text-on-surface-variant max-w-2xl">Đề xuất sử dụng cảm biến IoT và thuật toán AI để điều chỉnh độ sáng đèn LED theo mật độ nhân sự thực tế.</p>
+</div>
+<div class="flex flex-col items-end gap-2 text-right">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>Gửi ngày: 12/10/2023</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md">
+<span class="material-symbols-outlined text-[18px]">person</span>
+<span>Người gửi: Nguyễn Văn An - PX Sản Xuất</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Flow & Details -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Workflow Progress Tracker -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<h2 class="font-manrope font-bold text-xl mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                        Quy trình phê duyệt
+                    </h2>
+<div class="relative flex justify-between items-start">
+<!-- Progress Line -->
+<div class="absolute top-5 left-0 w-full h-1 bg-surface-container-high -z-0">
+<div class="w-[50%] h-full bg-primary transition-all duration-1000"></div>
+</div>
+<!-- Step 1: Nhân viên -->
+<div class="relative z-10 flex flex-col items-center gap-3 group">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="text-center">
+<p class="font-manrope font-bold text-sm text-primary">Nhân viên</p>
+<p class="font-label-md text-[10px] text-on-surface-variant uppercase mt-1">Hoàn thành</p>
+</div>
+</div>
+<!-- Step 2: KTĐM/PGĐ -->
+<div class="relative z-10 flex flex-col items-center gap-3 group">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">pending</span>
+</div>
+<div class="text-center">
+<p class="font-manrope font-bold text-sm text-primary">KTĐM/PGĐ</p>
+<p class="font-label-md text-[10px] text-on-surface-variant uppercase mt-1">≤3 ngày</p>
+</div>
+</div>
+<!-- Step 3: Trưởng bộ phận -->
+<div class="relative z-10 flex flex-col items-center gap-3 group">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="text-center">
+<p class="font-manrope font-bold text-sm text-on-surface-variant">Trưởng bộ phận</p>
+<p class="font-label-md text-[10px] text-on-surface-variant uppercase mt-1">Hàng tuần</p>
+</div>
+</div>
+<!-- Step 4: Ban cải tiến -->
+<div class="relative z-10 flex flex-col items-center gap-3 group">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+</div>
+<div class="text-center">
+<p class="font-manrope font-bold text-sm text-on-surface-variant">Ban cải tiến</p>
+<p class="font-label-md text-[10px] text-on-surface-variant uppercase mt-1">Đang chờ</p>
+</div>
+</div>
+<!-- Step 5: Lãnh đạo công ty -->
+<div class="relative z-10 flex flex-col items-center gap-3 group">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">military_tech</span>
+</div>
+<div class="text-center">
+<p class="font-manrope font-bold text-sm text-on-surface-variant">Lãnh đạo</p>
+<p class="font-label-md text-[10px] text-on-surface-variant uppercase mt-1">Phê duyệt cuối</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Content -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<div class="flex flex-col gap-8">
+<div>
+<h3 class="font-manrope font-bold text-lg mb-4 text-primary">Mô tả hiện trạng</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                                Hiện tại hệ thống chiếu sáng tại xưởng B1 hoạt động 24/7 với công suất tối đa, ngay cả trong các khung giờ nghỉ hoặc khu vực ít nhân sự qua lại. Điều này dẫn đến lãng phí khoảng 35% lượng điện năng không cần thiết.
+                            </p>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl">
+<h3 class="font-manrope font-bold text-lg mb-4 text-primary">Giải pháp đề xuất</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                                Lắp đặt mạng lưới cảm biến chuyển động PIR kết hợp với controller điều chỉnh Dimmer. Khi không có người trong vùng 5m, độ sáng tự động giảm xuống 10% công suất để duy trì an ninh.
+                            </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-6 bg-secondary-container/20 rounded-xl">
+<h4 class="font-manrope font-bold mb-2">Chi phí dự kiến</h4>
+<p class="text-2xl font-black text-primary">45,000,000 VNĐ</p>
+</div>
+<div class="p-6 bg-tertiary-fixed/30 rounded-xl">
+<h4 class="font-manrope font-bold mb-2">Tiết kiệm dự kiến</h4>
+<p class="text-2xl font-black text-tertiary">12,500,000 VNĐ/tháng</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar Actions & Attachments -->
+<div class="lg:col-span-4 flex flex-col gap-8">
+<!-- Action Card -->
+<section class="bg-white rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] flex flex-col gap-6">
+<h3 class="font-manrope font-bold text-lg">Thao tác xét duyệt</h3>
+<div class="flex flex-col gap-4">
+<button class="w-full py-4 bg-gradient-to-r from-primary to-primary-container text-white font-manrope font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">verified</span>
+                            Phê duyệt
+                        </button>
+<button class="w-full py-4 text-tertiary border-2 border-transparent hover:bg-surface-container-low transition-all font-manrope font-bold rounded-full flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">edit_note</span>
+                            Yêu cầu chỉnh sửa
+                        </button>
+</div>
+<div class="pt-6 mt-6 border-t border-surface-variant">
+<label class="block font-label-md text-on-surface-variant mb-2">Ý kiến phản hồi (không bắt buộc)</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-primary/30 min-h-[120px]" placeholder="Nhập nhận xét của bạn tại đây..."></textarea>
+</div>
+</section>
+<!-- Attachments & Media -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+<h3 class="font-manrope font-bold text-lg mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">attach_file</span>
+                        Tài liệu đính kèm
+                    </h3>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between p-3 bg-white rounded-lg group hover:bg-primary-fixed transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">description</span>
+<span class="text-sm font-medium">Ban-ve-ky-thuat.pdf</span>
+</div>
+<span class="material-symbols-outlined text-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">download</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white rounded-lg group hover:bg-primary-fixed transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">image</span>
+<span class="text-sm font-medium">Hien-trang-xuong-B1.jpg</span>
+</div>
+<span class="material-symbols-outlined text-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">download</span>
+</div>
+</div>
+</section>
+<!-- Helper Card -->
+<div class="p-6 bg-primary-container text-on-primary-container rounded-3xl relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="font-headline-md text-lg mb-2">Quy định phê duyệt</h4>
+<p class="text-sm opacity-80 leading-relaxed">Mọi ý tưởng cần được xem xét trong vòng tối đa 14 ngày làm việc kể từ khi tiếp nhận để đảm bảo tiến độ cải tiến.</p>
+</div>
+<span class="material-symbols-outlined absolute -bottom-4 -right-4 text-[120px] opacity-10">info</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Mobile Nav -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-12 py-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-t-[2rem] shadow-[0px_-10px_30px_rgba(0,0,0,0.03)] border-t border-white/20">
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 opacity-60 font-manrope text-[10px] uppercase tracking-widest transition-opacity hover:opacity-100">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+<span>Step 1</span>
+</div>
+<div class="flex flex-col items-center justify-center text-blue-800 dark:text-blue-400 scale-110 font-manrope text-[10px] uppercase tracking-widest animate-pulse-slow">
+<span class="material-symbols-outlined" data-icon="rate_review" style="font-variation-settings: 'FILL' 1;">rate_review</span>
+<span>Step 2</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 opacity-60 font-manrope text-[10px] uppercase tracking-widest transition-opacity hover:opacity-100">
+<span class="material-symbols-outlined" data-icon="approval_delegation">approval_delegation</span>
+<span>Step 3</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 opacity-60 font-manrope text-[10px] uppercase tracking-widest transition-opacity hover:opacity-100">
+<span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+<span>Step 4</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 opacity-60 font-manrope text-[10px] uppercase tracking-widest transition-opacity hover:opacity-100">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span>Step 5</span>
+</div>
+</nav>
+<!-- Floating Background Elements -->
+<div class="fixed -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="fixed top-1/2 -right-24 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] pointer-events-none"></div>
+</body></html>

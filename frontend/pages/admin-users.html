@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Admin - Users</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+    </style>
+  </head>
+  <body class="bg-[#f8f9fa] font-['Inter'] text-slate-900 min-h-screen">
+    <header class="bg-white/80 backdrop-blur-xl sticky top-0 z-40 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="max-w-6xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
+        <a href="/menu" class="flex items-center gap-4">
+          <div class="w-56 h-14 bg-transparent flex items-center justify-center overflow-hidden" aria-label="Marex logo">
+            <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+          </div>
+        </a>
+        <div class="flex items-center gap-3">
+          <button
+            class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:opacity-90"
+            onclick="openModal()"
+          >
+            + Thêm user
+          </button>
+          <button
+            class="px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-semibold"
+            onclick="logout()"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-8 py-10 space-y-6">
+      <div class="flex items-end justify-between gap-6">
+        <div>
+          <div class="text-xs uppercase tracking-widest text-slate-500">Quản trị</div>
+          <h1 class="text-2xl md:text-3xl font-black tracking-tight font-['Manrope']">Danh sách Users</h1>
+          <p class="text-slate-600 mt-2">
+            Tạo user theo đơn vị, chọn role. Nếu role là <span class="font-semibold">dept_manager</span> thì hệ thống tự gán
+            <code class="px-1 py-0.5 bg-slate-100 rounded">units.manager_user_id</code>.
+          </p>
+        </div>
+        <button class="text-slate-700 hover:underline" onclick="refreshUsers()">Tải lại</button>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-[0px_20px_40px_rgba(25,28,29,0.05)] overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="font-semibold">Users</div>
+          <div class="text-sm text-slate-500" id="usersCount">—</div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="text-left px-6 py-3 font-semibold">employee_code</th>
+                <th class="text-left px-6 py-3 font-semibold">full_name</th>
+                <th class="text-left px-6 py-3 font-semibold">role</th>
+                <th class="text-left px-6 py-3 font-semibold">unit</th>
+                <th class="text-left px-6 py-3 font-semibold">email</th>
+              </tr>
+            </thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="font-semibold">Thêm user (có thể thêm nhiều dòng rồi lưu một lần)</div>
+          <button class="p-2 hover:bg-slate-100 rounded-xl" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">employee_code *</label>
+              <input id="fEmployeeCode" class="mt-1 w-full rounded-xl bg-slate-50 border-0" placeholder="vd: T4880" />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">full_name *</label>
+              <input id="fFullName" class="mt-1 w-full rounded-xl bg-slate-50 border-0" placeholder="Họ và tên" />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">role *</label>
+              <select id="fRole" class="mt-1 w-full rounded-xl bg-slate-50 border-0">
+                <option value="employee">employee</option>
+                <option value="dept_manager">dept_manager</option>
+                <option value="sub_dept_manager">sub_dept_manager</option>
+                <option value="ie_manager">ie_manager</option>
+                <option value="bod_manager">bod_manager</option>
+                <option value="unit_represent">unit_represent</option>
+                <option value="treasurer">treasurer</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">unit *</label>
+              <select id="fUnitId" class="mt-1 w-full rounded-xl bg-slate-50 border-0"></select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">email</label>
+              <input id="fEmail" class="mt-1 w-full rounded-xl bg-slate-50 border-0" placeholder="(optional)" />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">phone</label>
+              <input id="fPhone" class="mt-1 w-full rounded-xl bg-slate-50 border-0" placeholder="(optional)" />
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button class="px-4 py-2 rounded-xl bg-slate-100 font-semibold hover:bg-slate-200" onclick="addToBatch()">
+              Thêm vào danh sách
+            </button>
+            <div class="text-sm text-slate-500" id="batchCount">0 dòng</div>
+          </div>
+
+          <div class="border border-slate-100 rounded-2xl overflow-hidden">
+            <div class="bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600">Batch</div>
+            <div class="max-h-56 overflow-auto">
+              <table class="min-w-full text-sm">
+                <thead class="text-slate-500">
+                  <tr>
+                    <th class="text-left px-4 py-2">code</th>
+                    <th class="text-left px-4 py-2">name</th>
+                    <th class="text-left px-4 py-2">role</th>
+                    <th class="text-left px-4 py-2">unit</th>
+                    <th class="px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody id="batchTbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button class="px-4 py-2 rounded-xl font-semibold hover:bg-slate-100" onclick="closeModal()">Hủy</button>
+          <button
+            class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:opacity-90"
+            onclick="saveBatch()"
+          >
+            Lưu batch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js?v=20260428-actual-benefit"></script>
+    <script>
+      const batch = [];
+      let units = [];
+      const LEADERSHIP_UNIT_VALUE = "__LEADERSHIP__";
+
+      function requireAdmin() {
+        const code = (localStorage.getItem("employee_code") || "").toLowerCase();
+        if (code !== "admin") {
+          window.location.href = "/pages/login";
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function openModal() {
+        document.getElementById("modalBackdrop").classList.remove("hidden");
+        document.getElementById("modalBackdrop").classList.add("flex");
+      }
+
+      function closeModal() {
+        document.getElementById("modalBackdrop").classList.add("hidden");
+        document.getElementById("modalBackdrop").classList.remove("flex");
+      }
+
+      function renderUnitOptions() {
+        const sel = document.getElementById("fUnitId");
+        sel.innerHTML = "";
+        const leadershipOpt = document.createElement("option");
+        leadershipOpt.value = LEADERSHIP_UNIT_VALUE;
+        leadershipOpt.textContent = "Ban lãnh đạo";
+        sel.appendChild(leadershipOpt);
+        units.forEach((u) => {
+          const opt = document.createElement("option");
+          opt.value = u.id;
+          opt.textContent = u.department ? `${u.department} • ${u.name}` : u.name;
+          sel.appendChild(opt);
+        });
+        syncRoleUnitUi();
+      }
+
+      function syncRoleUnitUi() {
+        const role = document.getElementById("fRole").value;
+        const unitSelect = document.getElementById("fUnitId");
+        if (role === "bod_manager") {
+          unitSelect.value = LEADERSHIP_UNIT_VALUE;
+        } else if (["treasurer", "admin"].includes(role)) {
+          return;
+        } else if (unitSelect.value === LEADERSHIP_UNIT_VALUE && units.length) {
+          unitSelect.value = String(units[0].id);
+        }
+      }
+
+      function addToBatch() {
+        const employee_code = document.getElementById("fEmployeeCode").value.trim();
+        const full_name = document.getElementById("fFullName").value.trim();
+        const role = document.getElementById("fRole").value;
+        const rawUnitValue = document.getElementById("fUnitId").value;
+        const unit_id = rawUnitValue === LEADERSHIP_UNIT_VALUE ? null : parseInt(rawUnitValue, 10);
+        const email = document.getElementById("fEmail").value.trim() || null;
+        const phone_number = document.getElementById("fPhone").value.trim() || null;
+
+        if (!employee_code || !full_name) {
+          alert("Vui lòng nhập employee_code và full_name");
+          return;
+        }
+
+        if (!["bod_manager", "treasurer", "admin"].includes(role) && (!unit_id || Number.isNaN(unit_id))) {
+          alert("Vui lòng chọn đơn vị");
+          return;
+        }
+
+        batch.push({ employee_code, full_name, role, unit_id, email, phone_number });
+        renderBatch();
+
+        document.getElementById("fEmployeeCode").value = "";
+        document.getElementById("fFullName").value = "";
+        document.getElementById("fEmail").value = "";
+        document.getElementById("fPhone").value = "";
+        document.getElementById("fEmployeeCode").focus();
+      }
+
+      function renderBatch() {
+        document.getElementById("batchCount").textContent = `${batch.length} dòng`;
+        const tbody = document.getElementById("batchTbody");
+        tbody.innerHTML = "";
+        batch.forEach((row, idx) => {
+          const tr = document.createElement("tr");
+          tr.className = "border-t border-slate-100";
+          const unit = units.find((u) => u.id === row.unit_id);
+          const unitLabel = row.role === "bod_manager"
+            ? "Ban lãnh đạo"
+            : unit
+              ? (unit.department ? `${unit.department} • ${unit.name}` : unit.name)
+              : row.unit_id;
+
+          tr.innerHTML = `
+            <td class="px-4 py-2 font-mono">${row.employee_code}</td>
+            <td class="px-4 py-2">${row.full_name}</td>
+            <td class="px-4 py-2">${row.role}</td>
+            <td class="px-4 py-2">${unitLabel}</td>
+            <td class="px-4 py-2 text-right">
+              <button class="px-3 py-1 rounded-lg hover:bg-slate-100" onclick="removeBatch(${idx})">Xóa</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function removeBatch(idx) {
+        batch.splice(idx, 1);
+        renderBatch();
+      }
+
+      async function saveBatch() {
+        if (batch.length === 0) {
+          alert("Batch trống");
+          return;
+        }
+        try {
+          await api.upsertUsersBulk(batch);
+          batch.length = 0;
+          renderBatch();
+          closeModal();
+          await refreshUsers();
+          alert("Đã lưu batch");
+        } catch (e) {
+          alert(e.message || "Lưu batch thất bại");
+        }
+      }
+
+      function renderUsers(users) {
+        document.getElementById("usersCount").textContent = `${users.length} users`;
+        const tbody = document.getElementById("usersTbody");
+        tbody.innerHTML = "";
+        users.forEach((u) => {
+          const unit = units.find((x) => x.id === u.unit_id);
+          const unitLabel = u.role === "bod_manager"
+            ? "Ban lãnh đạo"
+            : unit
+              ? (unit.department ? `${unit.department} • ${unit.name}` : unit.name)
+              : (u.unit_id ?? "");
+
+          const tr = document.createElement("tr");
+          tr.className = "border-t border-slate-100";
+          tr.innerHTML = `
+            <td class="px-6 py-3 font-mono">${u.employee_code}</td>
+            <td class="px-6 py-3">${u.full_name}</td>
+            <td class="px-6 py-3">${u.role}</td>
+            <td class="px-6 py-3">${unitLabel}</td>
+            <td class="px-6 py-3 text-slate-600">${u.email || ""}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function refreshUsers() {
+        try {
+          const users = await api.listUsers();
+          renderUsers(users);
+        } catch (e) {
+          alert(e.message || "Không tải được users");
+        }
+      }
+
+      async function init() {
+        requireAdmin();
+        units = await api.getUnits();
+        renderUnitOptions();
+        document.getElementById("fRole").addEventListener("change", syncRoleUnitUi);
+        await refreshUsers();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

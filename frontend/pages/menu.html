@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Menu - Ý tưởng vàng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              secondary: "#435b9f",
+              "inverse-primary": "#b2c5ff",
+              "surface-variant": "#e1e3e4",
+              "surface-container-low": "#f2f4f5",
+              "on-primary-container": "#98b3ff",
+              "surface-dim": "#d8dadb",
+              "on-primary-fixed": "#001848",
+              tertiary: "#5d1900",
+              "secondary-fixed-dim": "#b3c5ff",
+              "inverse-on-surface": "#eff1f2",
+              surface: "#f8f9fa",
+              "secondary-fixed": "#dbe1ff",
+              "on-background": "#191c1d",
+              "error-container": "#ffdad6",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#0056d2",
+              primary: "#002b73",
+              "surface-container-high": "#e7e8e9",
+              "on-secondary-container": "#2a4486",
+              "tertiary-fixed": "#ffdbd0",
+              "on-tertiary-container": "#ff9c7a",
+              "on-secondary-fixed": "#00184a",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-surface-variant": "#434652",
+              "surface-bright": "#f8f9fa",
+              outline: "#747784",
+              background: "#f8f9fa",
+              "on-surface": "#191c1d",
+              error: "#ba1a1a",
+              "surface-tint": "#2c59ba",
+              "secondary-container": "#9cb4fe",
+              "on-primary-fixed-variant": "#0040a1",
+              "tertiary-container": "#822803",
+              "on-secondary-fixed-variant": "#2a4385",
+              "primary-fixed": "#dae2ff",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed": "#390c00",
+              "on-tertiary": "#ffffff",
+              "surface-container-highest": "#e1e3e4",
+              "on-tertiary-fixed-variant": "#822803",
+              "surface-container": "#eceeef",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#ffb59d",
+              "on-primary": "#ffffff",
+              "outline-variant": "rgba(25, 28, 29, 0.2)",
+              "inverse-surface": "#2e3132",
+              "on-error": "#ffffff",
+            },
+            fontFamily: {
+              "body-lg": ["Inter"],
+              "label-md": ["Inter"],
+              "headline-md": ["Manrope"],
+              "display-lg": ["Manrope"],
+              manrope: ["Manrope"],
+            },
+            fontSize: {
+              "body-lg": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+              "label-md": ["12px", { lineHeight: "1.0", letterSpacing: "0.01em", fontWeight: "500" }],
+              "headline-md": ["28px", { lineHeight: "1.3", fontWeight: "600" }],
+              "display-lg": ["56px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+      .editorial-gradient {
+        background: linear-gradient(135deg, #002b73 0%, #0056d2 100%);
+      }
+    </style>
+  </head>
+  <body class="bg-background text-on-background font-body-lg min-h-screen selection:bg-secondary-container selection:text-on-secondary-container">
+    <!-- TopAppBar -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-slate-50/80 backdrop-blur-md shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+      <div class="flex justify-between items-center w-full px-4 md:px-6 py-3 max-w-7xl mx-auto">
+        <div class="flex items-center gap-4">
+          <a href="/menu" class="block">
+            <div class="w-48 h-10 md:w-60 md:h-12 bg-transparent flex items-center justify-center overflow-hidden">
+              <img src="../static/Marex.png" alt="Marex" class="block w-full h-full object-contain" />
+            </div>
+          </a>
+        </div>
+        <nav class="hidden md:flex items-center space-x-8">
+          <a class="text-blue-800 font-bold font-manrope transition-colors" href="/pages/submit-idea">Đăng ký</a>
+          <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/library">Kho Ý tưởng</a>
+          <a id="navApprovals" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/approvals">Phê duyệt</a>
+          <a id="navSettings" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/settings">Cài đặt</a>
+          <a id="navRewards" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/rewards">Chi thưởng</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:block text-right">
+            <div class="text-[11px] uppercase tracking-widest text-slate-500">Tài khoản</div>
+            <div class="font-semibold" id="whoami">—</div>
+          </div>
+          <button class="px-4 py-2 rounded-xl hover:bg-slate-200/50 transition-colors text-blue-900 font-semibold" onclick="logout()">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="pt-28 md:pt-32 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
+      <div id="roleError" class="hidden mb-6 bg-error-container text-on-error-container rounded-2xl p-4">
+        Không tải được role từ server, menu đang hiển thị như Nhân viên. Hãy reload trang (Ctrl+F5) hoặc restart backend.
+      </div>
+
+      <!-- Hero Section -->
+      <section class="mb-12 md:mb-16">
+        <div class="max-w-3xl">
+          <h1 class="font-headline-md text-[42px] md:text-display-lg text-primary mb-4 leading-tight font-manrope">
+            Kiến tạo giá trị từ <br />
+            <span class="text-secondary italic">những ý tưởng vàng.</span>
+          </h1>
+          <p class="text-body-lg text-on-surface-variant max-w-xl opacity-80">
+            Hệ thống quản trị và ươm mầm sáng kiến nội bộ, giúp chuyển đổi tri thức cá nhân thành tài sản chung của doanh nghiệp.
+          </p>
+        </div>
+      </section>
+
+      <!-- Main Navigation Cards -->
+      <div class="flex flex-wrap justify-center gap-6 xl:gap-8">
+        <!-- Card 1: Register -->
+        <a
+          href="/pages/submit-idea"
+          class="group relative flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col bg-surface-container-lowest p-9 rounded-[1.5rem] shadow-[0px_20px_40px_rgba(25,28,29,0.03)] hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:bg-primary"
+        >
+          <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          <div class="w-16 h-16 editorial-gradient rounded-2xl flex items-center justify-center mb-7 shadow-lg shadow-primary/20 group-hover:bg-white/15 group-hover:shadow-none">
+            <span class="material-symbols-outlined text-white text-[34px]" style="font-variation-settings:'FILL' 1">edit_note</span>
+          </div>
+          <h3 class="font-headline-md text-[1.85rem] leading-tight font-bold text-primary mb-4 group-hover:text-white">Đăng ký Ý tưởng vàng</h3>
+          <p class="text-on-surface-variant text-base leading-relaxed mb-10 group-hover:text-white/80">
+            Điền form, đính kèm minh họa, gửi ý tưởng cho đơn vị.
+          </p>
+          <div class="mt-auto flex items-center text-primary font-semibold text-base group-hover:gap-2 transition-all group-hover:text-white">
+            <span>Bắt đầu ngay</span>
+            <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+          </div>
+        </a>
+
+        <!-- Card 2: Library -->
+        <a
+          href="/pages/library"
+          class="group relative flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col bg-surface-container-lowest p-9 rounded-[1.5rem] shadow-[0px_20px_40px_rgba(25,28,29,0.03)] hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:bg-primary"
+        >
+          <div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          <div class="w-16 h-16 bg-surface-container-low rounded-2xl flex items-center justify-center mb-7 text-primary group-hover:bg-white/15 group-hover:text-white">
+            <span class="material-symbols-outlined text-[34px]">inventory_2</span>
+          </div>
+          <h3 class="font-headline-md text-[1.85rem] leading-tight font-bold text-primary mb-4 group-hover:text-white">Kho Ý tưởng vàng</h3>
+          <p class="text-on-surface-variant text-base leading-relaxed mb-10 group-hover:text-white/80">
+            Dashboard và kho dữ liệu ý tưởng để tra cứu và học hỏi.
+          </p>
+          <div class="mt-auto flex items-center text-primary font-semibold text-base group-hover:gap-2 transition-all group-hover:text-white">
+            <span>Khám phá kho</span>
+            <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+          </div>
+        </a>
+
+        <!-- Card 3: Approvals -->
+        <a
+          id="cardApprovals"
+          href="/pages/approvals"
+          class="group relative hidden flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col bg-surface-container-lowest p-9 rounded-[1.5rem] shadow-[0px_20px_40px_rgba(25,28,29,0.03)] hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:bg-primary"
+        >
+          <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          <div class="w-16 h-16 bg-surface-container-low rounded-2xl flex items-center justify-center mb-7 text-primary group-hover:bg-white/15 group-hover:text-white">
+            <span class="material-symbols-outlined text-[34px]">fact_check</span>
+          </div>
+          <h3 class="font-headline-md text-[1.85rem] leading-tight font-bold text-primary mb-4 group-hover:text-white">Phê duyệt</h3>
+          <p id="approvalsDesc" class="text-on-surface-variant text-base leading-relaxed mb-10 group-hover:text-white/80">
+            Duyệt theo cấp, chấm điểm, và xử lý phiếu nhận tiền.
+          </p>
+          <div class="mt-auto flex items-center text-primary font-semibold text-base group-hover:gap-2 transition-all group-hover:text-white">
+            <span>Xử lý phiếu</span>
+            <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+          </div>
+        </a>
+
+        <!-- Card 4: Rewards -->
+        <a
+          id="cardRewards"
+          href="/pages/rewards"
+          class="group relative hidden flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col bg-surface-container-lowest p-9 rounded-[1.5rem] shadow-[0px_20px_40px_rgba(25,28,29,0.03)] hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:bg-primary"
+        >
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-100/70 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          <div class="w-16 h-16 bg-surface-container-low rounded-2xl flex items-center justify-center mb-7 text-primary group-hover:bg-white/15 group-hover:text-white">
+            <span class="material-symbols-outlined text-[34px]">payments</span>
+          </div>
+          <h3 class="font-headline-md text-[1.85rem] leading-tight font-bold text-primary mb-4 group-hover:text-white">Chi thưởng</h3>
+          <p class="text-on-surface-variant text-base leading-relaxed mb-10 group-hover:text-white/80">
+            Theo dõi phiếu đủ điều kiện nhận thưởng, xác nhận trao thưởng và xuất danh sách đã chi.
+          </p>
+          <div class="mt-auto flex items-center text-primary font-semibold text-base group-hover:gap-2 transition-all group-hover:text-white">
+            <span>Mở module</span>
+            <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+          </div>
+        </a>
+
+        <!-- Card 5: Settings -->
+        <a
+          id="cardSettings"
+          href="/pages/settings"
+          class="group relative hidden flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col bg-surface-container-lowest p-9 rounded-[1.5rem] shadow-[0px_20px_40px_rgba(25,28,29,0.03)] hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)] transition-all duration-300 overflow-hidden hover:-translate-y-0.5 hover:bg-primary"
+        >
+          <div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+          <div class="w-16 h-16 bg-surface-container-low rounded-2xl flex items-center justify-center mb-7 text-primary group-hover:bg-white/15 group-hover:text-white">
+            <span class="material-symbols-outlined text-[34px]">settings</span>
+          </div>
+          <h3 class="font-headline-md text-[1.85rem] leading-tight font-bold text-primary mb-4 group-hover:text-white">Cài đặt</h3>
+          <p class="text-on-surface-variant text-base leading-relaxed mb-10 group-hover:text-white/80">
+            Quản trị user, phân quyền, cấu hình cơ bản.
+          </p>
+          <div class="mt-auto flex items-center text-primary font-semibold text-base group-hover:gap-2 transition-all group-hover:text-white">
+            <span>Thiết lập</span>
+            <span class="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+          </div>
+        </a>
+      </div>
+    </main>
+
+    <script src="../js/api.js?v=20260428-actual-benefit"></script>
+    <script>
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function isManagerRole(role) {
+        return typeof role === "string" && role.includes("manager");
+      }
+
+      function canAccessRewards(role) {
+        return role === "admin" || role === "treasurer";
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        localStorage.setItem("employee_code", code);
+        let user = null;
+        try {
+          user = await api.getUserByCode(code);
+        } catch (e) {
+          document.getElementById("roleError").classList.remove("hidden");
+          user = null;
+        }
+
+        const role = user?.role || null;
+        if (user?.full_name) {
+          localStorage.setItem("full_name", user.full_name);
+        }
+        const knownRole = role && (role === "admin" || role === "treasurer" || isManagerRole(role) || role === "unit_represent");
+        document.getElementById("whoami").textContent = user
+          ? `${user.employee_code} • ${user.full_name || "Chưa có tên"}`
+          : `${code || "?"} • ${knownRole ? role : "Nhân viên"}`;
+
+        const approvals = document.getElementById("cardApprovals");
+        const rewards = document.getElementById("cardRewards");
+        const settings = document.getElementById("cardSettings");
+        const navApprovals = document.getElementById("navApprovals");
+        const navRewards = document.getElementById("navRewards");
+        const navSettings = document.getElementById("navSettings");
+        const approvalsDesc = document.getElementById("approvalsDesc");
+
+        if (role === "admin") {
+          approvals.classList.remove("hidden");
+          rewards.classList.remove("hidden");
+          settings.classList.remove("hidden");
+          navApprovals.classList.remove("hidden");
+          navRewards.classList.remove("hidden");
+          navSettings.classList.remove("hidden");
+        } else if (role === "ie_manager") {
+          approvals.classList.remove("hidden");
+          settings.classList.remove("hidden");
+          navApprovals.classList.remove("hidden");
+          navSettings.classList.remove("hidden");
+        } else if (isManagerRole(role) || role === "unit_represent") {
+          approvals.classList.remove("hidden");
+          navApprovals.classList.remove("hidden");
+          if (role === "unit_represent") {
+            approvalsDesc.textContent = "In phiếu nhận tiền cho các ý tưởng đủ điều kiện (không phê duyệt/chấm).";
+          }
+        } else if (canAccessRewards(role)) {
+          rewards.classList.remove("hidden");
+          navRewards.classList.remove("hidden");
+        } else {
+          // Non-manager: only (1) and (2)
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

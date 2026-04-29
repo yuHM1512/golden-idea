@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+
+.env
+backend/.env
+
+backend/uploads/
+
+.DS_Store
+Thumbs.db
+
+.claude/
