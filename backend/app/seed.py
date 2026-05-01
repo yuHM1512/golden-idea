@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from app.database import SessionLocal
 from app.models.score_criteria import ScoreCriteria
@@ -693,6 +693,20 @@ def migrate_payment_slip_reward_columns() -> None:
             conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN paid_by_user_id integer REFERENCES public.users(id)"))
         if "paid_at" not in existing:
             conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN paid_at timestamp with time zone"))
+
+
+def migrate_reward_batch_special_coefficients_column() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("reward_batches"):
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("reward_batches")}
+    if "special_coefficients" in existing:
+        return
+
+    table_name = "public.reward_batches" if engine.dialect.name == "postgresql" else "reward_batches"
+    with engine.begin() as conn:
+        conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN special_coefficients text"))
 
 
 def seed_score_criteria() -> int:

@@ -339,6 +339,24 @@ const api = {
     }
   },
 
+  async getRewardBatchCandidates(quarter, year) {
+    try {
+      const qs = new URLSearchParams({
+        quarter: String(quarter),
+        year: String(year),
+      });
+      const response = await fetch(`${API_BASE}/reward-batches/candidates?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được danh sách ý tưởng đủ điều kiện');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Get reward batch candidates error:', error);
+      throw error;
+    }
+  },
+
   async getRewardBatchReport(batchId) {
     try {
       const response = await fetch(`${API_BASE}/reward-batches/${batchId}/report`);

@@ -11,5 +11,6 @@ class RewardBatch(Base):
     quarter = Column(Integer, nullable=False)   # 1-4
     year = Column(Integer, nullable=False)
     coefficient = Column(Float, nullable=False)  # VND per point
+    special_coefficients = Column(String, nullable=True)  # JSON [{idea_id, reward_multiplier}]
     created_by = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
