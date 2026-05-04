@@ -11,6 +11,11 @@ alembic==1.13.0
 weasyprint==60.1
 pillow==10.1.0
 email-validator
+requests==2.32.5
+chardet==5.2.0
+google-api-python-client==2.181.0
+google-auth==2.40.3
+google-auth-httplib2==0.2.0
 
 # TODO: Uncomment when implementing password-based auth
 # python-jose[cryptography]==3.3.0

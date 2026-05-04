@@ -38,20 +38,59 @@ const api = {
   // Upload attachment
   async uploadAttachment(ideaId, file) {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`${API_BASE}/ideas/${ideaId}/upload`, {
+      const sessionResponse = await fetch(`${API_BASE}/ideas/${ideaId}/upload-session`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          original_filename: file?.name || '',
+          file_size: file?.size || 0,
+          content_type: file?.type || 'application/octet-stream',
+        }),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || `Lỗi khi tải file lên: ${file?.name || 'unknown file'}`);
+      if (!sessionResponse.ok) {
+        const error = await sessionResponse.json().catch(() => ({}));
+        throw new Error(error.detail || `Không tạo được phiên tải file: ${file?.name || 'unknown file'}`);
       }
 
-      return await response.json();
+      const session = await sessionResponse.json();
+      const uploadResponse = await fetch(session.session_url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file?.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+      if (!uploadResponse.ok) {
+        const rawError = await uploadResponse.text().catch(() => '');
+        throw new Error(rawError || `Google Drive từ chối file: ${file?.name || 'unknown file'}`);
+      }
+
+      const uploadedMeta = await uploadResponse.json().catch(() => null);
+      const driveFileId = uploadedMeta?.id;
+      if (!driveFileId) {
+        throw new Error(`Không nhận được drive_file_id sau khi tải file: ${file?.name || 'unknown file'}`);
+      }
+
+      const finalizeResponse = await fetch(`${API_BASE}/ideas/${ideaId}/attachments/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          drive_file_id: driveFileId,
+          original_filename: file?.name || '',
+          file_size: file?.size || 0,
+          content_type: file?.type || 'application/octet-stream',
+        }),
+      });
+      if (!finalizeResponse.ok) {
+        const error = await finalizeResponse.json().catch(() => ({}));
+        throw new Error(error.detail || `Không thể ghi nhận file đã tải lên: ${file?.name || 'unknown file'}`);
+      }
+
+      return await finalizeResponse.json();
     } catch (error) {
       console.error('Upload error:', error);
       throw error;

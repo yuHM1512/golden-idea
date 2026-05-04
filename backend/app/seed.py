@@ -709,6 +709,27 @@ def migrate_reward_batch_special_coefficients_column() -> None:
         conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN special_coefficients text"))
 
 
+def migrate_file_attachments_drive_columns() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("file_attachments"):
+        return
+
+    existing = {column["name"] for column in inspector.get_columns("file_attachments")}
+    table_name = "public.file_attachments" if engine.dialect.name == "postgresql" else "file_attachments"
+    statements = {
+        "storage_provider": f"ALTER TABLE {table_name} ADD COLUMN storage_provider varchar(50) NOT NULL DEFAULT 'local'",
+        "external_file_id": f"ALTER TABLE {table_name} ADD COLUMN external_file_id varchar(255)",
+        "external_folder_id": f"ALTER TABLE {table_name} ADD COLUMN external_folder_id varchar(255)",
+        "external_url": f"ALTER TABLE {table_name} ADD COLUMN external_url varchar(500)",
+        "mime_type": f"ALTER TABLE {table_name} ADD COLUMN mime_type varchar(255)",
+    }
+
+    with engine.begin() as conn:
+        for column_name, ddl in statements.items():
+            if column_name not in existing:
+                conn.execute(text(ddl))
+
+
 def seed_score_criteria() -> int:
     db = SessionLocal()
     try:

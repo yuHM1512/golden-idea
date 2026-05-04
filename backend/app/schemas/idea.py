@@ -31,6 +31,24 @@ class FileAttachmentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class DirectUploadSessionRequest(BaseModel):
+    original_filename: str
+    file_size: int = Field(..., ge=1)
+    content_type: Optional[str] = None
+
+
+class DirectUploadSessionResponse(BaseModel):
+    session_url: str
+    folder_id: str
+
+
+class DirectUploadCompleteRequest(BaseModel):
+    drive_file_id: str
+    original_filename: str
+    file_size: Optional[int] = Field(default=None, ge=1)
+    content_type: Optional[str] = None
+
 class IdeaParticipant(BaseModel):
     full_name: str = Field(..., description="Họ và tên người tham gia")
     employee_code: Optional[str] = Field(None, description="Mã nhân viên người tham gia")

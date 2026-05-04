@@ -756,14 +756,14 @@
           return '<div class="mt-5 rounded-2xl bg-white/70 border border-slate-100 p-4 text-sm text-text-soft">Chưa có file minh hoạ.</div>';
         }
         return `
-          <div class="mt-6">
+          <div class="mt-6" id="approvalAttachmentSection">
             <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Minh hoạ người gửi</div>
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
               ${attachments
                 .map((file) => {
                   const type = String(file.file_type || "").toLowerCase();
                   const name = safeText(file.original_filename || "File minh hoạ");
-                  const rawUrl = file.file_url || "#";
+                  const rawUrl = file.file_url || file.external_url || "#";
                   const url = safeAttr(rawUrl);
                   const dataName = safeAttr(file.original_filename || "File minh hoạ");
                   const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
@@ -838,6 +838,57 @@
             </div>
           </div>
         `;
+      }
+
+      function attachApprovalAttachmentUrls(attachments = []) {
+        const section = document.getElementById("approvalAttachmentSection");
+        if (!section || !Array.isArray(attachments) || !attachments.length) {
+          return;
+        }
+
+        const cards = section.querySelectorAll(".grid > *");
+        attachments.forEach((file, index) => {
+          const openUrl = String(file?.external_url || file?.file_url || "").trim();
+          if (!openUrl) {
+            return;
+          }
+
+          const card = cards[index];
+          if (!card) {
+            return;
+          }
+
+          const caption = card.querySelector("figcaption");
+          if (caption) {
+            const titleNode = caption.querySelector(".text-sm.font-semibold.text-text-main");
+            if (titleNode && !titleNode.closest("a")) {
+              const titleLink = document.createElement("a");
+              titleLink.href = openUrl;
+              titleLink.target = "_blank";
+              titleLink.rel = "noopener";
+              titleLink.className = "text-sm font-semibold text-primary hover:underline";
+              titleLink.textContent = titleNode.textContent || file?.original_filename || "File minh hoạ";
+              titleNode.replaceWith(titleLink);
+            }
+            return;
+          }
+
+          if (card.tagName === "A") {
+            const wrapper = document.createElement("div");
+            wrapper.className = "rounded-2xl bg-white border border-slate-100 p-4";
+
+            const title = document.createElement("a");
+            title.href = openUrl;
+            title.target = "_blank";
+            title.rel = "noopener";
+            title.className = "block text-sm font-semibold text-primary hover:underline";
+            title.textContent = file?.original_filename || "File minh hoạ";
+
+            wrapper.appendChild(title);
+            card.replaceWith(wrapper);
+            return;
+          }
+        });
       }
 
       function renderScoreResultTable(scores = []) {
@@ -1092,6 +1143,7 @@
               : ""
           }
         `;
+        attachApprovalAttachmentUrls(attachments);
 
         actions.innerHTML = `
           <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>

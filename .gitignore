@@ -3,6 +3,7 @@ __pycache__/
 
 .env
 backend/.env
+backend/credentials_m29.json
 
 backend/uploads/
 

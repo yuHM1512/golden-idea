@@ -109,6 +109,7 @@ class ApprovalAttachmentView(BaseModel):
     file_type: str
     file_size: int
     file_url: str
+    external_url: Optional[str] = None
     uploaded_at: Optional[datetime]
 
 

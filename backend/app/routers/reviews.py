@@ -16,6 +16,7 @@ from app.models.review import IdeaReview, ReviewAction, ReviewLevel
 from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
 from app.models.user import User
+from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
 from app.schemas import (
     ActualBenefitInput,
     ActualBenefitView,
@@ -307,7 +308,8 @@ def _format_attachment(attachment) -> ApprovalAttachmentView:
         original_filename=attachment.original_filename,
         file_type=attachment.file_type,
         file_size=attachment.file_size,
-        file_url=f"/uploads/{attachment.stored_filename}",
+        file_url=build_attachment_file_url(attachment),
+        external_url=attachment.external_url,
         uploaded_at=attachment.uploaded_at,
     )
 
@@ -538,6 +540,23 @@ async def get_review_detail(idea_id: int, employee_code: str = Query(...), db: S
         raise HTTPException(status_code=403, detail="Bạn không được xem ý tưởng này")
     if scope == "anonymous":
         raise HTTPException(status_code=403, detail="Bạn không có quyền xem phê duyệt")
+
+    if not idea.attachments:
+        created = sync_idea_attachments_from_drive(db, idea.id)
+        if created:
+            idea = (
+                db.query(Idea)
+                .options(
+                    joinedload(Idea.unit),
+                    joinedload(Idea.attachments),
+                    joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+                    joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+                    joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+                    joinedload(Idea.payment_slip),
+                )
+                .filter(Idea.id == idea_id)
+                .first()
+            )
 
     return _idea_to_detail(idea, _can_review(user, idea))
 

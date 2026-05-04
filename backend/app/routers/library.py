@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.idea import Idea, IdeaCategory, IdeaStatus
 from app.models.unit import Unit
 from app.models.attachment import FileAttachment
+from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
 from app.schemas.library import IdeaLibraryRow, IdeaLibraryDetail, IdeaLibraryAttachment
 
 router = APIRouter(prefix="/library", tags=["library"])
@@ -29,13 +30,12 @@ def _make_title(description: str) -> str:
 
 
 def _attachment_to_view(attachment: FileAttachment) -> IdeaLibraryAttachment:
-    file_path = (attachment.file_path or "").replace("\\", "/").lstrip("/")
     return IdeaLibraryAttachment(
         id=attachment.id,
         original_filename=attachment.original_filename,
         file_type=attachment.file_type,
         file_size=attachment.file_size,
-        file_url=f"/{file_path}" if file_path else "#",
+        file_url=build_attachment_file_url(attachment),
         uploaded_at=attachment.uploaded_at,
     )
 
@@ -136,6 +136,16 @@ async def get_library_idea_detail(idea_id: int, db: Session = Depends(get_db)):
     )
     if idea is None:
         raise HTTPException(status_code=404, detail="Ý tưởng không tồn tại trong kho chuẩn hoá")
+
+    if not idea.attachments:
+        created = sync_idea_attachments_from_drive(db, idea.id)
+        if created:
+            idea = (
+                db.query(Idea)
+                .options(joinedload(Idea.unit), joinedload(Idea.attachments))
+                .filter(Idea.id == idea_id, Idea.status.in_(LIBRARY_VISIBLE_STATUSES))
+                .first()
+            )
 
     attachments = [_attachment_to_view(item) for item in (idea.attachments or [])]
     return IdeaLibraryDetail(
