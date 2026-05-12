@@ -233,6 +233,26 @@
                 </div>
 
             </form>
+            <section id="submitSuccessState" class="hidden max-w-3xl rounded-[28px] bg-surface-container-lowest p-10 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+                <div class="flex flex-col items-start gap-6">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
+                        <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="font-label-md uppercase tracking-[0.24em] text-primary">Gửi thành công</p>
+                        <h2 class="font-headline-md text-[32px] font-extrabold text-primary">Phiếu đã được ghi nhận</h2>
+                        <p id="submitSuccessMessage" class="max-w-2xl text-on-surface-variant">Ý tưởng và tài liệu đính kèm đã được lưu thành công.</p>
+                    </div>
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <button type="button" onclick="goBackToMenu()" class="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 font-headline-md text-[16px] text-white shadow-lg transition-all hover:bg-primary-container">
+                            Quay về menu
+                        </button>
+                        <button type="button" onclick="startNewIdeaSubmission()" class="inline-flex items-center justify-center rounded-xl border border-outline-variant bg-white px-6 py-3 font-headline-md text-[16px] text-primary transition-all hover:bg-surface-container-low">
+                            Gửi ý tưởng mới
+                        </button>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -406,6 +426,37 @@
             });
         }
 
+        function clearSubmitForm() {
+            selectedFiles = [];
+            document.getElementById('fileList').innerHTML = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('ideaForm').reset();
+            document.getElementById('category').value = '';
+            document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
+                input.checked = false;
+            });
+            localStorage.removeItem('ideaDraft');
+            resetParticipants();
+        }
+
+        function showSubmitSuccess(message) {
+            document.getElementById('submitSuccessMessage').textContent = message;
+            document.getElementById('ideaForm').classList.add('hidden');
+            document.getElementById('submitSuccessState').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startNewIdeaSubmission() {
+            document.getElementById('submitSuccessState').classList.add('hidden');
+            document.getElementById('ideaForm').classList.remove('hidden');
+            clearSubmitForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goBackToMenu() {
+            window.location.href = '/pages/menu';
+        }
+
         // Form submission
         document.getElementById('ideaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -461,24 +512,9 @@
                     return;
                 }
 
-                selectedFiles = [];
-                document.getElementById('fileList').innerHTML = '';
-                document.getElementById('fileInput').value = '';
+                clearSubmitForm();
                 showNotification('✓ Ý tưởng đã được gửi thành công!', 'success');
-
-                // Reset form
-                document.getElementById('ideaForm').reset();
-                document.getElementById('category').value = '';
-                document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
-                    input.checked = false;
-                });
-                localStorage.removeItem('ideaDraft');
-                resetParticipants();
-
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    window.location.href = '/pages/menu';
-                }, 2000);
+                showSubmitSuccess('Ý tưởng và tài liệu đính kèm đã được gửi thành công. Bạn có thể quay về menu hoặc tạo phiếu mới ngay tại đây.');
             } catch (error) {
                 showLoading(false);
                 showNotification('L\u1ed7i: ' + error.message, 'error');

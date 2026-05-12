@@ -26,6 +26,7 @@ from app.schemas import (
 from app.services.google_drive import (
     create_resumable_upload_session,
     ensure_idea_folder,
+    find_drive_file_in_folder,
     get_drive_file_metadata,
     iter_drive_file_content,
     list_drive_folder_files,
@@ -405,6 +406,82 @@ async def complete_attachment_upload(
         folder_id=parent_ids[0],
         web_view_link=str(metadata.get("webViewLink") or ""),
         mime_type=str(metadata.get("mimeType") or payload.content_type or "application/octet-stream"),
+    )
+
+    return {
+        "id": attachment.id,
+        "idea_id": attachment.idea_id,
+        "original_filename": attachment.original_filename,
+        "file_type": attachment.file_type,
+        "file_size": attachment.file_size,
+        "file_path": attachment.file_path,
+        "file_url": build_attachment_file_url(attachment),
+        "uploaded_at": attachment.uploaded_at,
+    }
+
+
+@router.post("/{idea_id}/attachments/complete-from-folder", tags=["attachments"])
+async def complete_attachment_upload_from_folder(
+    idea_id: int,
+    payload: DirectUploadCompleteRequest,
+    db: Session = Depends(get_db),
+):
+    idea = db.query(Idea).filter(Idea.id == idea_id).first()
+    if idea is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Idea khong ton tai")
+
+    original_filename = (payload.original_filename or "").strip()
+    if not original_filename:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thieu ten file")
+
+    suffix = _validate_attachment_filename(original_filename)
+    expected_folder_id = ensure_idea_folder(idea_id)
+    matched_file = find_drive_file_in_folder(
+        folder_id=expected_folder_id,
+        original_filename=original_filename,
+        file_size=payload.file_size,
+    )
+    if matched_file is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Khong tim thay file vua tai len tren Google Drive de hoan tat luu ho so",
+        )
+
+    drive_file_id = str(matched_file.get("id") or "").strip()
+    if not drive_file_id:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Google Drive khong tra ve ma file sau khi tai len",
+        )
+
+    existing = (
+        db.query(FileAttachment)
+        .filter(FileAttachment.idea_id == idea_id, FileAttachment.external_file_id == drive_file_id)
+        .first()
+    )
+    if existing is not None:
+        return {
+            "id": existing.id,
+            "idea_id": existing.idea_id,
+            "original_filename": existing.original_filename,
+            "file_type": existing.file_type,
+            "file_size": existing.file_size,
+            "file_path": existing.file_path,
+            "file_url": build_attachment_file_url(existing),
+            "uploaded_at": existing.uploaded_at,
+        }
+
+    parent_ids = [str(item) for item in (matched_file.get("parents") or [])]
+    attachment = _create_drive_attachment(
+        db=db,
+        idea_id=idea_id,
+        original_filename=original_filename,
+        file_type=suffix,
+        file_size=int(matched_file.get("size") or payload.file_size or 0),
+        drive_file_id=drive_file_id,
+        folder_id=parent_ids[0] if parent_ids else expected_folder_id,
+        web_view_link=str(matched_file.get("webViewLink") or ""),
+        mime_type=str(matched_file.get("mimeType") or payload.content_type or "application/octet-stream"),
     )
 
     return {

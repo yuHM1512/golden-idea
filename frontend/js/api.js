@@ -55,25 +55,32 @@ const api = {
       }
 
       const session = await sessionResponse.json();
-      const uploadResponse = await fetch(session.session_url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file?.type || 'application/octet-stream',
-        },
-        body: file,
-      });
-      if (!uploadResponse.ok) {
-        const rawError = await uploadResponse.text().catch(() => '');
-        throw new Error(rawError || `Google Drive từ chối file: ${file?.name || 'unknown file'}`);
+      let driveFileId = '';
+      let uploadFetchError = null;
+
+      try {
+        const uploadResponse = await fetch(session.session_url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file?.type || 'application/octet-stream',
+          },
+          body: file,
+        });
+        if (!uploadResponse.ok) {
+          const rawError = await uploadResponse.text().catch(() => '');
+          throw new Error(rawError || `Google Drive từ chối file: ${file?.name || 'unknown file'}`);
+        }
+
+        const uploadedMeta = await uploadResponse.json().catch(() => null);
+        driveFileId = uploadedMeta?.id || '';
+      } catch (error) {
+        uploadFetchError = error;
       }
 
-      const uploadedMeta = await uploadResponse.json().catch(() => null);
-      const driveFileId = uploadedMeta?.id;
-      if (!driveFileId) {
-        throw new Error(`Không nhận được drive_file_id sau khi tải file: ${file?.name || 'unknown file'}`);
-      }
-
-      const finalizeResponse = await fetch(`${API_BASE}/ideas/${ideaId}/attachments/complete`, {
+      const finalizeEndpoint = driveFileId
+        ? `${API_BASE}/ideas/${ideaId}/attachments/complete`
+        : `${API_BASE}/ideas/${ideaId}/attachments/complete-from-folder`;
+      const finalizeResponse = await fetch(finalizeEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +94,11 @@ const api = {
       });
       if (!finalizeResponse.ok) {
         const error = await finalizeResponse.json().catch(() => ({}));
-        throw new Error(error.detail || `Không thể ghi nhận file đã tải lên: ${file?.name || 'unknown file'}`);
+        throw new Error(
+          error.detail ||
+          uploadFetchError?.message ||
+          `Không thể ghi nhận file đã tải lên: ${file?.name || 'unknown file'}`
+        );
       }
 
       return await finalizeResponse.json();

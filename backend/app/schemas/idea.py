@@ -44,7 +44,7 @@ class DirectUploadSessionResponse(BaseModel):
 
 
 class DirectUploadCompleteRequest(BaseModel):
-    drive_file_id: str
+    drive_file_id: Optional[str] = None
     original_filename: str
     file_size: Optional[int] = Field(default=None, ge=1)
     content_type: Optional[str] = None

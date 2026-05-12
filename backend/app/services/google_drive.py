@@ -145,6 +145,41 @@ def list_drive_folder_files(folder_id: str) -> list[dict[str, str | int | list[s
     return list(response.get("files") or [])
 
 
+def find_drive_file_in_folder(
+    *,
+    folder_id: str,
+    original_filename: str,
+    file_size: int | None = None,
+) -> dict[str, str | int | list[str] | None] | None:
+    service = _drive_service()
+    query = (
+        f"'{_escape_drive_query(folder_id)}' in parents and "
+        f"name = '{_escape_drive_query(original_filename)}' and "
+        "trashed = false"
+    )
+    response = service.files().list(
+        q=query,
+        fields="files(id,name,mimeType,size,webViewLink,parents,createdTime)",
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        pageSize=20,
+        orderBy="createdTime desc",
+    ).execute()
+    files = list(response.get("files") or [])
+    if not files:
+        return None
+
+    if file_size is not None:
+        for item in files:
+            try:
+                if int(item.get("size") or 0) == int(file_size):
+                    return item
+            except (TypeError, ValueError):
+                continue
+
+    return files[0]
+
+
 def upload_attachment_to_drive(
     *,
     idea_id: int,
