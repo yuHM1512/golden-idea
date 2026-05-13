@@ -611,6 +611,13 @@
         return getCriteriaGroup(groupKey).find((item) => item.code === normalizedCode) || null;
       }
 
+      function getCriteriaCodeAndLabel(groupKey, code) {
+        const normalizedCode = groupKey === "K1" ? (LEGACY_K1_CODES[code] || code) : code;
+        const item = getCriteriaItem(groupKey, normalizedCode);
+        if (!item) return normalizedCode || "—";
+        return `${item.code} - ${item.label}`;
+      }
+
       function getCriteriaLabel(groupKey, code) {
         const normalizedCode = groupKey === "K1" ? (LEGACY_K1_CODES[code] || code) : code;
         if (groupKey === "K1") {
@@ -633,7 +640,7 @@
                 <div class="flex items-start gap-3">
                   <input id="${prefix}_${item.code}" type="checkbox" value="${item.code}" class="mt-1 rounded border-slate-300 text-primary focus:ring-primary" />
                   <div class="flex-1">
-                    <div class="font-semibold text-sm text-text-main">${safeText(item.label)} <span class="text-primary">• ${safeText(item.score)}đ</span></div>
+                    <div class="font-semibold text-sm text-text-main">${safeText(item.code)} - ${safeText(item.label)} <span class="text-primary">• ${safeText(item.score)}đ</span></div>
                     ${renderTooltipMeta(item)}
                   </div>
                 </div>
@@ -652,6 +659,11 @@
         return codes.map((code) => getCriteriaLabel(groupKey, code)).join(" • ");
       }
 
+      function selectedCodeLabelString(groupKey, codes = []) {
+        if (!Array.isArray(codes) || !codes.length) return "—";
+        return codes.map((code) => getCriteriaCodeAndLabel(groupKey, code)).join(" • ");
+      }
+
       function normalizeK2TypeForDisplay(value) {
         return K2_TYPE_LABELS[value] || value || "—";
       }
@@ -663,7 +675,7 @@
 
       function k2SelectionText(score) {
         if (Array.isArray(score.k2_selected_codes) && score.k2_selected_codes.length) {
-          return selectedLabelString(k2GroupKeyForScore(score), score.k2_selected_codes);
+          return selectedCodeLabelString(k2GroupKeyForScore(score), score.k2_selected_codes);
         }
         const note = score.k2_score ? `Dữ liệu cũ, tổng ${score.k2_score} điểm` : "Dữ liệu cũ";
         return note;
