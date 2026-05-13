@@ -7,12 +7,13 @@ from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
 from app.database import get_db
 from app.models.attachment import FileAttachment
 from app.models.idea import Idea, IdeaStatus
+from app.models.unit import Unit
 from app.schemas import (
     DirectUploadCompleteRequest,
     DirectUploadSessionRequest,
@@ -33,6 +34,7 @@ from app.services.google_drive import (
     request_drive_file_content,
     upload_attachment_to_drive,
 )
+from app.services.email_notifications import send_approval_stage_email
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
@@ -42,6 +44,16 @@ def _truncate(value: str | None, max_length: int) -> str | None:
         return None
     value = value.strip()
     return value[:max_length] if value else None
+
+
+def _idea_title_fallback(description: str | None, idea_id: int | None = None) -> str:
+    text = (description or "").strip()
+    if text:
+        first_line = text.splitlines()[0].strip()
+        shortened = first_line[:255].strip()
+        if shortened:
+            return shortened
+    return f"Ý tưởng #{idea_id}" if idea_id else "Ý tưởng chưa đặt tên"
 
 
 def _normalize_participants(idea: IdeaCreate) -> list[dict[str, str]]:
@@ -184,6 +196,7 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
             phone_number=idea.phone_number,
             bo_phan=_truncate(idea.bo_phan, 255),
             position=idea.position,
+            title=_truncate(idea.title, 255) or _idea_title_fallback(idea.description),
             product_code=idea.product_code,
             category=idea.category,
             description=idea.description,
@@ -196,6 +209,15 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
         db.add(new_idea)
         db.commit()
         db.refresh(new_idea)
+
+        email_idea = (
+            db.query(Idea)
+            .options(joinedload(Idea.unit).joinedload(Unit.manager))
+            .filter(Idea.id == new_idea.id)
+            .first()
+        )
+        if email_idea is not None:
+            send_approval_stage_email(db, email_idea, "dept_review")
 
         return {
             "id": new_idea.id,

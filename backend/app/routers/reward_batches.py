@@ -75,6 +75,9 @@ def _parse_participants(raw_value, fallback_name: str, fallback_code: str) -> li
 
 
 def _build_title(idea: Idea) -> str:
+    title = (idea.title or "").strip()
+    if title:
+        return title[:80] + ("..." if len(title) > 80 else "")
     desc = (idea.description or "").strip()
     if not desc:
         return f"Ý tưởng #{idea.id}"

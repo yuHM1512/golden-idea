@@ -7,7 +7,7 @@ from typing import List
 from app.database import get_db
 from app.models.unit import Unit
 from app.models.user import User, UserRole
-from app.schemas import UserCreate, UserResponse
+from app.schemas import UserCreate, UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -55,6 +55,27 @@ def _assign_dept_manager_if_needed(db: Session, user: User) -> None:
     unit.manager_user_id = user.id
 
 
+def _clear_dept_manager_assignment_if_needed(db: Session, user: User, previous_role: str | None, previous_unit_id: int | None) -> None:
+    if previous_role != UserRole.DEPT_MANAGER.value or previous_unit_id is None:
+        return
+    if user.role == UserRole.DEPT_MANAGER.value and user.unit_id == previous_unit_id:
+        return
+    unit = db.query(Unit).filter(Unit.id == previous_unit_id).first()
+    if unit and unit.manager_user_id == user.id:
+        unit.manager_user_id = None
+
+
+def _validate_role_unit_requirement_for_values(db: Session, role: UserRole, unit_id: int | None) -> None:
+    if role in {UserRole.BOD_MANAGER, UserRole.TREASURER, UserRole.ADMIN}:
+        return
+    if unit_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role này bắt buộc phải chọn đơn vị",
+        )
+    _ensure_unit_exists(db, unit_id)
+
+
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def upsert_user(user_in: UserCreate, db: Session = Depends(get_db)):
     """
@@ -99,6 +120,48 @@ async def get_user_by_code(employee_code: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(func.upper(User.employee_code) == code.upper()).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User không tồn tại")
+    return user
+
+
+@router.patch("/{employee_code}", response_model=UserResponse)
+async def update_user(employee_code: str, user_in: UserUpdate, db: Session = Depends(get_db)):
+    code = employee_code.strip().upper()
+    user = db.query(User).filter(func.upper(User.employee_code) == code).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User không tồn tại")
+
+    previous_role = user.role
+    previous_unit_id = user.unit_id
+
+    next_role = user_in.role or UserRole(user.role)
+    next_unit_id = user.unit_id if user_in.unit_id is None else user_in.unit_id
+    _validate_role_unit_requirement_for_values(db, next_role, next_unit_id)
+
+    if user_in.full_name is not None:
+        user.full_name = user_in.full_name.strip()
+    if user_in.email is not None:
+        user.email = user_in.email
+    if user_in.phone_number is not None:
+        user.phone_number = user_in.phone_number.strip() or None
+    if user_in.position is not None:
+        user.position = user_in.position.strip() or None
+    if user_in.unit_id is not None or next_role in {UserRole.BOD_MANAGER, UserRole.TREASURER, UserRole.ADMIN}:
+        user.unit_id = next_unit_id
+    if user_in.role is not None:
+        user.role = user_in.role.value
+    if user_in.is_active is not None:
+        user.is_active = bool(user_in.is_active)
+
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Trùng employee_code hoặc email") from e
+
+    _clear_dept_manager_assignment_if_needed(db, user, previous_role, previous_unit_id)
+    _assign_dept_manager_if_needed(db, user)
+    db.commit()
+    db.refresh(user)
     return user
 
 

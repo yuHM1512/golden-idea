@@ -67,6 +67,7 @@
                 <th class="text-left px-6 py-3 font-semibold">role</th>
                 <th class="text-left px-6 py-3 font-semibold">unit</th>
                 <th class="text-left px-6 py-3 font-semibold">email</th>
+                <th class="text-right px-6 py-3 font-semibold">action</th>
               </tr>
             </thead>
             <tbody id="usersTbody"></tbody>
@@ -160,10 +161,76 @@
       </div>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="editModalBackdrop" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="font-semibold">Cập nhật user</div>
+          <button class="p-2 hover:bg-slate-100 rounded-xl" onclick="closeEditModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">employee_code</label>
+              <input id="eEmployeeCode" class="mt-1 w-full rounded-xl bg-slate-100 border-0 text-slate-500" readonly />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">full_name *</label>
+              <input id="eFullName" class="mt-1 w-full rounded-xl bg-slate-50 border-0" />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">role *</label>
+              <select id="eRole" class="mt-1 w-full rounded-xl bg-slate-50 border-0">
+                <option value="employee">employee</option>
+                <option value="dept_manager">dept_manager</option>
+                <option value="sub_dept_manager">sub_dept_manager</option>
+                <option value="ie_manager">ie_manager</option>
+                <option value="bod_manager">bod_manager</option>
+                <option value="unit_represent">unit_represent</option>
+                <option value="treasurer">treasurer</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">unit</label>
+              <select id="eUnitId" class="mt-1 w-full rounded-xl bg-slate-50 border-0"></select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">email</label>
+              <input id="eEmail" class="mt-1 w-full rounded-xl bg-slate-50 border-0" />
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-slate-500">phone</label>
+              <input id="ePhone" class="mt-1 w-full rounded-xl bg-slate-50 border-0" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-xs uppercase tracking-widest text-slate-500">position</label>
+              <input id="ePosition" class="mt-1 w-full rounded-xl bg-slate-50 border-0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button class="px-4 py-2 rounded-xl font-semibold hover:bg-slate-100" onclick="closeEditModal()">Hủy</button>
+          <button
+            class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:opacity-90"
+            onclick="saveUserEdit()"
+          >
+            Cập nhật
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/api.js?v=20260428-actual-benefit"></script>
     <script>
       const batch = [];
       let units = [];
+      let currentUsers = [];
+      let editingEmployeeCode = "";
       const LEADERSHIP_UNIT_VALUE = "__LEADERSHIP__";
 
       function requireAdmin() {
@@ -189,6 +256,17 @@
         document.getElementById("modalBackdrop").classList.remove("flex");
       }
 
+      function openEditModal() {
+        document.getElementById("editModalBackdrop").classList.remove("hidden");
+        document.getElementById("editModalBackdrop").classList.add("flex");
+      }
+
+      function closeEditModal() {
+        document.getElementById("editModalBackdrop").classList.add("hidden");
+        document.getElementById("editModalBackdrop").classList.remove("flex");
+        editingEmployeeCode = "";
+      }
+
       function renderUnitOptions() {
         const sel = document.getElementById("fUnitId");
         sel.innerHTML = "";
@@ -203,11 +281,40 @@
           sel.appendChild(opt);
         });
         syncRoleUnitUi();
+        renderEditUnitOptions();
+      }
+
+      function renderEditUnitOptions() {
+        const sel = document.getElementById("eUnitId");
+        sel.innerHTML = "";
+        const leadershipOpt = document.createElement("option");
+        leadershipOpt.value = LEADERSHIP_UNIT_VALUE;
+        leadershipOpt.textContent = "Ban lãnh đạo";
+        sel.appendChild(leadershipOpt);
+        units.forEach((u) => {
+          const opt = document.createElement("option");
+          opt.value = u.id;
+          opt.textContent = u.department ? `${u.department} • ${u.name}` : u.name;
+          sel.appendChild(opt);
+        });
+        syncEditRoleUnitUi();
       }
 
       function syncRoleUnitUi() {
         const role = document.getElementById("fRole").value;
         const unitSelect = document.getElementById("fUnitId");
+        if (role === "bod_manager") {
+          unitSelect.value = LEADERSHIP_UNIT_VALUE;
+        } else if (["treasurer", "admin"].includes(role)) {
+          return;
+        } else if (unitSelect.value === LEADERSHIP_UNIT_VALUE && units.length) {
+          unitSelect.value = String(units[0].id);
+        }
+      }
+
+      function syncEditRoleUnitUi() {
+        const role = document.getElementById("eRole").value;
+        const unitSelect = document.getElementById("eUnitId");
         if (role === "bod_manager") {
           unitSelect.value = LEADERSHIP_UNIT_VALUE;
         } else if (["treasurer", "admin"].includes(role)) {
@@ -296,6 +403,7 @@
       }
 
       function renderUsers(users) {
+        currentUsers = Array.isArray(users) ? users : [];
         document.getElementById("usersCount").textContent = `${users.length} users`;
         const tbody = document.getElementById("usersTbody");
         tbody.innerHTML = "";
@@ -315,9 +423,71 @@
             <td class="px-6 py-3">${u.role}</td>
             <td class="px-6 py-3">${unitLabel}</td>
             <td class="px-6 py-3 text-slate-600">${u.email || ""}</td>
+            <td class="px-6 py-3 text-right">
+              <button class="px-3 py-1 rounded-lg bg-slate-100 font-semibold hover:bg-slate-200" onclick="editUser('${u.employee_code}')">Sửa</button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
+      }
+
+      function editUser(employeeCode) {
+        const user = currentUsers.find((item) => item.employee_code === employeeCode);
+        if (!user) {
+          alert("Không tìm thấy user");
+          return;
+        }
+
+        editingEmployeeCode = user.employee_code;
+        document.getElementById("eEmployeeCode").value = user.employee_code || "";
+        document.getElementById("eFullName").value = user.full_name || "";
+        document.getElementById("eRole").value = user.role || "employee";
+        document.getElementById("eUnitId").value = user.role === "bod_manager" ? LEADERSHIP_UNIT_VALUE : String(user.unit_id ?? LEADERSHIP_UNIT_VALUE);
+        document.getElementById("eEmail").value = user.email || "";
+        document.getElementById("ePhone").value = user.phone_number || "";
+        document.getElementById("ePosition").value = user.position || "";
+        syncEditRoleUnitUi();
+        openEditModal();
+      }
+
+      async function saveUserEdit() {
+        if (!editingEmployeeCode) {
+          alert("Chưa chọn user");
+          return;
+        }
+
+        const full_name = document.getElementById("eFullName").value.trim();
+        const role = document.getElementById("eRole").value;
+        const rawUnitValue = document.getElementById("eUnitId").value;
+        const unit_id = rawUnitValue === LEADERSHIP_UNIT_VALUE ? null : parseInt(rawUnitValue, 10);
+        const email = document.getElementById("eEmail").value.trim();
+        const phone_number = document.getElementById("ePhone").value.trim();
+        const position = document.getElementById("ePosition").value.trim();
+
+        if (!full_name) {
+          alert("Vui lòng nhập full_name");
+          return;
+        }
+        if (!["bod_manager", "treasurer", "admin"].includes(role) && (!unit_id || Number.isNaN(unit_id))) {
+          alert("Vui lòng chọn đơn vị");
+          return;
+        }
+
+        try {
+          await api.updateUser(editingEmployeeCode, {
+            full_name,
+            role,
+            unit_id,
+            email: email || null,
+            phone_number: phone_number || null,
+            position: position || null,
+          });
+          closeEditModal();
+          await refreshUsers();
+          alert("Đã cập nhật user");
+        } catch (e) {
+          alert(e.message || "Cập nhật user thất bại");
+        }
       }
 
       async function refreshUsers() {
@@ -334,6 +504,7 @@
         units = await api.getUnits();
         renderUnitOptions();
         document.getElementById("fRole").addEventListener("change", syncRoleUnitUi);
+        document.getElementById("eRole").addEventListener("change", syncEditRoleUnitUi);
         await refreshUsers();
       }
 

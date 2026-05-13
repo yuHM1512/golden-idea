@@ -16,6 +16,7 @@ from app.seed import (
     migrate_users_unit_nullable,
     migrate_idea_participants_column,
     migrate_idea_bo_phan_column,
+    migrate_idea_title_column,
     normalize_employee_codes,
     migrate_idea_category_column,
     migrate_score_k2_type_column,
@@ -39,6 +40,7 @@ async def lifespan(app: FastAPI):
     migrate_users_unit_nullable()
     migrate_idea_participants_column()
     migrate_idea_bo_phan_column()
+    migrate_idea_title_column()
     normalize_employee_codes()
     migrate_idea_category_column()
     migrate_score_k2_type_column()

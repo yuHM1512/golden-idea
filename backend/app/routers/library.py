@@ -19,7 +19,10 @@ LIBRARY_VISIBLE_STATUSES = {
 }
 
 
-def _make_title(description: str) -> str:
+def _make_title(title: str | None, description: str) -> str:
+    text = (title or "").strip()
+    if text:
+        return text[:80] + ("..." if len(text) > 80 else "")
     text = (description or "").strip()
     if not text:
         return "(Không có mô tả)"
@@ -59,6 +62,7 @@ async def list_library_ideas(
     query = (
         db.query(
             Idea.id,
+            Idea.title,
             Idea.category,
             Idea.status,
             Idea.submitted_at,
@@ -75,6 +79,7 @@ async def list_library_ideas(
         .filter(Idea.status.in_(LIBRARY_VISIBLE_STATUSES))
         .group_by(
             Idea.id,
+            Idea.title,
             Idea.category,
             Idea.status,
             Idea.submitted_at,
@@ -98,6 +103,7 @@ async def list_library_ideas(
         term = f"%{q.strip()}%"
         query = query.filter(
             or_(
+                Idea.title.ilike(term),
                 Idea.description.ilike(term),
                 Idea.full_name.ilike(term),
                 Idea.employee_code.ilike(term),
@@ -111,7 +117,7 @@ async def list_library_ideas(
         result.append(
             IdeaLibraryRow(
                 id=r.id,
-                title=_make_title(r.description),
+                title=_make_title(r.title, r.description),
                 category=r.category,
                 status=r.status,
                 submitted_at=r.submitted_at,
@@ -150,7 +156,7 @@ async def get_library_idea_detail(idea_id: int, db: Session = Depends(get_db)):
     attachments = [_attachment_to_view(item) for item in (idea.attachments or [])]
     return IdeaLibraryDetail(
         id=idea.id,
-        title=_make_title(idea.description),
+        title=_make_title(idea.title, idea.description),
         category=idea.category,
         status=idea.status,
         submitted_at=idea.submitted_at,

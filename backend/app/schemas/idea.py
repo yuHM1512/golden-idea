@@ -1,13 +1,16 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class IdeaCategory(str, Enum):
-    TOOLS = "TOOLS"  # Công cụ (cữ gá, ráp form, phụ trợ)
-    PROCESS = "PROCESS"  # Quy trình
-    DIGITIZATION = "DIGITIZATION"  # Số hóa
+    TOOLS = "TOOLS"
+    PROCESS = "PROCESS"
+    DIGITIZATION = "DIGITIZATION"
     OTHER = "OTHER"
+
 
 class IdeaStatus(str, Enum):
     DRAFT = "DRAFT"
@@ -20,6 +23,7 @@ class IdeaStatus(str, Enum):
     REWARDED = "REWARDED"
     REJECTED = "REJECTED"
     CANCELLED = "CANCELLED"
+
 
 class FileAttachmentResponse(BaseModel):
     id: int
@@ -49,39 +53,42 @@ class DirectUploadCompleteRequest(BaseModel):
     file_size: Optional[int] = Field(default=None, ge=1)
     content_type: Optional[str] = None
 
+
 class IdeaParticipant(BaseModel):
     full_name: str = Field(..., description="Họ và tên người tham gia")
     employee_code: Optional[str] = Field(None, description="Mã nhân viên người tham gia")
 
+
 class IdeaCreate(BaseModel):
-    """Phiếu đăng ký ý tưởng - Form submission"""
     full_name: str = Field(..., description="Họ và tên")
-    employee_code: Optional[str] = Field(None, description="Mã Nhân Viên (optional)")
+    employee_code: Optional[str] = Field(None, description="Mã nhân viên")
     participants: List[IdeaParticipant] = Field(default_factory=list, description="Danh sách người cùng đăng ký")
     phone_number: Optional[str] = Field(None, description="Số điện thoại")
     bo_phan: Optional[str] = Field(None, description="Bộ phận")
     position: Optional[str] = Field(None, description="Chức vụ")
+    title: str = Field(..., description="Tên ý tưởng")
     product_code: Optional[str] = Field(None, description="Mã hàng")
     category: IdeaCategory = Field(..., description="Nội dung ý tưởng liên quan")
     description: str = Field(..., description="Mô tả ý tưởng")
     is_anonymous: bool = Field(default=True, description="Ẩn danh")
-    unit_id: int = Field(..., description="Unit ID (from session or dropdown)")
+    unit_id: int = Field(..., description="Unit ID")
+
 
 class IdeaUpdate(BaseModel):
-    """Update idea (before submission)"""
     full_name: Optional[str] = None
     employee_code: Optional[str] = None
     participants: Optional[List[IdeaParticipant]] = None
     phone_number: Optional[str] = None
     bo_phan: Optional[str] = None
     position: Optional[str] = None
+    title: Optional[str] = None
     product_code: Optional[str] = None
     category: Optional[IdeaCategory] = None
     description: Optional[str] = None
     is_anonymous: Optional[bool] = None
 
+
 class IdeaDetailResponse(BaseModel):
-    """Full idea details with attachments"""
     id: int
     full_name: str
     employee_code: Optional[str]
@@ -89,6 +96,7 @@ class IdeaDetailResponse(BaseModel):
     phone_number: Optional[str]
     bo_phan: Optional[str]
     position: Optional[str]
+    title: str
     product_code: Optional[str]
     category: IdeaCategory
     description: str
@@ -105,9 +113,10 @@ class IdeaDetailResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class IdeaListResponse(BaseModel):
-    """List of ideas (summary)"""
     id: int
+    title: str
     full_name: str
     category: IdeaCategory
     status: IdeaStatus
@@ -117,8 +126,8 @@ class IdeaListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class IdeaSubmitResponse(BaseModel):
-    """Response after submitting idea"""
     id: int
     status: IdeaStatus
     submitted_at: datetime

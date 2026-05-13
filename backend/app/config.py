@@ -35,6 +35,19 @@ class Settings(BaseSettings):
     # Server
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = 8000
+    APPROVAL_PAGE_URL: str = "http://localhost:8015/pages/approvals"
+
+    # Email
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_EMAIL: str = ""
+    SMTP_APP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = True
+    SMTP_USE_SSL: bool = False
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "Golden Idea System"
 
     model_config = SettingsConfigDict(
         env_file=_BACKEND_DIR / ".env",

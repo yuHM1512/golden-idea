@@ -241,6 +241,26 @@ const api = {
     }
   },
 
+  async updateUser(employeeCode, payload) {
+    try {
+      const code = (employeeCode || '').trim().toUpperCase();
+      const response = await fetch(`${API_BASE}/users/${encodeURIComponent(code)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Lỗi khi cập nhật user');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update user error:', error);
+      throw error;
+    }
+  },
+
   async getApprovalQueue(employeeCode, statusValue = '') {
     try {
       const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });

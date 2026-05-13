@@ -103,8 +103,9 @@ def _participant_display(participants: list[dict[str, str]]) -> tuple[str, str]:
 
 
 def _idea_display_title(idea: Idea) -> str:
-    # The Idea model in this repo doesn't have a title column; many UIs expect a short label.
-    # Derive a stable "title" from the first line/sentence of description.
+    title = (idea.title or "").strip()
+    if title:
+        return title[:90] + ("..." if len(title) > 90 else "")
     raw = (idea.description or "").strip()
     if raw:
         first_line = raw.splitlines()[0].strip()

@@ -17,6 +17,7 @@ from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
+from app.services.email_notifications import send_approval_stage_email
 from app.schemas import (
     ActualBenefitInput,
     ActualBenefitView,
@@ -345,6 +346,9 @@ def _has_measurable_ie_score(idea: Idea) -> bool:
 
 
 def _build_title(idea: Idea) -> str:
+    title = (idea.title or "").strip()
+    if title:
+        return title[:80] + ("..." if len(title) > 80 else "")
     desc = (idea.description or "").strip()
     if not desc:
         return f"Ý tưởng #{idea.id}"
@@ -644,6 +648,15 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
         .filter(Idea.id == idea.id)
         .first()
     )
+
+    if action == ReviewAction.APPROVE and refreshed is not None:
+        if scope == "dept":
+            send_approval_stage_email(db, refreshed, "ie_review")
+        elif scope == "ie":
+            send_approval_stage_email(db, refreshed, "bod_review")
+        elif scope == "bod":
+            send_approval_stage_email(db, refreshed, "approved_notice")
+
     return _idea_to_detail(refreshed, _can_review(user, refreshed))
 
 

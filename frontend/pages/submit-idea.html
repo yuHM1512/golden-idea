@@ -198,6 +198,10 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Tên ý tưởng *</label>
+                                <input id="title" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập tên gọi ngắn gọn, dễ tìm kiếm cho ý tưởng" type="text" required/>
+                            </div>
+                            <div class="space-y-2">
                                 <label class="font-label-md text-on-surface-variant px-1">Mô tả ý tưởng *</label>
                                 <textarea id="description" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Trình bày chi tiết về ý tưởng của bạn..." rows="6" required></textarea>
                             </div>
@@ -472,6 +476,11 @@
             if (!participants) {
                 return;
             }
+            const title = document.getElementById('title').value.trim();
+            if (!title) {
+                showNotification('Vui lòng nhập tên ý tưởng', 'error');
+                return;
+            }
             showLoading(true, 'Đang tạo phiếu...');
 
             try {
@@ -482,6 +491,7 @@
                     phone_number: document.getElementById('phone').value,
                     bo_phan: document.getElementById('boPhan').value,
                     position: document.getElementById('position').value,
+                    title,
                     product_code: document.getElementById('productCode').value,
                     category: document.getElementById('category').value,
                     description: document.getElementById('description').value,
@@ -608,6 +618,11 @@
             if (!participants) {
                 return;
             }
+            const title = document.getElementById('title').value.trim();
+            if (!title) {
+                showNotification('Vui lòng nhập tên ý tưởng', 'error');
+                return;
+            }
             const formData = {
                 full_name: document.getElementById('fullName').value,
                 employee_code: document.getElementById('employeeCode').value,
@@ -615,6 +630,7 @@
                 phone_number: document.getElementById('phone').value,
                 bo_phan: document.getElementById('boPhan').value,
                 position: document.getElementById('position').value,
+                title,
                 product_code: document.getElementById('productCode').value,
                 category: document.getElementById('category').value,
                 description: document.getElementById('description').value,

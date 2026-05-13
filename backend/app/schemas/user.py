@@ -29,6 +29,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
     position: Optional[str] = None
+    unit_id: Optional[int] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
 

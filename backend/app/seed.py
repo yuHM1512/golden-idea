@@ -388,6 +388,42 @@ def migrate_idea_bo_phan_column() -> None:
         conn.execute(text("ALTER TABLE public.ideas ADD COLUMN bo_phan varchar(255)"))
 
 
+def migrate_idea_title_column() -> None:
+    with engine.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'ideas'
+                  AND column_name = 'title'
+                """
+            )
+        ).fetchone()
+
+        if not row:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN title varchar(255)"))
+
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas
+                SET title = LEFT(
+                    COALESCE(
+                        NULLIF(TRIM(SPLIT_PART(description, E'\n', 1)), ''),
+                        CONCAT('Ý tưởng #', id::text)
+                    ),
+                    255
+                )
+                WHERE title IS NULL OR BTRIM(title) = ''
+                """
+            )
+        )
+
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN title SET NOT NULL"))
+
+
 def migrate_idea_category_column() -> None:
     """
     Convert ideas.category to text so category options can evolve without
