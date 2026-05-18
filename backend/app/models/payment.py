@@ -14,7 +14,7 @@ class PaymentSlip(Base):
     employee_name = Column(String(255), nullable=False)
 
     # Payment details
-    amount = Column(DECIMAL(10, 2), default=50000.00, nullable=False)  # 50k default
+    amount = Column(DECIMAL(10, 2), default=100000.00, nullable=False)  # 100k default
 
     # Printing info
     printed_by_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)

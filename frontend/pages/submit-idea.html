@@ -214,15 +214,38 @@
                             <span class="material-symbols-outlined text-primary">attachment</span>
                             <h3 class="font-headline-md text-[20px] text-primary">Hình ảnh / Video minh họa</h3>
                         </div>
-                        <div id="uploadArea" class="border-2 border-dashed border-outline-variant rounded-xl p-12 flex flex-col items-center justify-center text-center bg-surface-container-low/30 hover:bg-surface-container-low transition-colors cursor-pointer group">
-                            <div class="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                <span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <div class="rounded-xl border border-surface-variant bg-surface-container-low/20 p-5">
+                                <div class="mb-4">
+                                    <div class="text-sm font-extrabold uppercase tracking-widest text-primary">Trước cải tiến</div>
+                                    <p class="mt-1 text-sm text-slate-500">Video hoặc hình ảnh hiện trạng trước khi áp dụng ý tưởng.</p>
+                                </div>
+                                <div id="uploadAreaBefore" data-attachment-type="before" class="border-2 border-dashed border-outline-variant rounded-xl p-10 flex flex-col items-center justify-center text-center bg-surface-container-low/30 hover:bg-surface-container-low transition-colors cursor-pointer group">
+                                    <div class="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                                    </div>
+                                    <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp trước cải tiến</h4>
+                                    <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video tại đây (Tối đa 300MB mỗi file)</p>
+                                    <input id="fileInputBefore" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                                </div>
+                                <div id="fileListBefore" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
                             </div>
-                            <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp lên</h4>
-                            <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video minh họa tại đây (Tối đa 300MB mỗi file)</p>
-                            <input id="fileInput" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                            <div class="rounded-xl border border-surface-variant bg-surface-container-low/20 p-5">
+                                <div class="mb-4">
+                                    <div class="text-sm font-extrabold uppercase tracking-widest text-primary">Sau cải tiến</div>
+                                    <p class="mt-1 text-sm text-slate-500">Video hoặc hình ảnh kết quả sau khi ý tưởng đã được áp dụng.</p>
+                                </div>
+                                <div id="uploadAreaAfter" data-attachment-type="after" class="border-2 border-dashed border-outline-variant rounded-xl p-10 flex flex-col items-center justify-center text-center bg-surface-container-low/30 hover:bg-surface-container-low transition-colors cursor-pointer group">
+                                    <div class="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <span class="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
+                                    </div>
+                                    <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp sau cải tiến</h4>
+                                    <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video tại đây (Tối đa 300MB mỗi file)</p>
+                                    <input id="fileInputAfter" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                                </div>
+                                <div id="fileListAfter" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
+                            </div>
                         </div>
-                        <div id="fileList" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
                     </section>
 
                     <!-- Buttons -->
@@ -431,9 +454,11 @@
         }
 
         function clearSubmitForm() {
-            selectedFiles = [];
-            document.getElementById('fileList').innerHTML = '';
-            document.getElementById('fileInput').value = '';
+            selectedFiles = { before: [], after: [] };
+            document.getElementById('fileListBefore').innerHTML = '';
+            document.getElementById('fileListAfter').innerHTML = '';
+            document.getElementById('fileInputBefore').value = '';
+            document.getElementById('fileInputAfter').value = '';
             document.getElementById('ideaForm').reset();
             document.getElementById('category').value = '';
             document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
@@ -503,11 +528,16 @@
 
                 // Upload attachments (if any)
                 const uploadFailures = [];
-                if (selectedFiles && selectedFiles.length) {
-                    for (const [index, f] of selectedFiles.entries()) {
-                        showLoading(true, `Đang tải file ${index + 1}/${selectedFiles.length}: ${f.name}`);
+                const uploadQueue = [
+                    ...(selectedFiles.before || []).map((file) => ({ file, attachmentType: 'before' })),
+                    ...(selectedFiles.after || []).map((file) => ({ file, attachmentType: 'after' })),
+                ];
+                if (uploadQueue.length) {
+                    for (const [index, item] of uploadQueue.entries()) {
+                        const f = item.file;
+                        showLoading(true, `Đang tải file ${index + 1}/${uploadQueue.length}: ${f.name}`);
                         try {
-                            await api.uploadAttachment(result.id, f);
+                            await api.uploadAttachment(result.id, f, item.attachmentType);
                         } catch (uploadError) {
                             uploadFailures.push(`${f.name}: ${uploadError.message}`);
                         }
@@ -532,32 +562,39 @@
         });
 
         // File upload
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        let selectedFiles = [];
+        const uploadAreaBefore = document.getElementById('uploadAreaBefore');
+        const uploadAreaAfter = document.getElementById('uploadAreaAfter');
+        const fileInputBefore = document.getElementById('fileInputBefore');
+        const fileInputAfter = document.getElementById('fileInputAfter');
+        let selectedFiles = { before: [], after: [] };
 
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('bg-surface-container-low');
-        });
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('bg-surface-container-low');
-        });
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            addFiles(e.dataTransfer.files);
-        });
+        function bindUploadArea(area, input, attachmentType) {
+            area.addEventListener('click', () => input.click());
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('bg-surface-container-low');
+            });
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('bg-surface-container-low');
+            });
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('bg-surface-container-low');
+                addFiles(attachmentType, e.dataTransfer.files);
+            });
+            input.addEventListener('change', (e) => {
+                addFiles(attachmentType, e.target.files);
+                input.value = '';
+            });
+        }
 
-        fileInput.addEventListener('change', (e) => {
-            addFiles(e.target.files);
-            fileInput.value = '';
-        });
+        bindUploadArea(uploadAreaBefore, fileInputBefore, 'before');
+        bindUploadArea(uploadAreaAfter, fileInputAfter, 'after');
 
-        function addFiles(newFiles) {
+        function addFiles(attachmentType, newFiles) {
             const { acceptedFiles, rejectedMessages } = validateIncomingFiles(newFiles);
             if (acceptedFiles.length) {
-                selectedFiles = [...selectedFiles, ...acceptedFiles];
+                selectedFiles[attachmentType] = [...(selectedFiles[attachmentType] || []), ...acceptedFiles];
             }
             renderFilePreviews();
             if (rejectedMessages.length) {
@@ -569,10 +606,13 @@
         }
 
         function renderFilePreviews() {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
+            renderFilePreviewGroup('before', document.getElementById('fileListBefore'));
+            renderFilePreviewGroup('after', document.getElementById('fileListAfter'));
+        }
 
-            selectedFiles.forEach((file, idx) => {
+        function renderFilePreviewGroup(attachmentType, fileList) {
+            fileList.innerHTML = '';
+            (selectedFiles[attachmentType] || []).forEach((file, idx) => {
                 const fileItem = document.createElement('div');
                 fileItem.className = 'relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 group bg-surface-container-low flex items-center justify-center';
 
@@ -581,7 +621,7 @@
                     reader.onload = (e) => {
                         fileItem.innerHTML = `
                             <img src="${e.target.result}" class="w-full h-full object-cover" />
-                            <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile(${idx})">
+                            <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile('${attachmentType}', ${idx})">
                                 <span class="material-symbols-outlined text-sm">close</span>
                             </button>
                         `;
@@ -590,7 +630,7 @@
                 } else {
                     fileItem.innerHTML = `
                         <span class="material-symbols-outlined text-primary text-3xl">videocam</span>
-                        <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile(${idx})">
+                        <button type="button" class="absolute top-1 right-1 bg-white/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeSelectedFile('${attachmentType}', ${idx})">
                             <span class="material-symbols-outlined text-sm">close</span>
                         </button>
                     `;
@@ -600,8 +640,8 @@
             });
         }
 
-        function removeSelectedFile(idx) {
-            selectedFiles.splice(idx, 1);
+        function removeSelectedFile(attachmentType, idx) {
+            selectedFiles[attachmentType].splice(idx, 1);
             renderFilePreviews();
         }
 

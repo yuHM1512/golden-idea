@@ -155,9 +155,49 @@
             <div id="tableMeta" class="text-sm text-text-soft">0 phiếu</div>
           </div>
         </div>
+        <div id="ieApprovalTabs" class="hidden px-6 md:px-8 pb-6">
+          <div class="inline-flex rounded-[1.5rem] bg-[#eef3fb] p-1.5 gap-1.5">
+            <button
+              id="ieIdeaTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setIeApprovalTab('idea_review')"
+            >
+              Phê duyệt ý tưởng mới
+            </button>
+            <button
+              id="ieReplicationTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setIeApprovalTab('replication_review')"
+            >
+              Phê duyệt nhân rộng ý tưởng
+            </button>
+          </div>
+        </div>
+        <div id="bodApprovalTabs" class="hidden px-6 md:px-8 pb-6">
+          <div class="inline-flex rounded-[1.5rem] bg-[#eef3fb] p-1.5 gap-1.5">
+            <button
+              id="bodMoneyTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setBodApprovalTab('register_slip')"
+            >
+              Duyệt phiếu nhận tiền
+            </button>
+            <button
+              id="bodCouncilTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setBodApprovalTab('council_review')"
+            >
+              Duyệt Hội đồng sáng kiến
+            </button>
+          </div>
+        </div>
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="bg-surface-low text-text-soft uppercase tracking-[0.18em] text-[11px] font-bold border-b border-slate-200">
+            <thead id="queueHead" class="bg-surface-low text-text-soft uppercase tracking-[0.18em] text-[11px] font-bold border-b border-slate-200">
               <tr>
                 <th class="text-left px-6 py-4 font-bold text-text-main">Ý tưởng</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị</th>
@@ -166,6 +206,7 @@
                 <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Điểm cấp 1</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Điểm BCT</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Cấp xét duyệt</th>
                 <th class="text-right px-4 py-4 font-bold text-text-main">In phiếu</th>
                 <th class="text-right px-6 py-4 font-bold text-text-main">Hành động</th>
               </tr>
@@ -235,6 +276,43 @@
       </div>
     </div>
 
+    <div id="councilScoreModal" class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm hidden items-center justify-center z-[65] p-4" onclick="closeCouncilScoreModal()">
+      <div class="w-full max-w-xl rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(25,28,29,0.22)] p-6 md:p-8" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Hội đồng sáng kiến</div>
+            <h3 class="mt-2 text-2xl font-black font-display text-primary">Chốt điểm cuối</h3>
+          </div>
+          <button class="w-11 h-11 rounded-full bg-surface-low flex items-center justify-center" onclick="closeCouncilScoreModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div id="councilScoreMeta" class="mt-5 rounded-[1.5rem] bg-[#f6f8ff] px-5 py-4 text-sm text-text-main"></div>
+        <div class="mt-5 space-y-4">
+          <label class="flex items-center gap-3 rounded-2xl bg-surface-low px-4 py-3">
+            <input id="councilFeaturedIdea" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-primary focus:ring-primary" onchange="toggleCouncilFeaturedFields()" />
+            <span class="text-sm font-semibold text-text-main">Ý tưởng nổi trội</span>
+          </label>
+          <label id="councilRewardMultiplierWrap" class="hidden block space-y-2">
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Hệ số nhân thưởng</span>
+            <input id="councilRewardMultiplier" type="number" min="0.1" step="0.1" class="w-full rounded-2xl border-none bg-surface-low" placeholder="Nhập hệ số nhân thưởng" />
+          </label>
+          <label class="block space-y-2">
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Điểm tổng Hội đồng</span>
+            <input id="councilFinalScoreInput" type="number" min="0" step="1" class="w-full rounded-2xl border-none bg-surface-low" placeholder="Nhập điểm chốt cuối" />
+          </label>
+          <label class="block space-y-2">
+            <span class="text-xs uppercase tracking-[0.25em] text-text-soft">Ghi chú</span>
+            <textarea id="councilFinalScoreNote" rows="4" class="w-full rounded-2xl border-none bg-surface-low" placeholder="Ghi chú của Hội đồng nếu cần"></textarea>
+          </label>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeCouncilScoreModal()">Đóng</button>
+          <button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitCouncilFinalScore()">Lưu điểm Hội đồng</button>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/api.js?v=20260428-print-dept"></script>
     <script>
       const CATEGORY_LABELS = {
@@ -273,6 +351,44 @@
         REQUEST_INFO: "Yêu cầu bổ sung",
         FORWARD: "Chuyển tiếp",
       };
+      const IE_RESULT_OPTIONS = [
+        {
+          value: "BCT_REJECTED",
+          label: "BCT Không duyệt",
+          note: "Không đủ điều kiện nhận tiền đăng ký",
+        },
+        {
+          value: "UNIT_REVIEW",
+          label: "XN xét duyệt",
+          note: "Đủ điều kiện nhận tiền đăng ký, XN tự xét thưởng thêm - Ý tưởng không đưa ra Hội đồng",
+        },
+        {
+          value: "BCT_APPROVED",
+          label: "BCT Duyệt",
+          note: "Đủ điều kiện nhận tiền đăng ký - Ý tưởng được đưa ra Hội đồng.",
+        },
+      ];
+      const IE_STANDARDIZATION_OPTIONS = [
+        {
+          value: "APPROVED_NO_STANDARDIZATION",
+          label: "Đạt - Không đưa vào chuẩn hoá",
+        },
+        {
+          value: "APPROVED_STANDARDIZATION",
+          label: "Đạt - Đưa vào chuẩn hoá",
+        },
+      ];
+      const IE_RESULT_TYPE_LABELS = {
+        BCT_REJECTED: "BCT Không duyệt",
+        UNIT_REVIEW: "XN xét duyệt",
+        BCT_APPROVED: "BCT Duyệt",
+        APPROVED_NO_STANDARDIZATION: "Đạt - Không đưa vào chuẩn hoá",
+        APPROVED_STANDARDIZATION: "Đạt - Đưa vào chuẩn hoá",
+      };
+      const BOD_COUNCIL_RESULT_TYPES = [
+        "APPROVED_NO_STANDARDIZATION",
+        "APPROVED_STANDARDIZATION",
+      ];
       const K3_LABELS = {
         TIME_SAVED: "Tiết kiệm thời gian",
         COST_SAVED: "Tiết kiệm chi phí trực tiếp",
@@ -350,6 +466,10 @@
       let queueSearchTerm = "";
       let activeDetail = null;
       let currentScoreStep = 1;
+      let currentIeApprovalTab = "idea_review";
+      let currentBodApprovalTab = "register_slip";
+      let activeCouncilScoreIdea = null;
+      let replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -365,7 +485,9 @@
           return "Bạn đang xác nhận đưa vào chuẩn hoá cho các ý tưởng đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
         }
         if (role === "bod_manager") {
-          return "Bạn đang xử lý các ý tưởng đã qua BCT. Cấp này ra quyết định duyệt cuối hoặc không duyệt.";
+          return currentBodApprovalTab === "register_slip"
+            ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
+            : "Tab Hội đồng sáng kiến sẽ dùng cho bước đánh giá chuyên sâu của lãnh đạo.";
         }
         if (role === "admin") {
           return "Admin đang xem toàn bộ queue. Hệ thống vẫn chỉ cho thao tác đúng bước trạng thái hiện tại.";
@@ -374,6 +496,20 @@
           return `Vai tr\u00f2 n\u00e0y xem c\u00f9ng ph\u1ea1m vi \u0111\u01a1n v\u1ecb ${queue.unit_name || ""}, nh\u01b0ng ch\u1ec9 \u0111\u01b0\u1ee3c xem v\u00e0 in phi\u1ebfu nh\u1eadn ti\u1ec1n cho c\u00e1c \u00fd t\u01b0\u1edfng \u0111\u00e3 duy\u1ec7t \u0111\u1ee7 3 c\u1ea5p.`;
         }
         return "Bạn không có quyền truy cập luồng duyệt.";
+      }
+
+      function currentRoleHint(queue) {
+        if (currentRole === "ie_manager") {
+          return currentIeApprovalTab === "replication_review"
+            ? "Bạn đang duyệt các đề xuất nhân rộng ý tưởng. Mỗi đề xuất được duyệt sẽ được tính 1 điểm cho đơn vị áp dụng."
+            : "Bạn đang xác nhận các ý tưởng mới đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
+        }
+        if (currentRole === "bod_manager") {
+          return currentBodApprovalTab === "register_slip"
+            ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
+            : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu và chốt điểm cuối cùng của lãnh đạo.";
+        }
+        return roleHint(currentRole, queue || {});
       }
 
       function safeText(text) {
@@ -443,9 +579,97 @@
         renderQueue(getDisplayedQueueItems());
       }
 
+      function allowedBodMoneyResultTypes() {
+        return ["UNIT_REVIEW", "APPROVED_NO_STANDARDIZATION", "APPROVED_STANDARDIZATION"];
+      }
+
+      function allowedBodCouncilResultTypes() {
+        return [...BOD_COUNCIL_RESULT_TYPES];
+      }
+
+      function renderIeApprovalTabs() {
+        const wrap = document.getElementById("ieApprovalTabs");
+        const ideaBtn = document.getElementById("ieIdeaTabBtn");
+        const replicationBtn = document.getElementById("ieReplicationTabBtn");
+        if (!wrap || !ideaBtn || !replicationBtn) return;
+        const isIe = currentRole === "ie_manager";
+        wrap.classList.toggle("hidden", !isIe);
+        if (!isIe) return;
+
+        ideaBtn.className = currentIeApprovalTab === "idea_review"
+          ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
+          : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+        replicationBtn.className = currentIeApprovalTab === "replication_review"
+          ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
+          : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+      }
+
+      function renderBodApprovalTabs() {
+        const wrap = document.getElementById("bodApprovalTabs");
+        const moneyBtn = document.getElementById("bodMoneyTabBtn");
+        const councilBtn = document.getElementById("bodCouncilTabBtn");
+        if (!wrap || !moneyBtn || !councilBtn) return;
+        const isBod = currentRole === "bod_manager";
+        wrap.classList.toggle("hidden", !isBod);
+        if (!isBod) return;
+
+        moneyBtn.className = currentBodApprovalTab === "register_slip"
+          ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
+          : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+        councilBtn.className = currentBodApprovalTab === "council_review"
+          ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
+          : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+      }
+
+      function setBodApprovalTab(tab) {
+        currentBodApprovalTab = tab === "council_review" ? "council_review" : "register_slip";
+        renderBodApprovalTabs();
+        document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
+        renderKpis(getActiveMetrics());
+        renderQueue(getDisplayedQueueItems());
+      }
+
+      function setIeApprovalTab(tab) {
+        currentIeApprovalTab = tab === "replication_review" ? "replication_review" : "idea_review";
+        renderIeApprovalTabs();
+        renderPendingFilterButton();
+        document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
+        renderKpis(getActiveMetrics());
+        renderQueue(getDisplayedQueueItems());
+      }
+
+      function getDisplayedReplicationItems() {
+        const items = Array.isArray(replicationQueueData?.items) ? replicationQueueData.items : [];
+        const q = normalizeSearchText(queueSearchTerm);
+        if (!q) return items;
+        return items.filter((item) => {
+          const fields = [
+            item?.unit_name,
+            item?.unit_department,
+            item?.idea_title,
+            item?.source_unit_name,
+            item?.description,
+            item?.approve ? "da duyet" : "cho duyet",
+          ];
+          return normalizeSearchText(fields.filter(Boolean).join(" ")).includes(q);
+        });
+      }
+
       function getDisplayedQueueItems() {
+        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+          return getDisplayedReplicationItems();
+        }
         const items = Array.isArray(queueData?.items) ? queueData.items : [];
-        const base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
+        let base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
+        if (currentRole === "bod_manager") {
+          if (currentBodApprovalTab === "register_slip") {
+            const allowed = new Set(allowedBodMoneyResultTypes());
+            base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          } else {
+            const allowed = new Set(allowedBodCouncilResultTypes());
+            base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          }
+        }
         const q = normalizeSearchText(queueSearchTerm);
         if (!q) return base;
 
@@ -457,6 +681,7 @@
             item?.employee_code,
             CATEGORY_LABELS[item?.category] || item?.category,
             STATUS_LABELS[item?.status] || item?.status,
+            IE_RESULT_TYPE_LABELS[item?.ie_result_type] || item?.ie_result_type,
             item?.description,
           ];
           const hay = normalizeSearchText(fields.filter(Boolean).join(" "));
@@ -464,10 +689,17 @@
         });
       }
 
+      function getActiveMetrics() {
+        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+          return replicationQueueData.metrics || {};
+        }
+        return queueData.metrics || {};
+      }
+
       function renderPendingFilterButton() {
         const button = document.getElementById("pendingReviewToggle");
         if (!button) return;
-        if (currentRole === "unit_represent") {
+        if (currentRole === "unit_represent" || (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review")) {
           button.classList.add("hidden");
           return;
         }
@@ -492,7 +724,10 @@
 
       function canPrintPaymentSlip(item) {
         const printableRoles = ["unit_represent", "dept_manager", "sub_dept_manager"];
-        return printableRoles.includes(currentRole) && ["APPROVED", "REWARDED"].includes(item?.status || "");
+        return printableRoles.includes(currentRole)
+          && Boolean(item?.eligible_register_reward)
+          && Boolean(item?.bod_register_approved)
+          && ["LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(item?.status || "");
       }
 
       let printPreviewUrl = "";
@@ -537,14 +772,288 @@
         }
       }
 
+      function renderQueueHead() {
+        const head = document.getElementById("queueHead");
+        if (!head) return;
+        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+          head.innerHTML = `
+            <tr>
+              <th class="text-left px-6 py-4 font-bold text-text-main">Đơn vị áp dụng</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Bộ phận</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Tên ý tưởng</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị tạo ý tưởng</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Mô tả</th>
+              <th class="text-center px-6 py-4 font-bold text-text-main">Phê duyệt</th>
+            </tr>
+          `;
+          return;
+        }
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          head.innerHTML = `
+            <tr>
+              <th class="text-left px-6 py-4 font-bold text-text-main">Tên ý tưởng</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Người đăng ký</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Mã nhân viên</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
+              <th class="text-center px-6 py-4 font-bold text-text-main">Phê duyệt</th>
+            </tr>
+          `;
+          return;
+        }
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "council_review") {
+          head.innerHTML = `
+            <tr>
+              <th class="text-left px-6 py-4 font-bold text-text-main">Tên ý tưởng</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Người đăng ký</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Mã nhân viên</th>
+              <th class="text-left px-4 py-4 font-bold text-text-main">Cấp xét duyệt</th>
+              <th class="text-right px-4 py-4 font-bold text-text-main">Giá trị làm lợi</th>
+              <th class="text-right px-4 py-4 font-bold text-text-main">Điểm đơn vị</th>
+              <th class="text-right px-4 py-4 font-bold text-text-main">Điểm ban cải tiến</th>
+              <th class="text-right px-4 py-4 font-bold text-text-main">Điểm Hội đồng</th>
+              <th class="text-right px-6 py-4 font-bold text-text-main">Đánh giá</th>
+            </tr>
+          `;
+          return;
+        }
+
+        head.innerHTML = `
+          <tr>
+            <th class="text-left px-6 py-4 font-bold text-text-main">Ý tưởng</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Đơn vị</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Người gửi</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Lĩnh vực</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Điểm cấp 1</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Điểm BCT</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Cấp xét duyệt</th>
+            <th class="text-right px-4 py-4 font-bold text-text-main">In phiếu</th>
+            <th class="text-right px-6 py-4 font-bold text-text-main">Hành động</th>
+          </tr>
+        `;
+      }
+
+      async function approveBodRegisterSlip(ideaId) {
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        showLoading(true);
+        try {
+          await api.approveBodRegisterSlip(ideaId, employeeCode);
+          await loadQueue();
+          showNotification("Đã duyệt phiếu nhận tiền", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function approveReplication(replicationId) {
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        showLoading(true);
+        try {
+          await api.approveReplication(replicationId, employeeCode);
+          await loadQueue();
+          showNotification("Đã duyệt nhân rộng ý tưởng", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function openCouncilScoreModalById(ideaId) {
+        const source = Array.isArray(queueData?.items) ? queueData.items : [];
+        const idea = source.find((item) => Number(item?.id) === Number(ideaId));
+        if (!idea) {
+          showNotification("Không tìm thấy ý tưởng để chốt điểm", "error");
+          return;
+        }
+        activeCouncilScoreIdea = idea;
+        const meta = document.getElementById("councilScoreMeta");
+        const scoreInput = document.getElementById("councilFinalScoreInput");
+        const noteInput = document.getElementById("councilFinalScoreNote");
+        if (meta) {
+          meta.innerHTML = `
+            <div class="font-semibold text-text-main">${safeText(idea.title || "Ý tưởng")}</div>
+            <div class="mt-2 text-text-soft">${safeText(idea.unit_name || "—")} • ${safeText(idea.full_name || "Ẩn danh")} • ${safeText(IE_RESULT_TYPE_LABELS[idea.ie_result_type] || idea.ie_result_type || "—")}</div>
+          `;
+        }
+        if (scoreInput) scoreInput.value = String(idea.council_final_score ?? "");
+        const featuredInput = document.getElementById("councilFeaturedIdea");
+        const multiplierInput = document.getElementById("councilRewardMultiplier");
+        if (featuredInput) featuredInput.checked = Boolean(idea.council_is_featured);
+        if (multiplierInput) multiplierInput.value = idea.council_reward_multiplier ?? "";
+        toggleCouncilFeaturedFields();
+        if (noteInput) noteInput.value = "";
+        const modal = document.getElementById("councilScoreModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeCouncilScoreModal() {
+        activeCouncilScoreIdea = null;
+        const modal = document.getElementById("councilScoreModal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function toggleCouncilFeaturedFields() {
+        const checked = Boolean(document.getElementById("councilFeaturedIdea")?.checked);
+        const wrap = document.getElementById("councilRewardMultiplierWrap");
+        if (!wrap) return;
+        wrap.classList.toggle("hidden", !checked);
+      }
+
+      async function submitCouncilFinalScore() {
+        if (!activeCouncilScoreIdea) return;
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const totalScore = Number(document.getElementById("councilFinalScoreInput")?.value || 0);
+        const isFeatured = Boolean(document.getElementById("councilFeaturedIdea")?.checked);
+        const rewardMultiplierRaw = document.getElementById("councilRewardMultiplier")?.value;
+        const rewardMultiplier = rewardMultiplierRaw === "" || rewardMultiplierRaw === undefined ? null : Number(rewardMultiplierRaw);
+        const comment = document.getElementById("councilFinalScoreNote")?.value.trim() || null;
+        if (!Number.isFinite(totalScore) || totalScore < 0) {
+          showNotification("Nhập điểm Hội đồng hợp lệ", "error");
+          return;
+        }
+        if (isFeatured && (!Number.isFinite(rewardMultiplier) || rewardMultiplier <= 0)) {
+          showNotification("Ý tưởng nổi trội phải nhập hệ số nhân thưởng hợp lệ", "error");
+          return;
+        }
+
+        showLoading(true);
+        try {
+          await api.submitCouncilFinalScore(activeCouncilScoreIdea.id, {
+            employee_code: employeeCode,
+            total_score: Math.trunc(totalScore),
+            is_featured: isFeatured,
+            reward_multiplier: isFeatured ? rewardMultiplier : null,
+            comment,
+          });
+          closeCouncilScoreModal();
+          await loadQueue();
+          showNotification("Đã lưu điểm Hội đồng", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
       function renderQueue(items) {
         const tbody = document.getElementById("queueBody");
+        renderQueueHead();
         tbody.innerHTML = "";
         document.getElementById("tableMeta").textContent = `${items.length} phiếu`;
+        const emptyColspan = currentRole === "ie_manager" && currentIeApprovalTab === "replication_review"
+          ? 6
+          : currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
+            ? 6
+            : (currentRole === "bod_manager" && currentBodApprovalTab === "council_review" ? 10 : 10);
         if (!items.length) {
           const hasSearch = Boolean(normalizeSearchText(queueSearchTerm));
-          const msg = hasSearch ? "Kh\u00f4ng c\u00f3 k\u1ebft qu\u1ea3 ph\u00f9 h\u1ee3p." : "Kh\u00f4ng c\u00f3 phi\u1ebfu trong ph\u1ea1m vi hi\u1ec7n t\u1ea1i.";
-          tbody.innerHTML = `<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">${msg}</td></tr>`;
+          const msg = hasSearch ? "Không có kết quả phù hợp." : "Không có phiếu trong phạm vi hiện tại.";
+          tbody.innerHTML = `<tr><td colspan="${emptyColspan}" class="px-6 py-10 text-center text-text-soft">${msg}</td></tr>`;
+          return;
+        }
+
+        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+          items.forEach((item) => {
+            const tr = document.createElement("tr");
+            const approved = Boolean(item.approve);
+            tr.className = "hover:bg-[#f8fbff] transition-colors";
+            tr.innerHTML = `
+              <td class="px-6 py-5 align-top text-text-main font-semibold">${safeText(item.unit_name || "—")}</td>
+              <td class="px-4 py-5 align-top text-text-soft">${safeText(item.unit_department || "—")}</td>
+              <td class="px-4 py-5 align-top">
+                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.idea_title || "—")}</div>
+                <div class="text-xs text-text-soft mt-2">${formatDate(item.apply_date)}</div>
+              </td>
+              <td class="px-4 py-5 align-top text-text-main">${safeText(item.source_unit_name || "—")}</td>
+              <td class="px-4 py-5 align-top text-text-soft"><div class="line-clamp-3">${safeText(item.description || "")}</div></td>
+              <td class="px-6 py-5 align-top text-center">
+                ${
+                  !approved && item.can_review
+                    ? `<button class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt nhân rộng ý tưởng" onclick="approveReplication(${item.id})"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
+                    : approved
+                      ? '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8bd3a8] bg-[#eef9f2] text-[#0f7a43]"><span class="material-symbols-outlined text-[22px]">check_box</span></span>'
+                      : '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-300"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></span>'
+                }
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+          return;
+        }
+
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          items.forEach((item) => {
+            const tr = document.createElement("tr");
+            const approved = Boolean(item.bod_register_approved);
+            tr.className = "cursor-pointer hover:bg-[#f8fbff] transition-colors";
+            tr.onclick = () => openReviewModal(item.id);
+            tr.innerHTML = `
+              <td class="px-6 py-5 align-top">
+                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title)}</div>
+                <div class="text-xs text-text-soft mt-2">${formatDate(item.submitted_at)}</div>
+              </td>
+              <td class="px-4 py-5 align-top text-text-main">${safeText(item.unit_name || "—")}</td>
+              <td class="px-4 py-5 align-top text-text-main">${safeText(item.full_name || "Ẩn danh")}</td>
+              <td class="px-4 py-5 align-top text-text-soft font-semibold">${safeText(item.employee_code || "—")}</td>
+              <td class="px-4 py-5 align-top">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${safeText(IE_RESULT_TYPE_LABELS[item.ie_result_type] || item.ie_result_type || "—")}</span>
+              </td>
+              <td class="px-6 py-5 align-top text-center">
+                ${
+                  !approved && item.can_review
+                    ? `<button class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt phiếu nhận tiền" onclick="event.stopPropagation(); approveBodRegisterSlip(${item.id})"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
+                    : approved
+                      ? '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8bd3a8] bg-[#eef9f2] text-[#0f7a43]"><span class="material-symbols-outlined text-[22px]">check_box</span></span>'
+                      : '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-300"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></span>'
+                }
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+          return;
+        }
+
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "council_review") {
+          items.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.className = "cursor-pointer hover:bg-[#f8fbff] transition-colors";
+            tr.onclick = () => openReviewModal(item.id);
+            tr.innerHTML = `
+              <td class="px-6 py-5 align-top">
+                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title)}</div>
+                <div class="text-xs text-text-soft mt-2">${formatDate(item.submitted_at)}</div>
+              </td>
+              <td class="px-4 py-5 align-top text-text-main">${safeText(item.unit_name || "—")}</td>
+              <td class="px-4 py-5 align-top text-text-main">${safeText(item.full_name || "Ẩn danh")}</td>
+              <td class="px-4 py-5 align-top text-text-soft font-semibold">${safeText(item.employee_code || "—")}</td>
+              <td class="px-4 py-5 align-top">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${safeText(IE_RESULT_TYPE_LABELS[item.ie_result_type] || item.ie_result_type || "—")}</span>
+              </td>
+              <td class="px-4 py-5 align-top text-right">
+                ${item.benefit_value !== null && item.benefit_value !== undefined
+                  ? `<span class="inline-flex items-center px-3 py-1 rounded-full bg-[#eef9f2] text-[#0f7a43] font-semibold">${Number(item.benefit_value || 0).toLocaleString("vi-VN")}</span>`
+                  : '<span class="text-text-soft">—</span>'}
+              </td>
+              <td class="px-4 py-5 align-top text-right">${scoreChip(item.dept_score)}</td>
+              <td class="px-4 py-5 align-top text-right">${scoreChip(item.ie_score)}</td>
+              <td class="px-4 py-5 align-top text-right">
+                ${item.council_final_score !== null && item.council_final_score !== undefined
+                  ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff3df] text-[#a55b00] font-semibold">${item.council_is_featured ? '<span class="material-symbols-outlined text-[16px]">stars</span>' : ''}${safeText(item.council_final_score)}</span>`
+                  : '<span class="text-text-soft">—</span>'}
+              </td>
+              <td class="px-6 py-5 align-top text-right">
+                <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openCouncilScoreModalById(${item.id})">Đánh giá</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
           return;
         }
 
@@ -574,6 +1083,9 @@
             </td>
             <td class="px-4 py-5 align-top">${scoreChip(item.dept_score)}</td>
             <td class="px-4 py-5 align-top">${scoreChip(item.ie_score)}</td>
+            <td class="px-4 py-5 align-top ${primaryTextClass}">
+              ${safeText(IE_RESULT_TYPE_LABELS[item.ie_result_type] || "—")}
+            </td>
             <td class="px-4 py-5 align-top text-right">
               ${
                 canPrintPaymentSlip(item)
@@ -701,8 +1213,25 @@
         return scores.find((score) => score.scorer_role === "ie_manager") || null;
       }
 
+      function ieDecisionValue() {
+        return document.getElementById("ieResultDecision")?.value || "";
+      }
+
+      function ieRequiresScore() {
+        return currentRole !== "ie_manager" || ieDecisionValue() === "BCT_APPROVED";
+      }
+
+      function ieMeasuredBenefitEnabled() {
+        if (currentRole !== "ie_manager" || ieDecisionValue() !== "BCT_APPROVED") return false;
+        const k3Type = document.getElementById("scoreK3Type")?.value || "";
+        return ["TIME_SAVED", "COST_SAVED"].includes(k3Type);
+      }
+
       function canEvaluateActualBenefit(detail, scores = []) {
-        const statusOk = ["LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(detail.status);
+        if (currentRole === "ie_manager" && detail?.can_review) {
+          return ieMeasuredBenefitEnabled();
+        }
+        const statusOk = ["DEPT_APPROVED", "COUNCIL_REVIEW", "LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(detail.status);
         const score = latestIeScore(scores);
         return ["ie_manager", "admin"].includes(currentRole)
           && statusOk
@@ -714,11 +1243,15 @@
         return Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 0 });
       }
 
-      function renderActualBenefitSection(detail, scores = []) {
-        if (!canEvaluateActualBenefit(detail, scores)) return "";
+      function renderActualBenefitSection(detail, scores = [], options = {}) {
+        const shouldRender = (currentRole === "ie_manager" && detail?.can_review) || canEvaluateActualBenefit(detail, scores);
+        if (!shouldRender) return "";
         const item = detail.actual_benefit || {};
+        const sectionClassName = options.embedded
+          ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
+          : "rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5";
         return `
-          <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5">
+          <section id="actualBenefitSection" class="${sectionClassName} ${(currentRole === "ie_manager" && detail?.can_review) ? "hidden" : ""}">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Đánh giá sau áp dụng</div>
@@ -763,26 +1296,39 @@
         `;
       }
 
-      function renderAttachments(attachments = []) {
+      function normalizeAttachmentType(value) {
+        return String(value || "after").trim().toLowerCase() === "before" ? "before" : "after";
+      }
+
+      function groupAttachmentsByType(attachments = []) {
+        return attachments.reduce(
+          (acc, file) => {
+            acc[normalizeAttachmentType(file?.attachment_type)].push(file);
+            return acc;
+          },
+          { before: [], after: [] }
+        );
+      }
+
+      function renderAttachmentCardGrid(attachments = []) {
         if (!attachments.length) {
-          return '<div class="mt-5 rounded-2xl bg-white/70 border border-slate-100 p-4 text-sm text-text-soft">Chưa có file minh hoạ.</div>';
+          return '<div class="rounded-2xl bg-white/70 border border-dashed border-slate-200 p-4 text-sm text-text-soft">Chưa có file cho nhóm này.</div>';
         }
         return `
-          <div class="mt-6" id="approvalAttachmentSection">
-            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Minh hoạ người gửi</div>
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
               ${attachments
-                .map((file) => {
+                .map((file, index) => {
                   const type = String(file.file_type || "").toLowerCase();
                   const name = safeText(file.original_filename || "File minh hoạ");
                   const rawUrl = file.file_url || file.external_url || "#";
                   const url = safeAttr(rawUrl);
                   const dataName = safeAttr(file.original_filename || "File minh hoạ");
+                  const attachmentType = normalizeAttachmentType(file.attachment_type);
                   const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
                   const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(type);
                   if (isVideo) {
                     return `
-                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100">
+                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100" data-attachment-card="${attachmentType}-${index}">
                         <div class="relative">
                           <video class="w-full max-h-80 bg-slate-950" controls preload="metadata" src="${url}"></video>
                           <button
@@ -816,7 +1362,7 @@
                   }
                   if (isImage) {
                     return `
-                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100">
+                      <figure class="rounded-2xl overflow-hidden bg-white border border-slate-100" data-attachment-card="${attachmentType}-${index}">
                         <button
                           type="button"
                           class="block w-full bg-slate-50"
@@ -844,10 +1390,41 @@
                       </figure>
                     `;
                   }
-                  return `<a class="rounded-2xl bg-white border border-slate-100 px-4 py-4 text-sm font-semibold text-primary hover:bg-[#f6f8ff]" href="${url}" target="_blank" rel="noopener">${name}</a>`;
+                  return `<a class="rounded-2xl bg-white border border-slate-100 px-4 py-4 text-sm font-semibold text-primary hover:bg-[#f6f8ff]" data-attachment-card="${attachmentType}-${index}" href="${url}" target="_blank" rel="noopener">${name}</a>`;
                 })
                 .join("")}
             </div>
+        `;
+      }
+
+      function renderAttachments(attachments = []) {
+        if (!attachments.length) {
+          return '<div class="mt-5 rounded-2xl bg-white/70 border border-slate-100 p-4 text-sm text-text-soft">Chưa có file minh hoạ.</div>';
+        }
+        const groups = groupAttachmentsByType(attachments);
+        return `
+          <div class="mt-6 space-y-5" id="approvalAttachmentSection">
+            <div>
+              <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Minh hoạ người gửi</div>
+            </div>
+            <section class="rounded-[1.5rem] border border-slate-100 bg-white/80 p-5" data-attachment-group="before">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Trước cải tiến</div>
+                  <div class="mt-1 text-sm font-semibold text-text-main">${groups.before.length} file</div>
+                </div>
+              </div>
+              ${renderAttachmentCardGrid(groups.before)}
+            </section>
+            <section class="rounded-[1.5rem] border border-slate-100 bg-white/80 p-5" data-attachment-group="after">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Sau cải tiến</div>
+                  <div class="mt-1 text-sm font-semibold text-text-main">${groups.after.length} file</div>
+                </div>
+              </div>
+              ${renderAttachmentCardGrid(groups.after)}
+            </section>
           </div>
         `;
       }
@@ -858,14 +1435,15 @@
           return;
         }
 
-        const cards = section.querySelectorAll(".grid > *");
-        attachments.forEach((file, index) => {
+        const grouped = groupAttachmentsByType(attachments);
+        ["before", "after"].forEach((attachmentType) => {
+          grouped[attachmentType].forEach((file, index) => {
           const openUrl = String(file?.external_url || file?.file_url || "").trim();
           if (!openUrl) {
             return;
           }
 
-          const card = cards[index];
+          const card = section.querySelector(`[data-attachment-card="${attachmentType}-${index}"]`);
           if (!card) {
             return;
           }
@@ -900,6 +1478,7 @@
             card.replaceWith(wrapper);
             return;
           }
+          });
         });
       }
 
@@ -985,19 +1564,46 @@
         `;
       }
 
-      function renderScoreForm() {
+      function renderScoreForm(detail, scores = []) {
         if (!activeDetail?.can_review || !["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return "";
         const k1Options = getCriteriaGroup("K1");
         const k2EasyOptions = getCriteriaGroup("K2_EASY");
         const k2HardOptions = getCriteriaGroup("K2_HARD");
         const k3UnmeasurableOptions = getCriteriaGroup("K3_UNMEASURABLE");
+        const isIeManager = currentRole === "ie_manager";
 
         return `
           <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-6">
             <div>
               <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Chấm điểm</div>
-              <div class="mt-2 text-sm text-text-soft">Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí.</div>
+              <div class="mt-2 text-sm text-text-soft">${isIeManager ? "IE chọn kết luận xét duyệt trước. Chỉ khi chọn BCT Duyệt mới cần chấm điểm và nhập giá trị làm lợi." : "Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí."}</div>
             </div>
+            ${isIeManager ? `
+              <div class="rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-4">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Kết luận cấp 2</div>
+                    <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">BCT / XN xét duyệt</div>
+                  </div>
+                  <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bắt buộc chọn</div>
+                </div>
+                <div class="space-y-3">
+                  <label class="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-text-soft">
+                    <span>Kết luận BCT</span>
+                    <span
+                      class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#eef4ff] text-[10px] font-black text-primary cursor-help"
+                      title="BCT Không duyệt: Không đủ điều kiện nhận tiền đăng ký. XN xét duyệt: Đủ điều kiện nhận tiền đăng ký, XN tự xét thưởng thêm và vẫn chuyển tiếp cho lãnh đạo. BCT Duyệt: Đủ điều kiện nhận tiền đăng ký, được đưa lên Hội đồng và cần chấm điểm."
+                    >i</span>
+                  </label>
+                  <select id="ieResultDecision" class="w-full rounded-2xl border-none bg-surface-low" onchange="onIeDecisionChange()">
+                    <option value="">Chọn kết luận cấp 2</option>
+                    ${IE_RESULT_OPTIONS.map((item) => `<option value="${item.value}" title="${safeAttr(item.note)}">${safeText(item.label)}</option>`).join("")}
+                  </select>
+                  <div id="ieResultDecisionMeta" class="rounded-2xl border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f7fbff_100%)] px-5 py-4 text-[15px] font-semibold leading-7 text-[#0b3d91] shadow-[0px_10px_24px_rgba(24,71,169,0.08)]">Chọn 1 kết luận để tiếp tục.</div>
+                </div>
+              </div>
+            ` : ""}
+            <div id="scoreWizardWrap" class="${isIeManager ? "hidden" : ""} space-y-6">
             <div class="grid grid-cols-3 gap-3">
               <button type="button" id="scoreStepTab1" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(1)">Bước 1 • K1</button>
               <button type="button" id="scoreStepTab2" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(2)">Bước 2 • K2</button>
@@ -1071,10 +1677,22 @@
                 <div id="scoreK3Meta" class="mt-3 text-sm text-text-soft leading-7"></div>
               </div>
               </div>
-              <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between gap-3">
                 <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="goToScoreStep(2)">Quay lại K2</button>
                 <div class="text-sm text-text-soft">Hoàn tất K3 rồi dùng nút "Duyệt phiếu" phía dưới.</div>
               </div>
+            </div>
+            ${isIeManager && detail?.can_review ? renderActualBenefitSection(detail, scores, { embedded: true }) : ""}
+            ${isIeManager ? `
+              <div id="ieStandardizationWrap" class="hidden space-y-3 rounded-[1.5rem] border border-slate-100 bg-[#fbfcfd] p-6">
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Loại ý tưởng đưa lên Hội đồng</label>
+                <select id="ieStandardizationDecision" class="w-full rounded-2xl border-none bg-surface-low">
+                  <option value="">Chọn loại chuyển sang Hội đồng</option>
+                  ${IE_STANDARDIZATION_OPTIONS.map((item) => `<option value="${item.value}">${safeText(item.label)}</option>`).join("")}
+                </select>
+                <div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Cả 2 loại đều chuyển lên Hội đồng. "Đưa vào chuẩn hoá" là dấu hiệu để Hội đồng ưu tiên đánh giá cao hơn.</div>
+              </div>
+            ` : ""}
             </div>
           </section>
         `;
@@ -1083,7 +1701,8 @@
       function renderModal(detail) {
         const body = document.getElementById("modalBody");
         const actions = document.getElementById("modalActions");
-        const canApprove = detail.can_review && ["dept_manager", "sub_dept_manager", "ie_manager", "bod_manager", "admin"].includes(currentRole);
+        const canApprove = detail.can_review
+          && ["dept_manager", "sub_dept_manager", "ie_manager", "admin"].includes(currentRole);
         const isIeManager = currentRole === "ie_manager";
         const reviews = Array.isArray(detail.reviews) ? detail.reviews : [];
         const scores = Array.isArray(detail.scores) ? detail.scores : [];
@@ -1099,6 +1718,7 @@
                 <div><span class="text-text-soft">Đơn vị:</span> <span class="font-semibold">${safeText(detail.unit_name || "—")}</span></div>
                 <div><span class="text-text-soft">Lĩnh vực:</span> <span class="font-semibold">${safeText(CATEGORY_LABELS[detail.category] || detail.category)}</span></div>
                 <div><span class="text-text-soft">Trạng thái:</span> <span class="font-semibold">${safeText(detail.status === 'REWARDED' && detail.employee_received ? 'Đã nhận tiền' : (STATUS_LABELS[detail.status] || detail.status))}</span></div>
+                <div><span class="text-text-soft">Cấp xét duyệt:</span> <span class="font-semibold">${safeText(IE_RESULT_TYPE_LABELS[detail.ie_result_type] || "—")}</span></div>
                 <div><span class="text-text-soft">Minh hoạ:</span> <span class="font-semibold">${detail.attachments_count} file</span></div>
               </div>
               <div class="mt-5">
@@ -1123,6 +1743,7 @@
                             <div class="text-xs text-text-soft">${formatDate(review.reviewed_at)}</div>
                           </div>
                           <div class="mt-1 text-sm text-text-soft">${safeText(REVIEW_LEVEL_LABELS[review.level] || review.level)} • ${safeText(REVIEW_ACTION_LABELS[review.action] || review.action)}</div>
+                          ${review.council_result_type ? `<div class="mt-2 inline-flex items-center rounded-full bg-[#eef4ff] px-3 py-1 text-xs font-semibold text-primary">${safeText(IE_RESULT_TYPE_LABELS[review.council_result_type] || review.council_result_type)}</div>` : ""}
                           ${review.comment ? `<div class="mt-2 text-sm">${safeText(review.comment)}</div>` : ""}
                           ${review.recommend_unit_reward ? '<div class="mt-2 inline-flex items-center rounded-full bg-[#fff5dc] px-3 py-1 text-xs font-semibold text-[#9a6400]">Đề nghị đơn vị tự khen thưởng</div>' : ""}
                         </div>
@@ -1136,20 +1757,14 @@
             </div>
           </section>
           ${renderScoreResultTable(scores)}
-          ${renderActualBenefitSection(detail, scores)}
-          ${renderScoreForm()}
+          ${!(isIeManager && detail?.can_review) ? renderActualBenefitSection(detail, scores) : ""}
+          ${renderScoreForm(detail, scores)}
           ${
             canApprove
               ? `
             <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
-              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">${isIeManager ? "Ghi chú / lý do không đạt chuẩn hoá" : "Ghi chú / lý do không duyệt"}</label>
-              <textarea id="reviewComment" class="mt-3 w-full rounded-2xl border-none bg-surface-low" rows="4" placeholder="${isIeManager ? "Nhập ghi chú xác nhận hoặc lý do không đạt" : "Nhập nhận xét, minh chứng hoặc lý do không duyệt"}"></textarea>
-              ${isIeManager ? `
-                <label class="mt-4 inline-flex items-start gap-3 rounded-2xl bg-[#fff8e9] px-4 py-3 cursor-pointer">
-                  <input id="recommendUnitReward" type="checkbox" class="mt-1 rounded border-slate-300 text-primary focus:ring-primary" />
-                  <span class="text-sm text-text-main"><span class="font-semibold">Đề nghị đơn vị tự khen thưởng</span><br /><span class="text-text-soft">Chỉ áp dụng khi chọn Không đạt.</span></span>
-                </label>
-              ` : ""}
+              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">${isIeManager ? "Ghi chú cấp 2" : "Ghi chú / lý do không duyệt"}</label>
+              <textarea id="reviewComment" class="mt-3 w-full rounded-2xl border-none bg-surface-low" rows="4" placeholder="${isIeManager ? "Nhập ghi chú xác nhận, lý do BCT không duyệt hoặc ghi chú chuyển Hội đồng" : "Nhập nhận xét, minh chứng hoặc lý do không duyệt"}"></textarea>
             </section>
           `
               : ""
@@ -1159,8 +1774,8 @@
 
         actions.innerHTML = `
           <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>
-          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision('REJECT')">${isIeManager ? "Không đạt" : "Không duyệt"}</button>` : ""}
-          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Đạt • Đưa vào chuẩn hoá" : "Duyệt phiếu"}</button>` : ""}
+          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Xác nhận cấp 2" : "Duyệt phiếu"}</button>` : ""}
+          ${canApprove && !isIeManager ? `<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision('REJECT')">Không duyệt</button>` : ""}
         `;
       }
 
@@ -1250,13 +1865,37 @@
         try {
           const saved = await api.saveActualBenefit(activeDetail.id, payload);
           activeDetail.actual_benefit = saved;
-          renderModal(activeDetail);
           updateActualBenefitPreview();
           showNotification("Đã lưu giá trị làm lợi thực tế", "success");
         } catch (error) {
           showNotification(error.message, "error");
         } finally {
           showLoading(false);
+        }
+      }
+
+      function onIeDecisionChange() {
+        const decision = document.getElementById("ieResultDecision");
+        const standardWrap = document.getElementById("ieStandardizationWrap");
+        const meta = document.getElementById("ieResultDecisionMeta");
+        const scoreWrap = document.getElementById("scoreWizardWrap");
+        const actualBenefitSection = document.getElementById("actualBenefitSection");
+        const selected = IE_RESULT_OPTIONS.find((item) => item.value === (decision?.value || ""));
+        if (meta) {
+          meta.textContent = selected ? selected.note : "Chọn 1 kết luận để tiếp tục.";
+          meta.className = selected
+            ? "rounded-2xl border border-[#7fb0ff] bg-[linear-gradient(135deg,#e8f2ff_0%,#f5faff_100%)] px-5 py-4 text-[15px] font-bold leading-7 text-[#0a3b8f] shadow-[0px_14px_30px_rgba(24,71,169,0.12)]"
+            : "rounded-2xl border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f7fbff_100%)] px-5 py-4 text-[15px] font-semibold leading-7 text-[#0b3d91] shadow-[0px_10px_24px_rgba(24,71,169,0.08)]";
+        }
+        const showScore = (decision?.value || "") === "BCT_APPROVED";
+        if (standardWrap) {
+          standardWrap.classList.toggle("hidden", !showScore);
+        }
+        if (scoreWrap) {
+          scoreWrap.classList.toggle("hidden", !showScore);
+        }
+        if (actualBenefitSection) {
+          actualBenefitSection.classList.toggle("hidden", !showScore || !ieMeasuredBenefitEnabled());
         }
       }
 
@@ -1323,6 +1962,10 @@
           measured.classList.add("hidden");
           unmeasurable.classList.remove("hidden");
           meta.textContent = "Mỗi tiêu chí tick được cộng 10 điểm.";
+          const actualBenefitSection = document.getElementById("actualBenefitSection");
+          if (actualBenefitSection && currentRole === "ie_manager" && activeDetail?.can_review) {
+            actualBenefitSection.classList.add("hidden");
+          }
           return;
         }
 
@@ -1330,6 +1973,10 @@
         measured.classList.remove("hidden");
         option.innerHTML = items.map((item) => `<option value="${item.code}">${safeText(item.code)} • ${safeText(item.label)} • ${safeText(item.score)}đ</option>`).join("");
         meta.textContent = items.map((item) => `${item.code}: ${item.label} = ${item.score}đ`).join(" | ");
+        const actualBenefitSection = document.getElementById("actualBenefitSection");
+        if (actualBenefitSection && currentRole === "ie_manager" && activeDetail?.can_review) {
+          actualBenefitSection.classList.toggle("hidden", !ieMeasuredBenefitEnabled());
+        }
       }
 
       async function openReviewModal(ideaId) {
@@ -1341,6 +1988,7 @@
           renderModal(activeDetail);
           openModal();
           onK1Change();
+          onIeDecisionChange();
           onK2TypeChange();
           onK3TypeChange();
           applyScoreWizardState();
@@ -1374,17 +2022,30 @@
         if (!activeDetail) return;
         const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
         const comment = document.getElementById("reviewComment")?.value.trim() || "";
-        const recommendUnitReward = currentRole === "ie_manager" && action === "REJECT"
-          ? Boolean(document.getElementById("recommendUnitReward")?.checked)
-          : false;
+        const ieDecision = ieDecisionValue();
         const payload = {
           employee_code: employeeCode,
           idea_id: activeDetail.id,
           action,
           comment: comment || null,
-          recommend_unit_reward: recommendUnitReward,
+          recommend_unit_reward: false,
         };
-        if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) {
+        if (currentRole === "ie_manager") {
+          if (!ieDecision) {
+            showNotification("IE phải chọn kết luận xét duyệt cấp 2", "error");
+            return;
+          }
+          payload.ie_result_type = ieDecision;
+          if (ieDecision === "BCT_APPROVED") {
+            const standardDecision = document.getElementById("ieStandardizationDecision")?.value || "";
+            if (!standardDecision) {
+              showNotification("Chọn loại ý tưởng trước khi chuyển sang Hội đồng", "error");
+              return;
+            }
+            payload.ie_result_type = standardDecision;
+          }
+        }
+        if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole) && ieRequiresScore()) {
           payload.score = buildScorePayload();
         }
 
@@ -1394,7 +2055,7 @@
           closeModal();
           await loadQueue();
           if (currentRole === "ie_manager") {
-            showNotification(action === "APPROVE" ? "Đã xác nhận đạt và chuyển lãnh đạo" : "Đã cập nhật kết quả không đạt", "success");
+            showNotification("Đã cập nhật kết quả xét duyệt cấp 2", "success");
           } else {
             showNotification(action === "APPROVE" ? "Đã duyệt phiếu" : "Đã cập nhật không duyệt", "success");
           }
@@ -1410,11 +2071,23 @@
         const statusValue = document.getElementById("statusFilter").value;
         showLoading(true);
         try {
-          queueData = await api.getApprovalQueue(code, statusValue);
-          renderKpis(queueData.metrics || {});
+          if (currentRole === "ie_manager") {
+            const [ideas, replications] = await Promise.all([
+              api.getApprovalQueue(code, statusValue),
+              api.getReplicationApprovalQueue(code),
+            ]);
+            queueData = ideas;
+            replicationQueueData = replications;
+          } else {
+            queueData = await api.getApprovalQueue(code, statusValue);
+            replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
+          }
+          renderKpis(getActiveMetrics());
+          renderIeApprovalTabs();
+          renderBodApprovalTabs();
           renderPendingFilterButton();
           renderQueue(getDisplayedQueueItems());
-          document.getElementById("roleHint").textContent = roleHint(currentRole, queueData);
+          document.getElementById("roleHint").textContent = currentRoleHint(queueData);
         } catch (error) {
           renderQueue([]);
           document.getElementById("roleHint").textContent = error.message;
@@ -1436,11 +2109,13 @@
         scoreCriteria = typeof api.getScoreCriteria === "function" ? await api.getScoreCriteria().catch(() => null) : null;
         renderSessionInfo();
         syncStatusFilterOptions();
+        renderIeApprovalTabs();
+        renderBodApprovalTabs();
         renderPendingFilterButton();
-        document.getElementById("roleHint").textContent = roleHint(currentRole, {});
+        document.getElementById("roleHint").textContent = currentRoleHint({});
 
         if (!["dept_manager", "sub_dept_manager", "ie_manager", "bod_manager", "admin", "unit_represent"].includes(currentRole)) {
-          document.getElementById("queueBody").innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">Bạn không có quyền sử dụng module phê duyệt.</td></tr>';
+          document.getElementById("queueBody").innerHTML = '<tr><td colspan="10" class="px-6 py-10 text-center text-text-soft">Bạn không có quyền sử dụng module phê duyệt.</td></tr>';
           return;
         }
 

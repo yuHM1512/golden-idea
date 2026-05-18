@@ -64,7 +64,24 @@ class ApprovalSubmitRequest(BaseModel):
     action: ReviewAction = ReviewAction.APPROVE
     comment: Optional[str] = None
     recommend_unit_reward: bool = False
+    ie_result_type: Optional[str] = None
     score: Optional[ApprovalScoreInput] = None
+
+
+class BodRegisterApprovalRequest(BaseModel):
+    employee_code: str
+
+
+class CouncilFinalScoreRequest(BaseModel):
+    employee_code: str
+    total_score: int = Field(..., ge=0, le=100000)
+    is_featured: bool = False
+    reward_multiplier: Optional[float] = Field(default=None, gt=0)
+    comment: Optional[str] = None
+
+
+class ReplicationApprovalRequest(BaseModel):
+    employee_code: str
 
 
 class ApprovalScoreView(BaseModel):
@@ -100,6 +117,7 @@ class ApprovalReviewView(BaseModel):
     action: str
     comment: Optional[str]
     recommend_unit_reward: bool = False
+    council_result_type: Optional[str] = None
     reviewed_at: datetime
 
 
@@ -110,6 +128,7 @@ class ApprovalAttachmentView(BaseModel):
     file_size: int
     file_url: str
     external_url: Optional[str] = None
+    attachment_type: str = "after"
     uploaded_at: Optional[datetime]
 
 
@@ -129,6 +148,13 @@ class ApprovalIdeaItem(BaseModel):
     rejection_reason: Optional[str]
     can_review: bool
     employee_received: bool = False
+    eligible_register_reward: bool = False
+    bod_register_approved: bool = False
+    ie_result_type: Optional[str] = None
+    council_final_score: Optional[int] = None
+    benefit_value: Optional[float] = None
+    council_is_featured: bool = False
+    council_reward_multiplier: Optional[float] = None
     dept_score: Optional["ApprovalScoreView"] = None
     ie_score: Optional["ApprovalScoreView"] = None
     latest_review: Optional["ApprovalReviewView"] = None
@@ -158,6 +184,29 @@ class ApprovalQueueResponse(BaseModel):
     unit_name: Optional[str]
     metrics: ApprovalMetrics
     items: List[ApprovalIdeaItem]
+
+
+class ApprovalReplicationItem(BaseModel):
+    id: int
+    idea_id: int
+    idea_title: str
+    unit_id: int
+    unit_name: str
+    unit_department: Optional[str] = None
+    source_unit_name: str
+    description: str
+    apply_date: datetime
+    approve: bool = False
+    can_review: bool = False
+    created_at: datetime
+
+
+class ApprovalReplicationQueueResponse(BaseModel):
+    role: str
+    unit_id: Optional[int]
+    unit_name: Optional[str]
+    metrics: ApprovalMetrics
+    items: List[ApprovalReplicationItem]
 
 
 class IdeaReviewCreate(BaseModel):

@@ -30,6 +30,7 @@ class FileAttachmentResponse(BaseModel):
     original_filename: str
     file_type: str
     file_size: int
+    attachment_type: str = "after"
     uploaded_at: datetime
 
     class Config:
@@ -40,6 +41,7 @@ class DirectUploadSessionRequest(BaseModel):
     original_filename: str
     file_size: int = Field(..., ge=1)
     content_type: Optional[str] = None
+    attachment_type: Optional[str] = "after"
 
 
 class DirectUploadSessionResponse(BaseModel):
@@ -52,6 +54,7 @@ class DirectUploadCompleteRequest(BaseModel):
     original_filename: str
     file_size: Optional[int] = Field(default=None, ge=1)
     content_type: Optional[str] = None
+    attachment_type: Optional[str] = "after"
 
 
 class IdeaParticipant(BaseModel):

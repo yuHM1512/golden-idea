@@ -384,7 +384,7 @@ Response (201):
   "idea_id": 42,
   "employee_code": "T4880",
   "employee_name": "Nguyễn Khắc Minh Huy",
-  "amount": 50000.00,
+  "amount": 100000.00,
   "printed_by_manager_id": null,
   "print_date": null,
   "is_printed": false,
@@ -412,7 +412,7 @@ Response (200):
     "id": 1,
     "idea_id": 42,
     "employee_name": "Nguyễn Khắc Minh Huy",
-    "amount": 50000.00,
+    "amount": 100000.00,
     "is_printed": false,
     "print_date": null,
     "created_at": "2024-04-24T16:00:00Z"

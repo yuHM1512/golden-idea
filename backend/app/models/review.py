@@ -29,6 +29,7 @@ class IdeaReview(Base):
     action = Column(SQLEnum(ReviewAction), nullable=False)
     comment = Column(Text, nullable=True)
     recommend_unit_reward = Column(Boolean, nullable=False, default=False)
+    council_result_type = Column(String(64), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

@@ -22,8 +22,11 @@ from app.seed import (
     migrate_score_k2_type_column,
     migrate_score_criteria_tables,
     migrate_payment_slip_reward_columns,
+    migrate_payment_slip_amount_default,
     migrate_reward_batch_special_coefficients_column,
+    migrate_ie_review_logic_columns,
     migrate_file_attachments_drive_columns,
+    migrate_standardized_idea_replications_table,
     normalize_sample_idea_categories,
 )
 
@@ -46,8 +49,11 @@ async def lifespan(app: FastAPI):
     migrate_score_k2_type_column()
     migrate_score_criteria_tables()
     migrate_payment_slip_reward_columns()
+    migrate_payment_slip_amount_default()
     migrate_reward_batch_special_coefficients_column()
+    migrate_ie_review_logic_columns()
     migrate_file_attachments_drive_columns()
+    migrate_standardized_idea_replications_table()
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:

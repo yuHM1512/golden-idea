@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
+
 class FileAttachment(Base):
     __tablename__ = "file_attachments"
 
@@ -19,6 +20,7 @@ class FileAttachment(Base):
     external_folder_id = Column(String(255), nullable=True)
     external_url = Column(String(500), nullable=True)
     mime_type = Column(String(255), nullable=True)
+    attachment_type = Column(String(20), nullable=False, default="after")
 
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
 

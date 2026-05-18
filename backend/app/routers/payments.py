@@ -21,7 +21,7 @@ from app.models.user import User
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
-SLIP_AMOUNT = 50000
+SLIP_AMOUNT = 100000
 BROWSER_CANDIDATES = (
     Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
     Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
@@ -219,7 +219,7 @@ def _render_payment_slip_html(
     tech_name: str,
     dept_name: str,
 ) -> str:
-    amount_text = "50.000 VND"
+    amount_text = "100.000 VND"
     printed_day = printed_at.strftime("%d")
     printed_month = printed_at.strftime("%m")
     printed_year = printed_at.strftime("%Y")
@@ -369,7 +369,7 @@ def _render_payment_slip_html(
 
         <div class="row amount-row">
           <div class="amount-cell"><span class="label">Có nhận tiền:</span> <span class="value">{amount_text}</span></div>
-          <div class="amount-cell right"><span class="label">Bằng chữ:</span> <span class="value">Năm mươi ngàn đồng chẵn</span></div>
+          <div class="amount-cell right"><span class="label">Bằng chữ:</span> <span class="value">Một trăm ngàn đồng chẵn</span></div>
         </div>
 
         <div class="row">
@@ -405,7 +405,11 @@ async def list_register_bonuses(
             joinedload(Idea.payment_slip).joinedload(PaymentSlip.paid_by_user),
             joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
         )
-        .filter(Idea.status.in_([IdeaStatus.APPROVED, IdeaStatus.REWARDED]))
+        .filter(
+            Idea.eligible_register_reward.is_(True),
+            Idea.bod_register_approved.is_(True),
+            Idea.status.in_([IdeaStatus.LEADERSHIP_REVIEW, IdeaStatus.APPROVED, IdeaStatus.REWARDED]),
+        )
         .order_by(Idea.submitted_at.desc().nullslast(), Idea.id.desc())
         .all()
     )
@@ -467,7 +471,11 @@ async def settle_register_bonus(
     )
     if idea is None:
         raise HTTPException(status_code=404, detail="Ý tưởng không tồn tại")
-    if _normalize_status(idea.status) not in {IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
+    if not idea.eligible_register_reward:
+        raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng đăng ký")
+    if not idea.bod_register_approved:
+        raise HTTPException(status_code=400, detail="Phiếu chưa được lãnh đạo duyệt ở luồng phiếu nhận tiền")
+    if _normalize_status(idea.status) not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng")
 
     slip = _get_or_create_payment_slip(db, idea)
@@ -521,8 +529,12 @@ async def print_payment_slip_for_idea(
         raise HTTPException(status_code=403, detail="Ý tưởng không thuộc đơn vị của bạn")
 
     status_value = _normalize_status(idea.status)
-    if status_value not in {IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
-        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã duyệt đủ 3 cấp")
+    if not idea.eligible_register_reward:
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đủ điều kiện nhận tiền đăng ký")
+    if not idea.bod_register_approved:
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu sau khi lãnh đạo duyệt ở tab Duyệt phiếu nhận tiền")
+    if status_value not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã đủ điều kiện nhận tiền đăng ký")
 
     slip = _get_or_create_payment_slip(db, idea)
     printed_at = datetime.now()

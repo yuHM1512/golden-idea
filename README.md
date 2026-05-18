@@ -255,7 +255,7 @@ golden-idea/
 ## Notes
 
 - User anonymity: `submitter_id` is stored but not returned in public APIs
-- Payment slip printing: 50,000 VND fixed amount per approved idea
+- Payment slip printing: 100,000 VND fixed amount per approved idea
 - File uploads: Max 10MB, allowed types in config
 - Multi-level approval: Automatic state transitions on approval
 - K3 scoring: Choose between TIME_SAVED or COST_SAVED (not both)

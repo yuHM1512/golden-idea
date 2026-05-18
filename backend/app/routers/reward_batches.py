@@ -13,6 +13,7 @@ from app.models.idea import Idea, IdeaStatus
 from app.models.reward_batch import RewardBatch
 from app.models.score import IdeaScore
 from app.models.user import User
+from app.services.email_notifications import send_reward_batch_summary_emails
 
 router = APIRouter(prefix="/reward-batches", tags=["reward-batches"])
 
@@ -48,6 +49,20 @@ def _ie_score_for_idea(scores: list[IdeaScore]) -> IdeaScore | None:
         return None
     ie_scores.sort(key=lambda score: score.scored_at or datetime.min, reverse=True)
     return ie_scores[0]
+
+
+def _reward_score_for_idea(idea: Idea) -> int:
+    if idea.council_final_score is not None:
+        return int(idea.council_final_score)
+    ie_score = _ie_score_for_idea(idea.scores or [])
+    return int(ie_score.total_score) if ie_score else 0
+
+
+def _reward_multiplier_for_idea(idea: Idea) -> float:
+    value = getattr(idea, "council_reward_multiplier", None)
+    if value is None:
+        return 1.0
+    return float(value)
 
 
 def _parse_participants(raw_value, fallback_name: str, fallback_code: str) -> list[dict[str, str]]:
@@ -167,7 +182,8 @@ def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db
     if user.role not in {"admin", "treasurer"}:
         raise HTTPException(status_code=403, detail="Không có quyền tạo đợt khen thưởng")
 
-    eligible_idea_ids = {idea.id for idea in _load_eligible_ideas(db, payload.year, payload.quarter)}
+    eligible_ideas = _load_eligible_ideas(db, payload.year, payload.quarter)
+    eligible_idea_ids = {idea.id for idea in eligible_ideas}
     special_rewards = _normalize_special_rewards(payload.special_rewards)
     invalid_idea_ids = [item["idea_id"] for item in special_rewards if item["idea_id"] not in eligible_idea_ids]
     if invalid_idea_ids:
@@ -184,6 +200,12 @@ def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db
     db.add(batch)
     db.commit()
     db.refresh(batch)
+    send_reward_batch_summary_emails(
+        db,
+        batch,
+        [idea for idea in eligible_ideas if idea.council_final_score is not None],
+        {int(item["idea_id"]): float(item["reward_multiplier"]) for item in special_rewards},
+    )
     return _serialize_batch(batch)
 
 
@@ -202,8 +224,7 @@ def get_reward_batch_candidates(
     ideas = _load_eligible_ideas(db, year, quarter)
     items: list[dict] = []
     for idea in ideas:
-        ie_score = _ie_score_for_idea(idea.scores or [])
-        score_value = int(ie_score.total_score) if ie_score else 0
+        score_value = _reward_score_for_idea(idea)
         participants = _parse_participants(idea.participants_json, idea.full_name or "", idea.employee_code or "")
         items.append(
             {
@@ -212,6 +233,8 @@ def get_reward_batch_candidates(
                 "description": idea.description or "",
                 "unit_name": idea.unit.name if idea.unit else "—",
                 "ie_score": score_value,
+                "council_is_featured": bool(getattr(idea, "council_is_featured", False)),
+                "council_reward_multiplier": _reward_multiplier_for_idea(idea),
                 "participant_count": len(participants),
                 "employee_codes": [item.get("employee_code") or "" for item in participants if item.get("employee_code")],
                 "approved_at": idea.approved_at.isoformat() if idea.approved_at else None,
@@ -231,9 +254,8 @@ def get_batch_report(batch_id: int, db: Session = Depends(get_db)):
 
     items: list[dict] = []
     for idea in ideas:
-        ie_score = _ie_score_for_idea(idea.scores or [])
-        score_value = int(ie_score.total_score) if ie_score else 0
-        reward_multiplier = float(special_rewards.get(idea.id, 1))
+        score_value = _reward_score_for_idea(idea)
+        reward_multiplier = float(special_rewards.get(idea.id, _reward_multiplier_for_idea(idea)))
         participants = _parse_participants(idea.participants_json, idea.full_name or "", idea.employee_code or "")
         for participant in participants:
             amount = round(score_value * float(batch.coefficient) * reward_multiplier)
@@ -246,6 +268,8 @@ def get_batch_report(batch_id: int, db: Session = Depends(get_db)):
                     "employee_code": participant.get("employee_code") or "—",
                     "description": idea.description or "",
                     "ie_score": score_value,
+                    "council_is_featured": bool(getattr(idea, "council_is_featured", False)),
+                    "council_reward_multiplier": _reward_multiplier_for_idea(idea),
                     "reward_multiplier": reward_multiplier,
                     "amount": amount,
                     "approved_at": idea.approved_at.isoformat() if idea.approved_at else None,

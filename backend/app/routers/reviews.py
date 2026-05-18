@@ -15,6 +15,7 @@ from app.models.idea import Idea, IdeaStatus
 from app.models.review import IdeaReview, ReviewAction, ReviewLevel
 from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
+from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
 from app.services.email_notifications import send_approval_stage_email
@@ -25,15 +26,40 @@ from app.schemas import (
     ApprovalIdeaDetail,
     ApprovalIdeaItem,
     ApprovalMetrics,
+    ApprovalReplicationItem,
+    ApprovalReplicationQueueResponse,
     ApprovalQueueResponse,
     ApprovalReviewView,
     ApprovalScoreInput,
     ApprovalScoreView,
     ApprovalSubmitRequest,
+    BodRegisterApprovalRequest,
+    CouncilFinalScoreRequest,
+    ReplicationApprovalRequest,
     ReviewHistoryResponse,
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
+
+IE_RESULT_BCT_REJECTED = "BCT_REJECTED"
+IE_RESULT_UNIT_REVIEW = "UNIT_REVIEW"
+IE_RESULT_APPROVED_NO_STANDARDIZATION = "APPROVED_NO_STANDARDIZATION"
+IE_RESULT_APPROVED_STANDARDIZATION = "APPROVED_STANDARDIZATION"
+IE_RESULT_TYPES = {
+    IE_RESULT_BCT_REJECTED,
+    IE_RESULT_UNIT_REVIEW,
+    IE_RESULT_APPROVED_NO_STANDARDIZATION,
+    IE_RESULT_APPROVED_STANDARDIZATION,
+}
+REGISTER_SLIP_ELIGIBLE_IE_TYPES = {
+    IE_RESULT_UNIT_REVIEW,
+    IE_RESULT_APPROVED_NO_STANDARDIZATION,
+    IE_RESULT_APPROVED_STANDARDIZATION,
+}
+COUNCIL_FINAL_ELIGIBLE_IE_TYPES = {
+    IE_RESULT_APPROVED_NO_STANDARDIZATION,
+    IE_RESULT_APPROVED_STANDARDIZATION,
+}
 
 DEPT_VISIBLE_STATUSES = {
     IdeaStatus.SUBMITTED.value,
@@ -63,6 +89,11 @@ def _normalize_status(value: Any) -> str:
     if value is None:
         return ""
     return str(value).split(".")[-1]
+
+
+def _normalize_ie_result_type(value: Any) -> str | None:
+    normalized = str(value or "").strip().upper()
+    return normalized or None
 
 
 def _parse_json_list(raw_value: Any) -> list[str]:
@@ -299,6 +330,7 @@ def _format_review(review: IdeaReview) -> ApprovalReviewView:
         action=_normalize_status(review.action),
         comment=review.comment,
         recommend_unit_reward=bool(review.recommend_unit_reward),
+        council_result_type=_normalize_ie_result_type(review.council_result_type),
         reviewed_at=review.reviewed_at,
     )
 
@@ -311,6 +343,7 @@ def _format_attachment(attachment) -> ApprovalAttachmentView:
         file_size=attachment.file_size,
         file_url=build_attachment_file_url(attachment),
         external_url=attachment.external_url,
+        attachment_type=(attachment.attachment_type or "after"),
         uploaded_at=attachment.uploaded_at,
     )
 
@@ -375,10 +408,19 @@ def _get_latest_review(idea: Idea) -> tuple[Optional[ApprovalReviewView], list[A
     return (formatted[0] if formatted else None), formatted
 
 
+def _latest_council_result_type(idea: Idea) -> str | None:
+    ordered = sorted(idea.reviews, key=lambda item: item.reviewed_at or datetime.min, reverse=True)
+    for review in ordered:
+        if _normalize_status(review.level) == ReviewLevel.COUNCIL.value:
+            return _normalize_ie_result_type(review.council_result_type)
+    return None
+
+
 def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
     dept_score, ie_score, _ = _get_latest_scores(idea)
     latest_review, _ = _get_latest_review(idea)
     slip = idea.payment_slip
+    ie_result_type = _latest_council_result_type(idea)
     return ApprovalIdeaItem(
         id=idea.id,
         title=_build_title(idea),
@@ -395,6 +437,13 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
         rejection_reason=idea.rejection_reason,
         can_review=can_review,
         employee_received=bool(slip and slip.employee_received),
+        eligible_register_reward=bool(idea.eligible_register_reward),
+        bod_register_approved=bool(idea.bod_register_approved),
+        ie_result_type=ie_result_type,
+        council_final_score=idea.council_final_score,
+        benefit_value=idea.actual_benefit.benefit_value if idea.actual_benefit else None,
+        council_is_featured=bool(getattr(idea, "council_is_featured", False)),
+        council_reward_multiplier=idea.council_reward_multiplier,
         dept_score=dept_score,
         ie_score=ie_score,
         latest_review=latest_review,
@@ -415,6 +464,24 @@ def _idea_to_detail(idea: Idea, can_review: bool) -> ApprovalIdeaDetail:
         reviews=reviews,
         scores=scores,
         actual_benefit=_format_actual_benefit(idea.actual_benefit),
+    )
+
+
+def _replication_to_item(replication: StandardizedIdeaReplication, can_review: bool) -> ApprovalReplicationItem:
+    source_unit = replication.idea.unit if replication.idea else None
+    return ApprovalReplicationItem(
+        id=replication.id,
+        idea_id=replication.idea_id,
+        idea_title=replication.idea_title,
+        unit_id=replication.unit_id,
+        unit_name=replication.unit.name if replication.unit else "",
+        unit_department=replication.unit.department if replication.unit else None,
+        source_unit_name=source_unit.name if source_unit else "",
+        description=replication.description,
+        apply_date=datetime.combine(replication.apply_date, datetime.min.time()),
+        approve=bool(replication.approve),
+        can_review=can_review and not bool(replication.approve),
+        created_at=replication.created_at or datetime.utcnow(),
     )
 
 
@@ -501,6 +568,13 @@ def _build_metrics(scope: str, items: list[Idea]) -> ApprovalMetrics:
     return ApprovalMetrics(total=total, approved=approved, pending=pending, rejected=rejected)
 
 
+def _build_replication_metrics(items: list[StandardizedIdeaReplication]) -> ApprovalMetrics:
+    total = len(items)
+    approved = sum(1 for item in items if item.approve)
+    pending = total - approved
+    return ApprovalMetrics(total=total, approved=approved, pending=pending, rejected=0)
+
+
 @router.get("/pending", response_model=ApprovalQueueResponse, tags=["dashboard"])
 async def get_pending_reviews(
     employee_code: str = Query(...),
@@ -516,6 +590,34 @@ async def get_pending_reviews(
         unit_id=user.unit_id,
         unit_name=user.unit.name if user.unit else None,
         metrics=_build_metrics(scope, ideas),
+        items=items,
+    )
+
+
+@router.get("/replications/pending", response_model=ApprovalReplicationQueueResponse)
+async def get_pending_replications(
+    employee_code: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    user = _require_user(db, employee_code)
+    if _scope_kind(user) not in {"ie", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ Ban cải tiến hoặc admin được duyệt nhân rộng ý tưởng")
+
+    replications = (
+        db.query(StandardizedIdeaReplication)
+        .options(
+            joinedload(StandardizedIdeaReplication.unit),
+            joinedload(StandardizedIdeaReplication.idea).joinedload(Idea.unit),
+        )
+        .order_by(StandardizedIdeaReplication.created_at.desc(), StandardizedIdeaReplication.id.desc())
+        .all()
+    )
+    items = [_replication_to_item(item, True) for item in replications]
+    return ApprovalReplicationQueueResponse(
+        role=_role_name(user),
+        unit_id=user.unit_id,
+        unit_name=user.unit.name if user.unit else None,
+        metrics=_build_replication_metrics(replications),
         items=items,
     )
 
@@ -589,13 +691,29 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
     action = payload.action
     comment = (payload.comment or "").strip() or None
     scope = _scope_kind(user)
-    recommend_unit_reward = bool(payload.recommend_unit_reward) if scope == "ie" and action == ReviewAction.REJECT else False
+    ie_result_type = _normalize_ie_result_type(payload.ie_result_type)
     if action == ReviewAction.REJECT and not comment:
         raise HTTPException(status_code=400, detail="Không duyệt phải nhập lý do")
-    if action == ReviewAction.APPROVE and scope in {"dept", "ie"} and payload.score is None:
+    if scope == "ie":
+        if ie_result_type not in IE_RESULT_TYPES:
+            raise HTTPException(status_code=400, detail="IE phải chọn kết luận xét duyệt cấp 2")
+        action = ReviewAction.REJECT if ie_result_type == IE_RESULT_BCT_REJECTED else ReviewAction.APPROVE
+    recommend_unit_reward = bool(payload.recommend_unit_reward) if scope == "ie" and ie_result_type == IE_RESULT_UNIT_REVIEW else False
+    requires_score = (
+        action == ReviewAction.APPROVE
+        and scope == "dept"
+    ) or (
+        action == ReviewAction.APPROVE
+        and scope == "ie"
+        and ie_result_type in {IE_RESULT_APPROVED_NO_STANDARDIZATION, IE_RESULT_APPROVED_STANDARDIZATION}
+    )
+    if requires_score and payload.score is None:
         raise HTTPException(status_code=400, detail="Phê duyệt ở cấp này phải chấm điểm")
 
-    if action == ReviewAction.APPROVE and payload.score is not None and scope in {"dept", "ie"}:
+    if action == ReviewAction.APPROVE and payload.score is not None and (
+        scope == "dept"
+        or (scope == "ie" and ie_result_type in {IE_RESULT_APPROVED_NO_STANDARDIZATION, IE_RESULT_APPROVED_STANDARDIZATION})
+    ):
         score_values = _calculate_score(db, payload.score)
         db.add(
             IdeaScore(
@@ -618,13 +736,21 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
             action=action,
             comment=comment,
             recommend_unit_reward=recommend_unit_reward,
+            council_result_type=ie_result_type if scope == "ie" else None,
             reviewed_at=datetime.utcnow(),
         )
     )
 
-    next_status = _next_status(user, action)
+    if scope == "ie":
+        next_status = IdeaStatus.REJECTED if ie_result_type == IE_RESULT_BCT_REJECTED else IdeaStatus.LEADERSHIP_REVIEW
+    else:
+        next_status = _next_status(user, action)
     idea.status = next_status
     idea.reviewed_at = datetime.utcnow()
+    if scope == "ie":
+        idea.eligible_register_reward = ie_result_type in {
+            *REGISTER_SLIP_ELIGIBLE_IE_TYPES,
+        }
     if next_status == IdeaStatus.REJECTED:
         idea.rejected_at = datetime.utcnow()
         idea.rejection_reason = comment
@@ -649,14 +775,181 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
         .first()
     )
 
-    if action == ReviewAction.APPROVE and refreshed is not None:
-        if scope == "dept":
+    if refreshed is not None:
+        if scope == "dept" and action == ReviewAction.APPROVE:
             send_approval_stage_email(db, refreshed, "ie_review")
         elif scope == "ie":
-            send_approval_stage_email(db, refreshed, "bod_review")
-        elif scope == "bod":
+            send_approval_stage_email(db, refreshed, "ie_result_notice")
+            if action == ReviewAction.APPROVE:
+                send_approval_stage_email(db, refreshed, "bod_review")
+        elif scope == "bod" and action == ReviewAction.APPROVE:
             send_approval_stage_email(db, refreshed, "approved_notice")
 
+    return _idea_to_detail(refreshed, _can_review(user, refreshed))
+
+
+@router.post("/{idea_id}/register-slip-approval", response_model=ApprovalIdeaDetail)
+async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalRequest, db: Session = Depends(get_db)):
+    user = _require_user(db, payload.employee_code)
+    if _scope_kind(user) not in {"bod", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ lãnh đạo hoặc admin được duyệt phiếu nhận tiền")
+
+    idea = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea_id)
+        .first()
+    )
+    if idea is None:
+        raise HTTPException(status_code=404, detail="Idea không tồn tại")
+
+    result_type = _latest_council_result_type(idea)
+    if result_type not in REGISTER_SLIP_ELIGIBLE_IE_TYPES:
+        raise HTTPException(status_code=400, detail="Phiếu này không thuộc diện duyệt phiếu nhận tiền")
+    if not idea.eligible_register_reward:
+        raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận tiền đăng ký")
+
+    idea.bod_register_approved = True
+    idea.bod_register_approved_at = datetime.utcnow()
+    idea.bod_register_approved_by_id = user.id
+    db.add(
+        IdeaReview(
+            idea_id=idea.id,
+            reviewer_id=user.id,
+            level=ReviewLevel.LEADERSHIP,
+            action=ReviewAction.APPROVE,
+            comment="Duyệt phiếu nhận tiền đăng ký",
+            recommend_unit_reward=False,
+            reviewed_at=datetime.utcnow(),
+        )
+    )
+    db.commit()
+
+    refreshed = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea.id)
+        .first()
+    )
+    return _idea_to_detail(refreshed, _can_review(user, refreshed))
+
+
+@router.post("/replications/{replication_id}/approve", response_model=ApprovalReplicationItem)
+async def approve_replication(replication_id: int, payload: ReplicationApprovalRequest, db: Session = Depends(get_db)):
+    user = _require_user(db, payload.employee_code)
+    if _scope_kind(user) not in {"ie", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ Ban cải tiến hoặc admin được duyệt nhân rộng ý tưởng")
+
+    replication = (
+        db.query(StandardizedIdeaReplication)
+        .options(
+            joinedload(StandardizedIdeaReplication.unit),
+            joinedload(StandardizedIdeaReplication.idea).joinedload(Idea.unit),
+        )
+        .filter(StandardizedIdeaReplication.id == replication_id)
+        .first()
+    )
+    if replication is None:
+        raise HTTPException(status_code=404, detail="Bản ghi nhân rộng không tồn tại")
+
+    replication.approve = True
+    replication.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(replication)
+
+    refreshed = (
+        db.query(StandardizedIdeaReplication)
+        .options(
+            joinedload(StandardizedIdeaReplication.unit),
+            joinedload(StandardizedIdeaReplication.idea).joinedload(Idea.unit),
+        )
+        .filter(StandardizedIdeaReplication.id == replication_id)
+        .first()
+    )
+    return _replication_to_item(refreshed, True)
+
+
+@router.post("/{idea_id}/council-final-score", response_model=ApprovalIdeaDetail)
+async def submit_council_final_score(idea_id: int, payload: CouncilFinalScoreRequest, db: Session = Depends(get_db)):
+    user = _require_user(db, payload.employee_code)
+    if _scope_kind(user) not in {"bod", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ lãnh đạo hoặc admin được chốt điểm hội đồng")
+
+    idea = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea_id)
+        .first()
+    )
+    if idea is None:
+        raise HTTPException(status_code=404, detail="Idea không tồn tại")
+
+    result_type = _latest_council_result_type(idea)
+    if result_type not in COUNCIL_FINAL_ELIGIBLE_IE_TYPES:
+        raise HTTPException(status_code=400, detail="Chỉ ý tưởng đưa lên Hội đồng mới được chốt điểm cuối")
+
+    if payload.is_featured and payload.reward_multiplier is None:
+        raise HTTPException(status_code=400, detail="Ý tưởng nổi trội phải nhập hệ số nhân thưởng")
+    if not payload.is_featured:
+        payload.reward_multiplier = None
+
+    idea.council_final_score = int(payload.total_score)
+    idea.council_final_scored_at = datetime.utcnow()
+    idea.council_final_scored_by_id = user.id
+    idea.council_final_note = (payload.comment or "").strip() or None
+    idea.council_is_featured = bool(payload.is_featured)
+    idea.council_reward_multiplier = float(payload.reward_multiplier) if payload.reward_multiplier is not None else None
+    if _normalize_status(idea.status) != IdeaStatus.REWARDED.value:
+        idea.status = IdeaStatus.APPROVED
+    if idea.approved_at is None:
+        idea.approved_at = datetime.utcnow()
+    db.add(
+        IdeaReview(
+            idea_id=idea.id,
+            reviewer_id=user.id,
+            level=ReviewLevel.LEADERSHIP,
+            action=ReviewAction.APPROVE,
+            comment=(payload.comment or "").strip() or f"Chốt điểm Hội đồng: {int(payload.total_score)}",
+            recommend_unit_reward=False,
+            reviewed_at=datetime.utcnow(),
+        )
+    )
+    db.commit()
+
+    refreshed = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea.id)
+        .first()
+    )
     return _idea_to_detail(refreshed, _can_review(user, refreshed))
 
 
@@ -679,9 +972,15 @@ async def upsert_actual_benefit(idea_id: int, payload: ActualBenefitInput, db: S
         raise HTTPException(status_code=404, detail="Idea không tồn tại")
 
     status_value = _normalize_status(idea.status)
-    if status_value not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
+    if status_value not in {
+        IdeaStatus.DEPT_APPROVED.value,
+        IdeaStatus.COUNCIL_REVIEW.value,
+        IdeaStatus.LEADERSHIP_REVIEW.value,
+        IdeaStatus.APPROVED.value,
+        IdeaStatus.REWARDED.value,
+    }:
         raise HTTPException(status_code=400, detail="Chỉ đánh giá sau khi IE đã xác nhận đạt")
-    if not _has_measurable_ie_score(idea):
+    if not (_scope_kind(user) == "ie" or _has_measurable_ie_score(idea)):
         raise HTTPException(status_code=400, detail="Chỉ áp dụng cho ý tưởng IE đánh giá là đo lường được")
     if payload.before_seconds <= 0:
         raise HTTPException(status_code=400, detail="Trước cải tiến phải lớn hơn 0")

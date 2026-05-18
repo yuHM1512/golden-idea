@@ -51,7 +51,7 @@
           <div class="text-xs uppercase tracking-[0.3em] text-white/70">Tài chính</div>
           <h1 class="mt-4 text-3xl md:text-5xl font-black font-['Manrope'] leading-tight">Chi thưởng</h1>
           <p class="mt-4 max-w-3xl text-white/80 leading-relaxed">
-            Theo dõi phiếu đủ điều kiện nhận thưởng, xác nhận đã trao 50.000 VND cho phiếu đăng ký đã duyệt đủ 3 cấp và tạo
+            Theo dõi phiếu đủ điều kiện nhận thưởng, xác nhận đã trao 100.000 VND cho phiếu đăng ký đã duyệt đủ 3 cấp và tạo
             báo cáo khen thưởng sáng kiến theo quý.
           </p>
         </div>
@@ -133,14 +133,14 @@
                 <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Tạo đợt</div>
                 <h2 class="mt-3 text-xl font-black font-['Manrope'] text-primary">Đợt khen thưởng</h2>
                 <p class="mt-4 text-sm leading-relaxed text-slate-600">
-                  Mở popup để nhập Quý, Năm, Đơn giá VND và thêm các ý tưởng nổi trội theo cách gõ để hiện dropdown, click chọn ý tưởng rồi nhập hệ số.
+                  Mở popup để nhập Quý, Năm và Đơn giá VND. Hệ số nhân thưởng của ý tưởng nổi trội sẽ lấy từ phần duyệt Hội đồng sáng kiến.
                 </p>
                 <button type="button" class="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/15 hover:bg-[#0a43a7] transition-all" onclick="openCreateRecognitionModal()">
                   <span class="material-symbols-outlined text-[20px]">add</span>
                   Tạo đợt khen thưởng
                 </button>
                 <p class="mt-3 text-xs text-slate-500 leading-relaxed">
-                  Số tiền mỗi cá nhân = <span class="font-semibold">Điểm BCT</span> × <span class="font-semibold">Đơn giá VND</span> ×
+                  Số tiền mỗi cá nhân = <span class="font-semibold">Điểm Hội đồng</span> × <span class="font-semibold">Đơn giá VND</span> ×
                   <span class="font-semibold">Hệ số khen thưởng</span>.
                 </p>
               </div>
@@ -206,7 +206,7 @@
           <div>
             <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Tạo đợt</div>
             <h3 class="mt-2 text-2xl font-black font-['Manrope'] text-primary">Đợt khen thưởng sáng kiến</h3>
-            <p class="mt-2 text-sm text-slate-500">Nhập thông tin đợt và thêm ý tưởng nổi trội nếu có.</p>
+            <p class="mt-2 text-sm text-slate-500">Nhập thông tin đợt. Hệ số nổi trội sẽ lấy từ phần Hội đồng đã duyệt.</p>
           </div>
           <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="closeCreateRecognitionModal()">
             <span class="material-symbols-outlined">close</span>
@@ -234,29 +234,6 @@
                 <input id="batchCoefficient" type="number" min="1" step="1" class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm focus:border-primary focus:ring-primary" placeholder="5000" />
               </div>
             </div>
-          </section>
-
-          <section id="specialRewardSection" class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="text-xs font-semibold uppercase tracking-widest text-slate-500">Ý tưởng nổi trội</div>
-                <div class="mt-1 text-sm text-slate-600">
-                  Type để hiện dropdown, click chọn ý tưởng, sau đó nhập hệ số khen thưởng.
-                </div>
-              </div>
-              <button
-                id="addSpecialRewardBtn"
-                type="button"
-                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-slate-100"
-                onclick="addSpecialRewardRow()"
-              >
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                Thêm +
-              </button>
-            </div>
-            <div id="specialRewardRows" class="mt-4 space-y-3"></div>
-            <div id="specialRewardEmpty" class="mt-4 text-sm text-slate-500">Chưa có ý tưởng nổi trội nào được thêm.</div>
-            <div id="specialRewardHint" class="mt-3 text-xs leading-relaxed text-slate-500"></div>
           </section>
         </div>
 
@@ -286,8 +263,6 @@
       let activeBatch = null;
       let recognitionItems = [];
       let recognitionCandidates = [];
-      let specialRewardRows = [];
-      let specialRewardSectionInitialized = false;
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -301,7 +276,6 @@
         modal.classList.remove("hidden");
         modal.classList.add("flex");
         document.body.classList.add("overflow-hidden");
-        updateSpecialRewardVisibility();
       }
 
       function closeCreateRecognitionModal() {
@@ -384,266 +358,8 @@
         };
       }
 
-      function buildCandidateLabel(item) {
-        return `#${item.idea_id} • ${item.title || "Ý tưởng"} • ${item.unit_name || "—"} • ${Number(item.ie_score || 0)} điểm`;
-      }
-
-      function buildCandidateInputValue(item) {
-        const employeeCodes = Array.isArray(item.employee_codes) ? item.employee_codes.join(" | ") : "";
-        const descriptionPreview = String(item.description || "").replace(/\s+/g, " ").trim().slice(0, 80);
-        return [employeeCodes, item.title || "Ý tưởng", descriptionPreview].filter(Boolean).join(" • ");
-      }
-
-      function shouldShowCandidateList(row) {
-        const currentIdeaId = Number(row.ideaId || 0);
-        return Boolean(String(row.filterText || "").trim()) || !currentIdeaId;
-      }
-
-      function focusSpecialRewardInput(rowId, caretPos = null) {
-        window.requestAnimationFrame(() => {
-          const input = document.querySelector(`[data-special-reward-input="${rowId}"]`);
-          if (!input) return;
-          input.focus();
-          if (typeof caretPos === "number") {
-            try {
-              input.setSelectionRange(caretPos, caretPos);
-            } catch {}
-          }
-        });
-      }
-
-      function buildCandidateSearchText(item) {
-        return normalizeSearchText([
-          item.idea_id,
-          item.title,
-          item.unit_name,
-          item.description,
-          item.ie_score,
-          Array.isArray(item.employee_codes) ? item.employee_codes.join(" ") : "",
-        ].join(" "));
-      }
-
-      function ensureOneSpecialRewardRow() {
-        if (!specialRewardRows.length) {
-          specialRewardRows.push({
-            rowId: Date.now() + Math.random(),
-            ideaId: "",
-            rewardMultiplier: "",
-            filterText: "",
-          });
-        }
-      }
-
-      function updateSpecialRewardVisibility() {
-        const section = document.getElementById("specialRewardSection");
-        if (!section) return;
-        const visible = quarterYearReady();
-        section.classList.toggle("hidden", !visible);
-        if (visible && !specialRewardSectionInitialized) {
-          ensureOneSpecialRewardRow();
-          specialRewardSectionInitialized = true;
-        }
-        renderSpecialRewardRows();
-      }
-
-      function getSelectableCandidates(row) {
-        const selectedIdeaIds = new Set(
-          specialRewardRows
-            .filter((item) => item.rowId !== row.rowId && item.ideaId)
-            .map((item) => Number(item.ideaId))
-        );
-        const filterText = normalizeSearchText(row.filterText);
-        return recognitionCandidates.filter((item) => {
-          if (selectedIdeaIds.has(Number(item.idea_id))) return false;
-          if (!filterText) return true;
-          return buildCandidateSearchText(item).includes(filterText);
-        });
-      }
-
-      function renderSpecialRewardRows() {
-        const wrap = document.getElementById("specialRewardRows");
-        const empty = document.getElementById("specialRewardEmpty");
-        const hint = document.getElementById("specialRewardHint");
-        const addBtn = document.getElementById("addSpecialRewardBtn");
-        if (!wrap || !empty || !hint || !addBtn) return;
-
-        wrap.innerHTML = "";
-        const ready = quarterYearReady();
-        const hasCandidates = recognitionCandidates.length > 0;
-        addBtn.disabled = !ready || !hasCandidates;
-        addBtn.classList.toggle("opacity-50", !ready || !hasCandidates);
-
-        if (!ready) {
-          empty.textContent = "Nhập đủ Quý, Năm và Đơn giá VND để thêm ý tưởng nổi trội.";
-          empty.classList.remove("hidden");
-          hint.textContent = "";
-          return;
-        }
-
-        if (!hasCandidates) {
-          empty.textContent = "Không có ý tưởng đủ điều kiện trong quý/năm này để chọn.";
-          empty.classList.remove("hidden");
-          hint.textContent = "";
-          return;
-        }
-
-        if (!specialRewardRows.length) {
-          empty.textContent = "Chưa có ý tưởng nổi trội nào được thêm.";
-          empty.classList.remove("hidden");
-        } else {
-          empty.classList.add("hidden");
-        }
-
-        specialRewardRows.forEach((row) => {
-          const options = getSelectableCandidates(row);
-          const currentIdeaId = Number(row.ideaId || 0);
-          const currentCandidate = recognitionCandidates.find((item) => Number(item.idea_id) === currentIdeaId);
-          if (currentCandidate && !options.some((item) => Number(item.idea_id) === currentIdeaId)) {
-            options.unshift(currentCandidate);
-          }
-
-          const optionHtml = options
-            .slice(0, 8)
-            .map((item) => `
-              <button
-                type="button"
-                class="w-full px-3 py-2 text-left hover:bg-slate-50 ${Number(item.idea_id) === currentIdeaId ? "bg-primary/5 text-primary" : "text-slate-700"}"
-                onclick="chooseSpecialRewardIdea(${row.rowId}, ${item.idea_id})"
-              >
-                <div class="text-sm font-semibold">${safeText(buildCandidateLabel(item))}</div>
-                <div class="mt-1 text-xs text-slate-500">${safeText(buildCandidateInputValue(item))}</div>
-              </button>
-            `)
-            .join("");
-
-          const card = document.createElement("div");
-          card.className = "rounded-2xl border border-slate-200 bg-white p-4";
-          card.innerHTML = `
-            <div class="grid grid-cols-1 gap-3">
-              <div class="flex items-center justify-between gap-3">
-                <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Ý tưởng nổi trội</div>
-                <button type="button" class="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100" onclick="removeSpecialRewardRow(${row.rowId})">
-                  <span class="material-symbols-outlined text-[16px]">close</span>
-                  Bỏ
-                </button>
-              </div>
-              <div class="space-y-2">
-                <input
-                  type="search"
-                  data-special-reward-input="${row.rowId}"
-                  value="${safeText(row.filterText)}"
-                  class="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-                  placeholder="Gõ mã NV hoặc từ khóa trong mô tả để chọn ý tưởng"
-                  oninput="handleSpecialRewardTextInput(${row.rowId}, this.value, this.selectionStart)"
-                />
-                ${shouldShowCandidateList(row) ? `
-                  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    ${optionHtml || `<div class="px-3 py-3 text-sm text-slate-500">Không có gợi ý phù hợp.</div>`}
-                  </div>
-                ` : ""}
-              </div>
-              <input
-                type="number"
-                min="1"
-                step="0.1"
-                value="${safeText(row.rewardMultiplier)}"
-                class="w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-primary focus:ring-primary"
-                placeholder="Hệ số khen thưởng, ví dụ 1.5"
-                oninput="updateSpecialRewardMultiplier(${row.rowId}, this.value)"
-              />
-              ${currentCandidate ? `<div class="text-xs text-slate-500">Đang chọn: ${safeText(buildCandidateLabel(currentCandidate))} • ${formatDate(currentCandidate.approved_at)}</div>` : ""}
-            </div>
-          `;
-          wrap.appendChild(card);
-        });
-
-        hint.textContent = `Có ${recognitionCandidates.length} ý tưởng đủ điều kiện trong quý/năm đang chọn. Hệ số mặc định của các ý tưởng không nằm trong danh sách nổi trội là 1.`;
-      }
-
-      function addSpecialRewardRow() {
-        if (!recognitionCandidates.length) return;
-        specialRewardRows.push({
-          rowId: Date.now() + Math.random(),
-          ideaId: "",
-          rewardMultiplier: "",
-          filterText: "",
-        });
-        renderSpecialRewardRows();
-      }
-
-      function removeSpecialRewardRow(rowId) {
-        specialRewardRows = specialRewardRows.filter((item) => item.rowId !== rowId);
-        renderSpecialRewardRows();
-      }
-
-      function updateSpecialRewardFilter(rowId, value, caretPos = null) {
-        specialRewardRows = specialRewardRows.map((item) => item.rowId === rowId ? { ...item, filterText: value, ideaId: "" } : item);
-        renderSpecialRewardRows();
-        focusSpecialRewardInput(rowId, caretPos);
-      }
-
-      function updateSpecialRewardMultiplier(rowId, value) {
-        specialRewardRows = specialRewardRows.map((item) => item.rowId === rowId ? { ...item, rewardMultiplier: value } : item);
-      }
-
-      function handleSpecialRewardTextInput(rowId, value, caretPos = null) {
-        updateSpecialRewardFilter(rowId, value, caretPos);
-      }
-
-      function chooseSpecialRewardIdea(rowId, ideaId) {
-        const chosen = recognitionCandidates.find((item) => Number(item.idea_id) === Number(ideaId));
-        specialRewardRows = specialRewardRows.map((item) => (
-          item.rowId === rowId
-            ? {
-                ...item,
-                ideaId: chosen ? String(chosen.idea_id) : "",
-                filterText: chosen ? buildCandidateInputValue(chosen) : item.filterText,
-              }
-            : item
-        ));
-        renderSpecialRewardRows();
-      }
-
-      function collectSpecialRewards() {
-        const normalized = [];
-        const seen = new Set();
-        for (const row of specialRewardRows) {
-          const ideaId = Number(row.ideaId || 0);
-          const rewardMultiplier = Number(row.rewardMultiplier || 0);
-          if (!ideaId && !rewardMultiplier) continue;
-          if (!ideaId && rewardMultiplier) {
-            throw new Error("Có dòng ý tưởng nổi trội chưa chọn ý tưởng.");
-          }
-          if (!rewardMultiplier || rewardMultiplier <= 0) {
-            throw new Error("Có dòng ý tưởng nổi trội chưa nhập hệ số khen thưởng hợp lệ.");
-          }
-          if (seen.has(ideaId)) {
-            throw new Error("Một ý tưởng nổi trội đang được chọn lặp lại nhiều lần.");
-          }
-          seen.add(ideaId);
-          normalized.push({ idea_id: ideaId, reward_multiplier: rewardMultiplier });
-        }
-        return normalized;
-      }
-
       async function refreshRecognitionCandidates() {
-        updateSpecialRewardVisibility();
-        const ready = quarterYearReady();
-        if (!ready) {
-          recognitionCandidates = [];
-          renderSpecialRewardRows();
-          return;
-        }
-        const { quarter, year } = getBatchFormValues();
-        const data = await api.getRewardBatchCandidates(quarter, year);
-        recognitionCandidates = Array.isArray(data?.items) ? data.items : [];
-        const candidateIds = new Set(recognitionCandidates.map((item) => Number(item.idea_id)));
-        specialRewardRows = specialRewardRows.map((row) => (
-          row.ideaId && !candidateIds.has(Number(row.ideaId))
-            ? { ...row, ideaId: "", rewardMultiplier: "" }
-            : row
-        ));
-        renderSpecialRewardRows();
+        recognitionCandidates = [];
       }
 
       function switchTab(tab) {
@@ -663,9 +379,6 @@
         if (tab === "recognition") {
           loadRecognitionBatches().catch((error) => {
             showNotification(error.message || "Không tải được danh sách đợt khen thưởng", "error");
-          });
-          refreshRecognitionCandidates().catch((error) => {
-            showNotification(error.message || "Không tải được danh sách ý tưởng đủ điều kiện", "error");
           });
         }
       }
@@ -690,7 +403,6 @@
               <div>
                 <div class="text-sm font-bold text-slate-900">Quý ${batch.quarter}/${batch.year}</div>
                 <div class="mt-1 text-xs text-slate-500">Đơn giá: ${formatMoney(batch.coefficient)} VND/điểm</div>
-                <div class="mt-1 text-xs text-slate-500">Ý tưởng nổi trội: ${Number(batch.special_reward_count || 0)}</div>
               </div>
               <span class="material-symbols-outlined text-slate-400">chevron_right</span>
             </div>
@@ -757,9 +469,8 @@
         activeBatch = report?.batch || null;
         recognitionItems = Array.isArray(report?.items) ? report.items : [];
         const total = formatMoney(report?.total_amount || 0);
-        const specialCount = Number(activeBatch?.special_reward_count || 0);
         document.getElementById("reportMeta").textContent = activeBatch
-          ? `Quý ${activeBatch.quarter}/${activeBatch.year} • Đơn giá ${formatMoney(activeBatch.coefficient)} VND/điểm • Ý tưởng nổi trội ${specialCount} • Tổng chi ${total} VND`
+          ? `Quý ${activeBatch.quarter}/${activeBatch.year} • Đơn giá ${formatMoney(activeBatch.coefficient)} VND/điểm • Tổng chi ${total} VND`
           : "Chọn 1 đợt để xem dữ liệu.";
         renderBatchList();
         renderRecognitionRows();
@@ -773,32 +484,21 @@
           return;
         }
 
-        let specialRewards = [];
-        try {
-          specialRewards = collectSpecialRewards();
-        } catch (error) {
-          showNotification(error.message || "Dữ liệu ý tưởng nổi trội chưa hợp lệ", "error");
-          return;
-        }
-
         showLoading(true);
         try {
           await api.createRewardBatch({
             quarter,
             year,
             coefficient,
-            special_rewards: specialRewards,
+            special_rewards: [],
             employee_code: currentUser.employee_code,
           });
           showNotification("Đã tạo đợt khen thưởng", "success");
           document.getElementById("batchCoefficient").value = "";
-          specialRewardRows = [];
-          specialRewardSectionInitialized = false;
           activeBatch = null;
           recognitionItems = [];
           closeCreateRecognitionModal();
           await loadRecognitionBatches();
-          await refreshRecognitionCandidates();
           document.getElementById("reportMeta").textContent = "Chọn 1 đợt để xem dữ liệu.";
         } catch (error) {
           showNotification(error.message || "Không tạo được đợt khen thưởng", "error");
@@ -1049,22 +749,7 @@
         URL.revokeObjectURL(url);
       }
 
-      function bindRecognitionFormEvents() {
-        ["batchQuarter", "batchYear", "batchCoefficient"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          el.addEventListener("change", () => {
-            refreshRecognitionCandidates().catch((error) => {
-              showNotification(error.message || "Không tải được danh sách ý tưởng đủ điều kiện", "error");
-            });
-          });
-          el.addEventListener("input", () => {
-            refreshRecognitionCandidates().catch((error) => {
-              showNotification(error.message || "Không tải được danh sách ý tưởng đủ điều kiện", "error");
-            });
-          });
-        });
-      }
+      function bindRecognitionFormEvents() {}
 
       async function init() {
         if (localStorage.getItem("is_logged_in") !== "true") {
@@ -1090,7 +775,6 @@
         bindRecognitionFormEvents();
         switchTab(activeTab);
         await loadRewards();
-        await refreshRecognitionCandidates().catch(() => {});
       }
 
       init().catch((error) => {

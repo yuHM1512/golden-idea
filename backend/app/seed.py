@@ -731,6 +731,12 @@ def migrate_payment_slip_reward_columns() -> None:
             conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN paid_at timestamp with time zone"))
 
 
+def migrate_payment_slip_amount_default() -> None:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE public.payment_slips ALTER COLUMN amount SET DEFAULT 100000.00"))
+        conn.execute(text("UPDATE public.payment_slips SET amount = 100000.00 WHERE amount IS NULL OR amount = 50000.00"))
+
+
 def migrate_reward_batch_special_coefficients_column() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("reward_batches"):
@@ -743,6 +749,121 @@ def migrate_reward_batch_special_coefficients_column() -> None:
     table_name = "public.reward_batches" if engine.dialect.name == "postgresql" else "reward_batches"
     with engine.begin() as conn:
         conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN special_coefficients text"))
+
+
+def migrate_ie_review_logic_columns() -> None:
+    with engine.begin() as conn:
+        idea_columns = {
+            row[0]
+            for row in conn.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'ideas'
+                    """
+                )
+            ).fetchall()
+        }
+        if "eligible_register_reward" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN eligible_register_reward boolean"))
+        if "bod_register_approved" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN bod_register_approved boolean"))
+        if "bod_register_approved_at" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN bod_register_approved_at timestamptz"))
+        if "bod_register_approved_by_id" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN bod_register_approved_by_id integer"))
+        if "council_final_score" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_final_score integer"))
+        if "council_final_scored_at" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_final_scored_at timestamptz"))
+        if "council_final_scored_by_id" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_final_scored_by_id integer"))
+        if "council_final_note" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_final_note text"))
+        if "council_is_featured" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_is_featured boolean"))
+        if "council_reward_multiplier" not in idea_columns:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN council_reward_multiplier double precision"))
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas
+                SET eligible_register_reward = CASE
+                    WHEN status::text IN ('LEADERSHIP_REVIEW', 'APPROVED', 'REWARDED') THEN true
+                    ELSE COALESCE(eligible_register_reward, false)
+                END
+                WHERE eligible_register_reward IS NULL
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN eligible_register_reward SET DEFAULT false"))
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN eligible_register_reward SET NOT NULL"))
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas
+                SET bod_register_approved = CASE
+                    WHEN status::text IN ('APPROVED', 'REWARDED') THEN true
+                    ELSE COALESCE(bod_register_approved, false)
+                END
+                WHERE bod_register_approved IS NULL
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN bod_register_approved SET DEFAULT false"))
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN bod_register_approved SET NOT NULL"))
+        conn.execute(
+            text(
+                """
+                WITH latest_ie_score AS (
+                    SELECT DISTINCT ON (s.idea_id)
+                        s.idea_id,
+                        s.total_score,
+                        s.scored_at
+                    FROM public.idea_scores s
+                    JOIN public.users u ON u.id = s.scorer_id
+                    WHERE lower(coalesce(u.role, '')) = 'ie_manager'
+                    ORDER BY s.idea_id, s.scored_at DESC NULLS LAST, s.id DESC
+                )
+                UPDATE public.ideas i
+                SET council_final_score = lis.total_score,
+                    council_final_scored_at = COALESCE(i.council_final_scored_at, lis.scored_at, i.approved_at)
+                FROM latest_ie_score lis
+                WHERE i.id = lis.idea_id
+                  AND i.status::text IN ('APPROVED', 'REWARDED')
+                  AND i.council_final_score IS NULL
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas
+                SET council_is_featured = COALESCE(council_is_featured, false)
+                WHERE council_is_featured IS NULL
+                """
+            )
+        )
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN council_is_featured SET DEFAULT false"))
+        conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN council_is_featured SET NOT NULL"))
+
+        review_columns = {
+            row[0]
+            for row in conn.execute(
+                text(
+                    """
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'idea_reviews'
+                    """
+                )
+            ).fetchall()
+        }
+        if "council_result_type" not in review_columns:
+            conn.execute(text("ALTER TABLE public.idea_reviews ADD COLUMN council_result_type varchar(64)"))
 
 
 def migrate_file_attachments_drive_columns() -> None:
@@ -758,12 +879,40 @@ def migrate_file_attachments_drive_columns() -> None:
         "external_folder_id": f"ALTER TABLE {table_name} ADD COLUMN external_folder_id varchar(255)",
         "external_url": f"ALTER TABLE {table_name} ADD COLUMN external_url varchar(500)",
         "mime_type": f"ALTER TABLE {table_name} ADD COLUMN mime_type varchar(255)",
+        "attachment_type": f"ALTER TABLE {table_name} ADD COLUMN attachment_type varchar(20)",
     }
 
     with engine.begin() as conn:
         for column_name, ddl in statements.items():
             if column_name not in existing:
                 conn.execute(text(ddl))
+        conn.execute(text(f"UPDATE {table_name} SET attachment_type = 'after' WHERE attachment_type IS NULL OR btrim(attachment_type) = ''"))
+        conn.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN attachment_type SET DEFAULT 'after'"))
+        conn.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN attachment_type SET NOT NULL"))
+
+
+def migrate_standardized_idea_replications_table() -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS public.standardized_idea_replications (
+                    id serial PRIMARY KEY,
+                    idea_id integer NOT NULL REFERENCES public.ideas(id),
+                    unit_id integer NOT NULL REFERENCES public.units(id),
+                    requester_user_id integer NULL REFERENCES public.users(id),
+                    requester_employee_code varchar(50) NOT NULL,
+                    requester_name varchar(255) NOT NULL,
+                    idea_title varchar(255) NOT NULL,
+                    apply_date date NOT NULL,
+                    description text NOT NULL,
+                    approve boolean NOT NULL DEFAULT false,
+                    created_at timestamptz NOT NULL DEFAULT now(),
+                    updated_at timestamptz NULL
+                )
+                """
+            )
+        )
 
 
 def seed_score_criteria() -> int:

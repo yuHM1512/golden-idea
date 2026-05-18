@@ -142,39 +142,34 @@
         <!-- Charts -->
         <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
           <div class="xl:col-span-7 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
-            <div class="flex items-end justify-between gap-6 mb-6">
-              <div>
-                <div class="text-xs uppercase tracking-widest text-on-surface-variant">Biểu đồ</div>
-                <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng theo đơn vị</h2>
+            <div class="mb-5 flex items-center justify-between gap-4">
+              <h2 class="text-2xl font-black font-manrope text-primary leading-tight lg:whitespace-nowrap">Ý tưởng theo đơn vị</h2>
+
+              <div class="flex items-center gap-2 flex-none">
+                <label class="text-[11px] uppercase tracking-[0.22em] text-on-surface-variant whitespace-nowrap">
+                  Tháng
+                  <select id="unitChartMonth" class="ml-2 rounded-lg bg-surface-container-low border-none py-2 pl-3 pr-8 text-sm font-semibold min-w-[108px]">
+                    <option value="">Tất cả</option>
+                  </select>
+                </label>
+                <label class="text-[11px] uppercase tracking-[0.22em] text-on-surface-variant whitespace-nowrap">
+                  Năm
+                  <select id="unitChartYear" class="ml-2 rounded-lg bg-surface-container-low border-none py-2 pl-3 pr-8 text-sm font-semibold min-w-[108px]">
+                    <option value="">Tất cả</option>
+                  </select>
+                </label>
+                <button class="px-4 py-2 rounded-lg bg-signature-gradient text-sm text-white font-semibold hover:opacity-95 whitespace-nowrap" onclick="refreshUnitChart()">
+                  Xem dữ liệu
+                </button>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3 mb-5">
-              <label class="text-xs uppercase tracking-widest text-on-surface-variant">
-                Tháng
-                <select id="unitChartMonth" class="ml-2 rounded-xl bg-surface-container-low border-none text-sm font-semibold">
-                  <option value="">Tất cả</option>
-                </select>
-              </label>
-              <label class="text-xs uppercase tracking-widest text-on-surface-variant">
-                Năm
-                <select id="unitChartYear" class="ml-2 rounded-xl bg-surface-container-low border-none text-sm font-semibold">
-                  <option value="">Tất cả</option>
-                </select>
-              </label>
-              <button class="px-4 py-2 rounded-xl bg-signature-gradient text-white font-semibold hover:opacity-95" onclick="refreshUnitChart()">
-                Xem dữ liệu
-              </button>
-            </div>
             <div id="unitChartWrap" class="min-h-64 overflow-x-auto pb-2 pr-2"></div>
           </div>
 
           <div class="xl:col-span-5 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
-            <div class="flex items-end justify-between gap-6 mb-6">
-              <div>
-                <div class="text-xs uppercase tracking-widest text-on-surface-variant">Tỷ trọng</div>
-                <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Ý tưởng theo lĩnh vực</h2>
-              </div>
+            <div class="mb-6 flex items-center justify-between gap-6">
+              <h2 class="text-2xl font-black font-manrope text-primary">Ý tưởng theo lĩnh vực</h2>
             </div>
 
             <div class="flex flex-col lg:flex-row items-center gap-8">
@@ -184,7 +179,33 @@
           </div>
         </section>
 
-        <!-- Filters -->
+        <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
+          <div class="xl:col-span-7 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+            <div class="mb-5 flex items-center justify-between gap-4">
+              <h2 class="text-2xl font-black font-manrope text-primary">Xếp hạng đơn vị - Nhân rộng YTV</h2>
+            </div>
+            <div id="replicationUnitChartWrap" class="min-h-64 overflow-x-auto pb-2 pr-2"></div>
+          </div>
+
+          <div class="xl:col-span-5 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+            <div class="mb-5 flex items-center justify-between gap-4">
+              <h2 class="text-2xl font-black font-manrope text-primary">Top 5 ý tưởng áp dụng nhiều nhất</h2>
+            </div>
+            <div class="overflow-hidden rounded-[1.5rem] border border-surface-variant">
+              <table class="min-w-full text-sm">
+                <thead class="bg-surface-container-low text-on-surface-variant">
+                  <tr>
+                    <th class="px-5 py-4 text-left font-semibold">Ý tưởng</th>
+                    <th class="px-5 py-4 text-left font-semibold">Đơn vị tạo</th>
+                    <th class="px-5 py-4 text-right font-semibold">Số lần áp dụng</th>
+                  </tr>
+                </thead>
+                <tbody id="topReplicatedIdeasBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section class="bg-surface-container-lowest rounded-[2rem] p-6 md:p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
           <div class="flex flex-col xl:flex-row xl:items-end gap-4">
             <div class="xl:w-[30%]">
@@ -222,6 +243,7 @@
               </button>
             </div>
           </div>
+          <div class="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-6" id="libraryTabs"></div>
         </section>
 
         <!-- Data Table -->
@@ -229,15 +251,15 @@
           <div class="px-8 py-6 flex items-center justify-between">
             <div>
               <div class="text-xs uppercase tracking-widest text-on-surface-variant">Kho dữ liệu</div>
-              <h2 class="mt-2 text-2xl font-black font-manrope text-primary">Bảng ý tưởng</h2>
-              <p class="mt-2 text-sm text-on-surface-variant">Tên ý tưởng (tóm tắt), lĩnh vực, người gửi, mô tả, minh hoạ.</p>
+              <h2 id="libraryTableHeading" class="mt-2 text-2xl font-black font-manrope text-primary">Đưa vào chuẩn hoá</h2>
+              <p id="libraryTableDescription" class="mt-2 text-sm text-on-surface-variant">Tên ý tưởng (tóm tắt), lĩnh vực, người gửi, mô tả, minh hoạ.</p>
             </div>
               <div class="text-sm text-on-surface-variant" id="tableMeta">&#8212;</div>
           </div>
 
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
-              <thead class="bg-surface-container-low text-on-surface-variant">
+              <thead id="libraryTableHead" class="bg-surface-container-low text-on-surface-variant">
                 <tr>
                   <th class="text-left px-8 py-4 font-semibold">Tên ý tưởng</th>
                   <th class="text-left px-6 py-4 font-semibold">Lĩnh vực</th>
@@ -308,6 +330,44 @@
       </div>
     </div>
 
+    <div id="replicationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4" onclick="closeReplicationModal()">
+      <div class="w-full max-w-2xl rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(25,28,29,0.22)]" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Nhân rộng</div>
+            <h3 class="mt-2 text-2xl font-black font-manrope text-primary">Nhân rộng ý tưởng</h3>
+          </div>
+          <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full bg-surface-container-low" onclick="closeReplicationModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="space-y-5 px-6 py-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label class="block">
+              <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Đơn vị</div>
+              <input id="replicationUnit" type="text" class="mt-2 w-full rounded-xl bg-surface-container-low border-none" readonly />
+            </label>
+            <label class="block">
+              <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Ý tưởng</div>
+              <input id="replicationIdeaTitle" type="text" class="mt-2 w-full rounded-xl bg-surface-container-low border-none" readonly />
+            </label>
+          </div>
+          <label class="block">
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Ngày áp dụng</div>
+            <input id="replicationApplyDate" type="date" class="mt-2 w-full rounded-xl bg-surface-container-low border-none" />
+          </label>
+          <label class="block">
+            <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Mô tả</div>
+            <textarea id="replicationDescription" rows="5" class="mt-2 w-full rounded-xl bg-surface-container-low border-none" placeholder="Mô tả ngắn việc nhân rộng ý tưởng tại đơn vị của bạn"></textarea>
+          </label>
+        </div>
+        <div class="flex justify-end gap-3 border-t border-slate-100 px-6 py-5">
+          <button type="button" class="px-5 py-3 rounded-xl font-semibold text-primary hover:bg-surface-container-low" onclick="closeReplicationModal()">Đóng</button>
+          <button type="button" class="px-5 py-3 rounded-xl bg-signature-gradient text-white font-semibold shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:opacity-95" onclick="submitReplication()">Nhân rộng</button>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/api.js?v=20260428-unit-chart-filter"></script>
     <script>
       const CATEGORY_LABELS = {
@@ -334,6 +394,11 @@
         REJECTED: "Không duyệt",
         CANCELLED: "Đã huỷ",
       };
+      const LIBRARY_TAB_LABELS = {
+        standardization: "Đưa vào chuẩn hoá",
+        non_standardization: "Không đưa vào chuẩn hoá",
+        unit: "Kho Đơn vị",
+      };
       const PIE_PALETTE = ["#1E3A8A", "#1D4ED8", "#3B82F6", "#93C5FD", "#DBEAFE"];
 
       let units = [];
@@ -343,11 +408,97 @@
       let activeIdeaDetail = null;
       let unitChartLastData = [];
       let unitChartLastParams = { month: "", year: "" };
+      let currentUser = null;
+      let currentLibraryTab = "standardization";
+      let canViewUnitLibrary = false;
+      let activeReplicationIdea = null;
+      let currentUserUnitName = "";
+      let currentLibraryRows = [];
 
       function logout() {
         localStorage.removeItem("is_logged_in");
         localStorage.removeItem("employee_code");
         window.location.href = "/pages/login";
+      }
+
+      function currentEmployeeCode() {
+        return (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+      }
+
+      function canReplicateIdea() {
+        return Boolean(currentUser?.id) && currentLibraryTab !== "unit";
+      }
+
+      function resolveCurrentUserUnitName() {
+        if (!currentUser?.unit_id) return "";
+        return units.find((item) => Number(item.id) === Number(currentUser.unit_id))?.name || "";
+      }
+
+      function renderLibraryTabs() {
+        const wrap = document.getElementById("libraryTabs");
+        if (!wrap) return;
+        const tabs = [
+          { key: "standardization", label: LIBRARY_TAB_LABELS.standardization, visible: true },
+          { key: "non_standardization", label: LIBRARY_TAB_LABELS.non_standardization, visible: true },
+          { key: "unit", label: LIBRARY_TAB_LABELS.unit, visible: canViewUnitLibrary },
+        ].filter((item) => item.visible);
+
+        wrap.innerHTML = tabs
+          .map((tab) => {
+            const active = tab.key === currentLibraryTab;
+            const classes = active
+              ? "rounded-[1.25rem] bg-signature-gradient px-5 py-3 text-sm font-semibold text-white shadow-[0px_18px_36px_rgba(0,43,115,0.16)]"
+              : "rounded-[1.25rem] bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface hover:bg-surface-variant";
+            return `<button type="button" class="${classes}" onclick="switchLibraryTab('${tab.key}')">${safeText(tab.label)}</button>`;
+          })
+          .join("");
+      }
+
+      function updateLibraryTableHeading() {
+        const heading = document.getElementById("libraryTableHeading");
+        const desc = document.getElementById("libraryTableDescription");
+        if (!heading || !desc) return;
+        heading.textContent = LIBRARY_TAB_LABELS[currentLibraryTab] || "Bảng ý tưởng";
+        if (currentLibraryTab === "unit") {
+          desc.textContent = "Kho đơn vị hiển thị toàn bộ ý tưởng của đơn vị bạn trên hệ thống, bao gồm mọi trạng thái xử lý.";
+        } else {
+          desc.textContent = "Tên ý tưởng (tóm tắt), lĩnh vực, người gửi, mô tả, minh hoạ.";
+        }
+      }
+
+      function renderLibraryTableHead() {
+        const head = document.getElementById("libraryTableHead");
+        if (!head) return;
+        const replicateColumn = canReplicateIdea()
+          ? '<th class="text-center px-4 py-4 font-semibold">Nhân rộng</th>'
+          : '';
+        head.innerHTML = `
+          <tr>
+            ${replicateColumn}
+            <th class="text-left px-8 py-4 font-semibold">Tên ý tưởng</th>
+            <th class="text-left px-6 py-4 font-semibold">Lĩnh vực</th>
+            <th class="text-left px-6 py-4 font-semibold">Người gửi</th>
+            <th class="text-left px-6 py-4 font-semibold">Mô tả</th>
+            <th class="text-center px-6 py-4 font-semibold">Minh hoạ</th>
+          </tr>
+        `;
+      }
+
+      function switchLibraryTab(tab) {
+        if (tab === "unit" && !canViewUnitLibrary) return;
+        currentLibraryTab = tab;
+        skip = 0;
+        renderLibraryTabs();
+        updateLibraryTableHeading();
+        renderLibraryTableHead();
+        const unitSelect = document.getElementById("filterUnitId");
+        if (unitSelect) {
+          unitSelect.disabled = currentLibraryTab === "unit";
+          if (currentLibraryTab === "unit") {
+            unitSelect.value = "";
+          }
+        }
+        loadIdeas(true);
       }
 
       function resetFilters() {
@@ -360,6 +511,22 @@
 
       function safeText(text) {
         return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
+      }
+
+      function getVietnamDateValue(date = new Date()) {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(date);
+      }
+
+      function formatDateTimeVN(value) {
+        if (!value) return "—";
+        return new Date(value).toLocaleString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        });
       }
 
       function formatVnd(value) {
@@ -379,6 +546,54 @@
         const modal = document.getElementById("unitChartModal");
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+      }
+
+      function openReplicationModalById(ideaId) {
+        if (!canReplicateIdea()) return;
+        const row = currentLibraryRows.find((item) => Number(item.id) === Number(ideaId));
+        if (!row) return;
+        activeReplicationIdea = row;
+        document.getElementById("replicationUnit").value = currentUserUnitName || "";
+        document.getElementById("replicationIdeaTitle").value = row?.title || "";
+        document.getElementById("replicationApplyDate").value = getVietnamDateValue();
+        document.getElementById("replicationDescription").value = "";
+        const modal = document.getElementById("replicationModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeReplicationModal() {
+        activeReplicationIdea = null;
+        const modal = document.getElementById("replicationModal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      async function submitReplication() {
+        if (!activeReplicationIdea || !canReplicateIdea()) return;
+        const applyDate = document.getElementById("replicationApplyDate").value;
+        const description = document.getElementById("replicationDescription").value.trim();
+        if (!applyDate) {
+          alert("Hãy chọn ngày áp dụng.");
+          return;
+        }
+        if (!description) {
+          alert("Hãy nhập mô tả nhân rộng.");
+          return;
+        }
+
+        try {
+          await api.createStandardizedIdeaReplication({
+            employee_code: currentEmployeeCode(),
+            idea_id: activeReplicationIdea.id,
+            apply_date: applyDate,
+            description,
+          });
+          closeReplicationModal();
+          alert("Đã ghi nhận yêu cầu nhân rộng ý tưởng.");
+        } catch (error) {
+          alert(error.message || "Không tạo được yêu cầu nhân rộng.");
+        }
       }
 
       function openUnitChartModal() {
@@ -542,15 +757,29 @@
         return `${value} B`;
       }
 
+      function normalizeAttachmentType(value) {
+        return String(value || "after").trim().toLowerCase() === "before" ? "before" : "after";
+      }
+
+      function groupAttachmentsByType(attachments = []) {
+        return attachments.reduce(
+          (acc, file) => {
+            acc[normalizeAttachmentType(file?.attachment_type)].push(file);
+            return acc;
+          },
+          { before: [], after: [] }
+        );
+      }
+
       function closeIdeaModal() {
         const modal = document.getElementById("ideaModal");
         modal.classList.add("hidden");
         modal.classList.remove("flex");
       }
 
-      function renderIdeaAttachments(attachments = []) {
+      function renderAttachmentCards(attachments = []) {
         if (!attachments.length) {
-          return '<div class="rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest p-5 text-sm text-on-surface-variant">Chưa có file minh hoạ.</div>';
+          return '<div class="rounded-[1.25rem] border border-dashed border-slate-200 bg-surface-container-lowest p-5 text-sm text-on-surface-variant">Chưa có file cho nhóm này.</div>';
         }
 
         return `
@@ -592,6 +821,36 @@
         `;
       }
 
+      function renderIdeaAttachments(attachments = []) {
+        if (!attachments.length) {
+          return '<div class="rounded-[1.5rem] border border-slate-100 bg-surface-container-lowest p-5 text-sm text-on-surface-variant">Chưa có file minh hoạ.</div>';
+        }
+
+        const groups = groupAttachmentsByType(attachments);
+        return `
+          <div class="space-y-5">
+            <section class="rounded-[1.5rem] border border-slate-100 bg-white p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Trước cải tiến</div>
+                  <div class="mt-1 text-sm font-semibold text-on-surface">${groups.before.length} file</div>
+                </div>
+              </div>
+              <div class="mt-4">${renderAttachmentCards(groups.before)}</div>
+            </section>
+            <section class="rounded-[1.5rem] border border-slate-100 bg-white p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-on-surface-variant">Sau cải tiến</div>
+                  <div class="mt-1 text-sm font-semibold text-on-surface">${groups.after.length} file</div>
+                </div>
+              </div>
+              <div class="mt-4">${renderAttachmentCards(groups.after)}</div>
+            </section>
+          </div>
+        `;
+      }
+
       function renderIdeaModal(detail) {
         const modal = document.getElementById("ideaModal");
         document.getElementById("ideaModalTitle").textContent = detail.title || "Ý tưởng";
@@ -612,7 +871,7 @@
             </div>
             <div class="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
               <div class="text-xs uppercase tracking-widest text-on-surface-variant">Ngày ghi nhận</div>
-              <div class="mt-2 font-semibold text-on-surface">${new Date(detail.submitted_at).toLocaleString("vi-VN")}</div>
+              <div class="mt-2 font-semibold text-on-surface">${formatDateTimeVN(detail.submitted_at)}</div>
             </div>
           </section>
           <section class="rounded-[1.75rem] border border-slate-100 bg-surface-container-lowest p-6">
@@ -635,7 +894,10 @@
       }
 
       async function openIdeaModal(ideaId) {
-        activeIdeaDetail = await api.getLibraryIdeaDetail(ideaId);
+        activeIdeaDetail = await api.getLibraryIdeaDetail(ideaId, {
+          employee_code: currentEmployeeCode(),
+          library_type: currentLibraryTab,
+        });
         renderIdeaModal(activeIdeaDetail);
       }
 
@@ -697,6 +959,82 @@
         wrap.appendChild(plot);
       }
 
+      function renderReplicationUnitChart(data) {
+        const wrap = document.getElementById("replicationUnitChartWrap");
+        if (!wrap) return;
+        wrap.innerHTML = "";
+
+        const normalized = (data || [])
+          .map((x) => ({
+            label: x.unit_name || "Chưa có đơn vị",
+            count: Number(x.replication_count || 0),
+          }))
+          .filter((x) => x.count > 0)
+          .sort((a, b) => b.count - a.count);
+
+        if (!normalized.length) {
+          wrap.innerHTML =
+            '<div class="w-full h-full flex items-center justify-center text-on-surface-variant">Chưa có dữ liệu nhân rộng được duyệt.</div>';
+          return;
+        }
+
+        const max = Math.max(1, ...normalized.map((x) => x.count));
+        const plot = document.createElement("div");
+        plot.className = "min-w-max mx-auto";
+        const barRow = document.createElement("div");
+        barRow.className = "h-44 flex items-end justify-center gap-7 px-4";
+        const labelRow = document.createElement("div");
+        labelRow.className = "mt-3 flex items-start justify-center gap-7 px-4";
+
+        normalized.slice(0, 16).forEach((item) => {
+          const height = Math.round((item.count / max) * 100);
+          const bar = document.createElement("div");
+          bar.className = "flex-none w-14 h-44 flex flex-col items-center justify-end gap-2";
+          bar.innerHTML = `
+            <div class="text-xs text-on-surface-variant">${item.count}</div>
+            <div class="w-9 rounded-2xl bg-surface-container-low overflow-hidden flex items-end h-40">
+              <div class="w-full bg-[linear-gradient(180deg,#1D4ED8_0%,#002B73_100%)]" style="height:${height}%"></div>
+            </div>
+          `;
+          barRow.appendChild(bar);
+
+          const label = document.createElement("div");
+          label.className = "flex-none w-14 text-[10px] text-on-surface-variant uppercase tracking-widest text-center leading-snug line-clamp-2";
+          label.textContent = item.label;
+          labelRow.appendChild(label);
+        });
+
+        plot.appendChild(barRow);
+        plot.appendChild(labelRow);
+        wrap.appendChild(plot);
+      }
+
+      function renderTopReplicatedIdeas(rows) {
+        const tbody = document.getElementById("topReplicatedIdeasBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(rows) || !rows.length) {
+          tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-on-surface-variant">Chưa có ý tưởng nhân rộng được duyệt.</td></tr>';
+          return;
+        }
+
+        rows.forEach((item, index) => {
+          const tr = document.createElement("tr");
+          tr.className = index === 0 ? "" : "border-t border-surface-variant";
+          tr.innerHTML = `
+            <td class="px-5 py-4 align-top">
+              <div class="font-semibold text-on-surface line-clamp-2">${safeText(item.idea_title || "—")}</div>
+            </td>
+            <td class="px-5 py-4 align-top text-on-surface-variant">${safeText(item.source_unit_name || "—")}</td>
+            <td class="px-5 py-4 align-top text-right">
+              <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${Number(item.replication_count || 0)}</span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
       function renderCategoryDonut(data) {
         const donut = document.getElementById("categoryDonut");
         const legend = document.getElementById("categoryDonutLegend");
@@ -749,11 +1087,21 @@
       }
 
       function renderIdeas(rows) {
+        renderLibraryTableHead();
         const tbody = document.getElementById("ideasTbody");
         tbody.innerHTML = "";
+        currentLibraryRows = Array.isArray(rows) ? rows : [];
         lastCount = rows.length;
         document.getElementById("tableMeta").textContent = `${rows.length} dòng (hiển thị tối đa ${limit})`;
         document.getElementById("pageInfo").textContent = `Trang: ${Math.floor(skip / limit) + 1}`;
+
+        if (!rows.length) {
+          const tr = document.createElement("tr");
+          const colspan = canReplicateIdea() ? 6 : 5;
+          tr.innerHTML = `<td colspan="${colspan}" class="px-8 py-10 text-center text-on-surface-variant">Chưa có ý tưởng trong kho này.</td>`;
+          tbody.appendChild(tr);
+          return;
+        }
 
         rows.forEach((r) => {
           const tr = document.createElement("tr");
@@ -767,8 +1115,23 @@
           const categoryBadgeClass = CATEGORY_BADGE_CLASSES[r.category] || CATEGORY_BADGE_CLASSES.OTHER;
           const unit = r.unit_name ? `${r.unit_name}` : "";
           const statusLabel = STATUS_LABELS[r.status] || r.status || "\u2014";
+          const replicateCell = canReplicateIdea()
+            ? `
+            <td class="px-4 py-5 align-top text-center">
+              <button
+                type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container-low text-primary hover:bg-surface-variant"
+                title="Nhân rộng ý tưởng"
+                onclick="event.stopPropagation(); openReplicationModalById(${r.id})"
+              >
+                <span class="material-symbols-outlined text-[20px]">content_copy</span>
+              </button>
+            </td>
+          `
+            : "";
 
           tr.innerHTML = `
+            ${replicateCell}
             <td class="px-8 py-5 align-top">
               <div class="font-semibold text-on-surface line-clamp-2">${safeText(r.title)}</div>
               <div class="text-xs text-on-surface-variant mt-2">${safeText(unit)} · ${safeText(statusLabel)}</div>
@@ -780,7 +1143,7 @@
             </td>
             <td class="px-6 py-5 align-top">
               <div class="font-semibold">${safeText(r.full_name)}${r.employee_code ? ` • <span class="font-mono text-on-surface-variant">${safeText(r.employee_code)}</span>` : ""}</div>
-              <div class="text-xs text-on-surface-variant mt-1">${new Date(r.submitted_at).toLocaleString()}</div>
+              <div class="text-xs text-on-surface-variant mt-1">${formatDateTimeVN(r.submitted_at)}</div>
             </td>
             <td class="px-6 py-5 align-top">
               <div class="text-on-surface-variant line-clamp-3">${safeText(r.description)}</div>
@@ -798,6 +1161,8 @@
 
       function buildParams() {
         return {
+          employee_code: currentEmployeeCode(),
+          library_type: currentLibraryTab,
           q: document.getElementById("q").value.trim(),
           unit_id: document.getElementById("filterUnitId").value,
           category: document.getElementById("filterCategory").value,
@@ -829,6 +1194,15 @@
           return;
         }
 
+        currentUser = await api.getUserByCode(currentEmployeeCode()).catch(() => null);
+        const role = (currentUser?.role || "").trim().toLowerCase();
+        canViewUnitLibrary = Boolean(currentUser?.unit_id) && ["dept_manager", "sub_dept_manager", "unit_represent", "admin"].includes(role);
+        if (!canViewUnitLibrary) {
+          currentLibraryTab = "standardization";
+        }
+        renderLibraryTabs();
+        updateLibraryTableHeading();
+
         units = await api.getUnits();
         const unitSel = document.getElementById("filterUnitId");
         units.forEach((u) => {
@@ -837,6 +1211,7 @@
           opt.textContent = u.department ? `${u.department} • ${u.name}` : u.name;
           unitSel.appendChild(opt);
         });
+        currentUserUnitName = resolveCurrentUserUnitName();
 
         const cats = api.getCategories();
         const catSel = document.getElementById("filterCategory");
@@ -846,16 +1221,21 @@
           opt.textContent = c.label;
           catSel.appendChild(opt);
         });
+        unitSel.disabled = currentLibraryTab === "unit";
 
-        const [metrics, unitChart, categoryChart] = await Promise.all([
+        const [metrics, unitChart, categoryChart, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
           api.getIdeaMetrics(),
           api.getIdeasByUnit(),
           api.getIdeasByCategory(),
+          api.getReplicationsByUnit(),
+          api.getTopReplicatedIdeas(5),
         ]);
         renderKpis(metrics);
         unitChartLastData = unitChart || [];
         renderUnitChart(unitChartLastData);
         renderCategoryDonut(categoryChart);
+        renderReplicationUnitChart(replicationUnitChart || []);
+        renderTopReplicatedIdeas(topReplicatedIdeas || []);
         await loadIdeas(true);
 
         const monthSel = document.getElementById("unitChartMonth");

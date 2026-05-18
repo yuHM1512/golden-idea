@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.unit import Unit
 from app.models.idea import Idea, IdeaStatus, IdeaCategory
 from app.models.actual_benefit import ActualBenefitEvaluation
+from app.models.standardized_idea_replication import StandardizedIdeaReplication
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -112,3 +113,59 @@ async def ideas_by_category(db: Session = Depends(get_db)):
         .all()
     )
     return [{"category": getattr(category, "value", str(category)), "count": int(count)} for category, count in rows]
+
+
+@router.get("/replications-by-unit", response_model=List[Dict[str, Any]])
+async def replications_by_unit(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            Unit.id.label("unit_id"),
+            Unit.name.label("unit_name"),
+            Unit.department.label("department"),
+            func.count(StandardizedIdeaReplication.id).label("replication_count"),
+        )
+        .outerjoin(
+            StandardizedIdeaReplication,
+            (StandardizedIdeaReplication.unit_id == Unit.id) & (StandardizedIdeaReplication.approve.is_(True)),
+        )
+        .group_by(Unit.id, Unit.name, Unit.department)
+        .order_by(Unit.department.asc().nullslast(), Unit.name.asc())
+        .all()
+    )
+    return [
+        {
+            "unit_id": row.unit_id,
+            "unit_name": row.unit_name,
+            "department": row.department,
+            "replication_count": int(row.replication_count or 0),
+        }
+        for row in rows
+    ]
+
+
+@router.get("/top-replicated-ideas", response_model=List[Dict[str, Any]])
+async def top_replicated_ideas(limit: int = Query(default=5, ge=1, le=20), db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            StandardizedIdeaReplication.idea_id.label("idea_id"),
+            func.max(StandardizedIdeaReplication.idea_title).label("idea_title"),
+            func.max(Unit.name).label("source_unit_name"),
+            func.count(StandardizedIdeaReplication.id).label("replication_count"),
+        )
+        .join(Idea, Idea.id == StandardizedIdeaReplication.idea_id)
+        .join(Unit, Unit.id == Idea.unit_id)
+        .filter(StandardizedIdeaReplication.approve.is_(True))
+        .group_by(StandardizedIdeaReplication.idea_id)
+        .order_by(func.count(StandardizedIdeaReplication.id).desc(), func.max(StandardizedIdeaReplication.idea_title).asc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "idea_id": row.idea_id,
+            "idea_title": row.idea_title,
+            "source_unit_name": row.source_unit_name,
+            "replication_count": int(row.replication_count or 0),
+        }
+        for row in rows
+    ]

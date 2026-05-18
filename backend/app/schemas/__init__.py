@@ -27,8 +27,13 @@ from .review import (
     ApprovalScoreInput,
     ApprovalScoreView,
     ApprovalSubmitRequest,
+    ApprovalReplicationItem,
+    ApprovalReplicationQueueResponse,
+    BodRegisterApprovalRequest,
+    CouncilFinalScoreRequest,
     IdeaReviewCreate,
     IdeaReviewResponse,
+    ReplicationApprovalRequest,
     ReviewHistoryResponse,
     ReviewLevel,
     ReviewAction,
@@ -37,7 +42,13 @@ from .payment import (
     PaymentSlipCreate, PaymentSlipUpdate, PaymentSlipResponse,
     PaymentSlipListResponse, PaymentSlipPrintRequest, PaymentSlipPrintResponse
 )
-from .library import IdeaLibraryRow, IdeaLibraryDetail, IdeaLibraryAttachment
+from .library import (
+    IdeaLibraryRow,
+    IdeaLibraryDetail,
+    IdeaLibraryAttachment,
+    StandardizedIdeaReplicationCreate,
+    StandardizedIdeaReplicationResponse,
+)
 
 __all__ = [
     # User
@@ -56,11 +67,15 @@ __all__ = [
     # Review
     "ActualBenefitInput", "ActualBenefitView",
     "ApprovalAttachmentView", "ApprovalIdeaDetail", "ApprovalIdeaItem", "ApprovalMetrics", "ApprovalQueueResponse",
+    "ApprovalReplicationItem", "ApprovalReplicationQueueResponse",
     "ApprovalReviewView", "ApprovalScoreInput", "ApprovalScoreView", "ApprovalSubmitRequest",
+    "BodRegisterApprovalRequest", "CouncilFinalScoreRequest",
+    "ReplicationApprovalRequest",
     "IdeaReviewCreate", "IdeaReviewResponse", "ReviewHistoryResponse", "ReviewLevel", "ReviewAction",
     # Payment
     "PaymentSlipCreate", "PaymentSlipUpdate", "PaymentSlipResponse",
     "PaymentSlipListResponse", "PaymentSlipPrintRequest", "PaymentSlipPrintResponse",
     # Library
     "IdeaLibraryRow", "IdeaLibraryDetail", "IdeaLibraryAttachment",
+    "StandardizedIdeaReplicationCreate", "StandardizedIdeaReplicationResponse",
 ]

@@ -36,7 +36,7 @@ const api = {
   },
 
   // Upload attachment
-  async uploadAttachment(ideaId, file) {
+  async uploadAttachment(ideaId, file, attachmentType = 'after') {
     try {
       const sessionResponse = await fetch(`${API_BASE}/ideas/${ideaId}/upload-session`, {
         method: 'POST',
@@ -47,6 +47,7 @@ const api = {
           original_filename: file?.name || '',
           file_size: file?.size || 0,
           content_type: file?.type || 'application/octet-stream',
+          attachment_type: attachmentType || 'after',
         }),
       });
       if (!sessionResponse.ok) {
@@ -90,6 +91,7 @@ const api = {
           original_filename: file?.name || '',
           file_size: file?.size || 0,
           content_type: file?.type || 'application/octet-stream',
+          attachment_type: attachmentType || 'after',
         }),
       });
       if (!finalizeResponse.ok) {
@@ -191,6 +193,28 @@ const api = {
     }
   },
 
+  async getReplicationsByUnit() {
+    try {
+      const response = await fetch(`${API_BASE}/dashboard/replications-by-unit`);
+      if (!response.ok) throw new Error('Không tải được thống kê nhân rộng theo đơn vị');
+      return await response.json();
+    } catch (error) {
+      console.error('Replications by unit error:', error);
+      throw error;
+    }
+  },
+
+  async getTopReplicatedIdeas(limit = 5) {
+    try {
+      const response = await fetch(`${API_BASE}/dashboard/top-replicated-ideas?limit=${encodeURIComponent(limit)}`);
+      if (!response.ok) throw new Error('Không tải được thống kê top ý tưởng nhân rộng');
+      return await response.json();
+    } catch (error) {
+      console.error('Top replicated ideas error:', error);
+      throw error;
+    }
+  },
+
   async listLibraryIdeas(params = {}) {
     try {
       const qs = new URLSearchParams();
@@ -207,9 +231,15 @@ const api = {
     }
   },
 
-  async getLibraryIdeaDetail(ideaId) {
+  async getLibraryIdeaDetail(ideaId, params = {}) {
     try {
-      const response = await fetch(`${API_BASE}/library/ideas/${ideaId}`);
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === '') return;
+        qs.set(k, String(v));
+      });
+      const suffix = qs.toString() ? `?${qs.toString()}` : '';
+      const response = await fetch(`${API_BASE}/library/ideas/${ideaId}${suffix}`);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.detail || 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chi ti\u1ebft \u00fd t\u01b0\u1edfng');
@@ -217,6 +247,27 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error('Get library idea detail error:', error);
+      throw error;
+    }
+  },
+
+  async createStandardizedIdeaReplication(payload) {
+    try {
+      const response = await fetch(`${API_BASE}/library/replications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          employee_code: (payload?.employee_code || '').trim().toUpperCase(),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tạo được yêu cầu nhân rộng ý tưởng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Create standardized idea replication error:', error);
       throw error;
     }
   },
@@ -332,6 +383,82 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error('Save actual benefit error:', error);
+      throw error;
+    }
+  },
+
+  async approveBodRegisterSlip(ideaId, employeeCode) {
+    try {
+      const response = await fetch(`${API_BASE}/reviews/${ideaId}/register-slip-approval`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không duyệt được phiếu nhận tiền');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Approve BOD register slip error:', error);
+      throw error;
+    }
+  },
+
+  async submitCouncilFinalScore(ideaId, payload) {
+    try {
+      const response = await fetch(`${API_BASE}/reviews/${ideaId}/council-final-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          employee_code: (payload?.employee_code || '').trim().toUpperCase(),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không lưu được điểm Hội đồng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Submit council final score error:', error);
+      throw error;
+    }
+  },
+
+  async getReplicationApprovalQueue(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/reviews/replications/pending?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được danh sách duyệt nhân rộng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Get replication approval queue error:', error);
+      throw error;
+    }
+  },
+
+  async approveReplication(replicationId, employeeCode) {
+    try {
+      const response = await fetch(`${API_BASE}/reviews/replications/${replicationId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không duyệt được nhân rộng ý tưởng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Approve replication error:', error);
       throw error;
     }
   },

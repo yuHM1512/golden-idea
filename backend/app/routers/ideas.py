@@ -38,6 +38,10 @@ from app.services.email_notifications import send_approval_stage_email
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
+ATTACHMENT_TYPE_BEFORE = "before"
+ATTACHMENT_TYPE_AFTER = "after"
+ALLOWED_ATTACHMENT_TYPES = {ATTACHMENT_TYPE_BEFORE, ATTACHMENT_TYPE_AFTER}
+
 
 def _truncate(value: str | None, max_length: int) -> str | None:
     if value is None:
@@ -95,6 +99,16 @@ def _validate_attachment_filename(original_filename: str) -> str:
     return suffix
 
 
+def _normalize_attachment_type(value: str | None) -> str:
+    normalized = str(value or ATTACHMENT_TYPE_AFTER).strip().lower()
+    if normalized not in ALLOWED_ATTACHMENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="attachment_type chỉ hỗ trợ 'before' hoặc 'after'",
+        )
+    return normalized
+
+
 def _create_drive_attachment(
     *,
     db: Session,
@@ -106,6 +120,7 @@ def _create_drive_attachment(
     folder_id: str | None,
     web_view_link: str | None,
     mime_type: str | None,
+    attachment_type: str = ATTACHMENT_TYPE_AFTER,
 ) -> FileAttachment:
     attachment = FileAttachment(
         idea_id=idea_id,
@@ -119,6 +134,7 @@ def _create_drive_attachment(
         external_folder_id=folder_id,
         external_url=web_view_link,
         mime_type=mime_type,
+        attachment_type=_normalize_attachment_type(attachment_type),
     )
     db.add(attachment)
     db.commit()
@@ -161,6 +177,7 @@ def sync_idea_attachments_from_drive(db: Session, idea_id: int) -> list[FileAtta
             folder_id=folder_id,
             web_view_link=str(item.get("webViewLink") or ""),
             mime_type=str(item.get("mimeType") or "application/octet-stream"),
+            attachment_type=ATTACHMENT_TYPE_AFTER,
         )
         created.append(attachment)
         existing_ids.add(drive_file_id)
@@ -272,6 +289,7 @@ async def upload_attachment(
     idea_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    attachment_type: str = ATTACHMENT_TYPE_AFTER,
 ):
     """
     Upload image/video attachment to idea.
@@ -284,6 +302,7 @@ async def upload_attachment(
     original_filename = (file.filename or "").strip()
     if not original_filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiếu tên file")
+    normalized_attachment_type = _normalize_attachment_type(attachment_type)
 
     suffix = _validate_attachment_filename(original_filename)
 
@@ -330,6 +349,7 @@ async def upload_attachment(
         folder_id=uploaded.folder_id,
         web_view_link=uploaded.web_view_link,
         mime_type=uploaded.mime_type or mime_type,
+        attachment_type=normalized_attachment_type,
     )
 
     return {
@@ -340,6 +360,7 @@ async def upload_attachment(
         "file_size": attachment.file_size,
         "file_path": attachment.file_path,
         "file_url": build_attachment_file_url(attachment),
+        "attachment_type": attachment.attachment_type,
         "uploaded_at": attachment.uploaded_at,
     }
 
@@ -359,6 +380,7 @@ async def create_attachment_upload_session(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiếu tên file")
 
     _validate_attachment_filename(original_filename)
+    _normalize_attachment_type(payload.attachment_type)
     if payload.file_size > int(settings.MAX_FILE_SIZE_MB) * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -391,6 +413,7 @@ async def complete_attachment_upload(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiếu drive_file_id")
     if not original_filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiếu tên file")
+    normalized_attachment_type = _normalize_attachment_type(payload.attachment_type)
 
     suffix = _validate_attachment_filename(original_filename)
     metadata = get_drive_file_metadata(drive_file_id)
@@ -415,6 +438,7 @@ async def complete_attachment_upload(
             "file_size": existing.file_size,
             "file_path": existing.file_path,
             "file_url": build_attachment_file_url(existing),
+            "attachment_type": existing.attachment_type,
             "uploaded_at": existing.uploaded_at,
         }
 
@@ -428,6 +452,7 @@ async def complete_attachment_upload(
         folder_id=parent_ids[0],
         web_view_link=str(metadata.get("webViewLink") or ""),
         mime_type=str(metadata.get("mimeType") or payload.content_type or "application/octet-stream"),
+        attachment_type=normalized_attachment_type,
     )
 
     return {
@@ -438,6 +463,7 @@ async def complete_attachment_upload(
         "file_size": attachment.file_size,
         "file_path": attachment.file_path,
         "file_url": build_attachment_file_url(attachment),
+        "attachment_type": attachment.attachment_type,
         "uploaded_at": attachment.uploaded_at,
     }
 
@@ -455,6 +481,7 @@ async def complete_attachment_upload_from_folder(
     original_filename = (payload.original_filename or "").strip()
     if not original_filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thieu ten file")
+    normalized_attachment_type = _normalize_attachment_type(payload.attachment_type)
 
     suffix = _validate_attachment_filename(original_filename)
     expected_folder_id = ensure_idea_folder(idea_id)
@@ -490,6 +517,7 @@ async def complete_attachment_upload_from_folder(
             "file_size": existing.file_size,
             "file_path": existing.file_path,
             "file_url": build_attachment_file_url(existing),
+            "attachment_type": existing.attachment_type,
             "uploaded_at": existing.uploaded_at,
         }
 
@@ -504,6 +532,7 @@ async def complete_attachment_upload_from_folder(
         folder_id=parent_ids[0] if parent_ids else expected_folder_id,
         web_view_link=str(matched_file.get("webViewLink") or ""),
         mime_type=str(matched_file.get("mimeType") or payload.content_type or "application/octet-stream"),
+        attachment_type=normalized_attachment_type,
     )
 
     return {
@@ -514,6 +543,7 @@ async def complete_attachment_upload_from_folder(
         "file_size": attachment.file_size,
         "file_path": attachment.file_path,
         "file_url": build_attachment_file_url(attachment),
+        "attachment_type": attachment.attachment_type,
         "uploaded_at": attachment.uploaded_at,
     }
 
