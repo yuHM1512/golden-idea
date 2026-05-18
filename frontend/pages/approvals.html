@@ -173,6 +173,14 @@
             >
               Phê duyệt nhân rộng ý tưởng
             </button>
+            <button
+              id="ieCouncilTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setIeApprovalTab('council_review')"
+            >
+              Duy&#7879;t H&#7897;i &#273;&#7891;ng s&#225;ng ki&#7871;n
+            </button>
           </div>
         </div>
         <div id="bodApprovalTabs" class="hidden px-6 md:px-8 pb-6">
@@ -195,6 +203,26 @@
             </button>
           </div>
         </div>
+        <div id="councilFiltersWrap" class="hidden px-6 md:px-8 pb-6">
+          <div class="flex flex-wrap items-end gap-4 rounded-[1.5rem] bg-[#f6f8ff] px-5 py-4">
+            <div>
+              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Qu&#253;</label>
+              <select id="councilQuarterFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
+                <option value="">T&#7845;t c&#7843; qu&#253;</option>
+                <option value="1">Q1</option>
+                <option value="2">Q2</option>
+                <option value="3">Q3</option>
+                <option value="4">Q4</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">N&#259;m</label>
+              <select id="councilYearFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
+                <option value="">T&#7845;t c&#7843; n&#259;m</option>
+              </select>
+            </div>
+          </div>
+        </div>
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead id="queueHead" class="bg-surface-low text-text-soft uppercase tracking-[0.18em] text-[11px] font-bold border-b border-slate-200">
@@ -204,7 +232,7 @@
                 <th class="text-left px-4 py-4 font-bold text-text-main">Người gửi</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Lĩnh vực</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
-                <th class="text-left px-4 py-4 font-bold text-text-main">Điểm cấp 1</th>
+                <th class="text-left px-4 py-4 font-bold text-text-main">Điểm đơn vị</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Điểm BCT</th>
                 <th class="text-left px-4 py-4 font-bold text-text-main">Cấp xét duyệt</th>
                 <th class="text-right px-4 py-4 font-bold text-text-main">In phiếu</th>
@@ -470,6 +498,8 @@
       let currentBodApprovalTab = "register_slip";
       let activeCouncilScoreIdea = null;
       let replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
+      let currentCouncilQuarterFilter = "";
+      let currentCouncilYearFilter = "";
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -500,18 +530,69 @@
 
       function currentRoleHint(queue) {
         if (currentRole === "ie_manager") {
-          return currentIeApprovalTab === "replication_review"
-            ? "Bạn đang duyệt các đề xuất nhân rộng ý tưởng. Mỗi đề xuất được duyệt sẽ được tính 1 điểm cho đơn vị áp dụng."
-            : "Bạn đang xác nhận các ý tưởng mới đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
+          if (currentIeApprovalTab === "replication_review") {
+            return "Bạn đang duyệt các đề xuất nhân rộng ý tưởng. Mỗi đề xuất được duyệt sẽ được tính 1 điểm cho đơn vị áp dụng.";
+          }
+          if (currentIeApprovalTab === "council_review") {
+            return "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu và chốt điểm cuối cùng. Bạn có thể lọc theo quý / năm để chọn danh sách phù hợp.";
+          }
+          return "Bạn đang xác nhận các ý tưởng mới đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
         }
-        if (currentRole === "bod_manager") {
+        if (["bod_manager", "admin"].includes(currentRole)) {
           return currentBodApprovalTab === "register_slip"
             ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
-            : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu và chốt điểm cuối cùng của lãnh đạo.";
+            : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu và chốt điểm cuối cùng. Bạn có thể lọc theo quý / năm để chọn danh sách phù hợp.";
         }
         return roleHint(currentRole, queue || {});
       }
 
+
+      function isCouncilReviewRole() {
+        return ["ie_manager", "bod_manager", "admin"].includes(currentRole);
+      }
+
+      function isCouncilReviewMode() {
+        if (currentRole === "ie_manager") return currentIeApprovalTab === "council_review";
+        if (["bod_manager", "admin"].includes(currentRole)) return currentBodApprovalTab === "council_review";
+        return false;
+      }
+
+      function itemQuarterFromDate(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+        return Math.floor(date.getMonth() / 3) + 1;
+      }
+
+      function itemYearFromDate(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+        return date.getFullYear();
+      }
+
+      function onCouncilFilterChange() {
+        currentCouncilQuarterFilter = document.getElementById("councilQuarterFilter")?.value || "";
+        currentCouncilYearFilter = document.getElementById("councilYearFilter")?.value || "";
+        renderQueue(getDisplayedQueueItems());
+      }
+
+      function renderCouncilFilterOptions() {
+        const wrap = document.getElementById("councilFiltersWrap");
+        const yearSelect = document.getElementById("councilYearFilter");
+        const quarterSelect = document.getElementById("councilQuarterFilter");
+        if (!wrap || !yearSelect || !quarterSelect) return;
+        wrap.classList.toggle("hidden", !isCouncilReviewMode());
+        if (!isCouncilReviewMode()) return;
+
+        const source = Array.isArray(queueData?.items) ? queueData.items : [];
+        const years = [...new Set(source.map((item) => itemYearFromDate(item?.submitted_at)).filter(Boolean))].sort((a, b) => b - a);
+        yearSelect.innerHTML = ['<option value="">T&#7845;t c&#7843; n&#259;m</option>']
+          .concat(years.map((year) => `<option value="${year}">${year}</option>`))
+          .join('');
+        yearSelect.value = currentCouncilYearFilter;
+        quarterSelect.value = currentCouncilQuarterFilter;
+      }
       function safeText(text) {
         return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
       }
@@ -591,7 +672,8 @@
         const wrap = document.getElementById("ieApprovalTabs");
         const ideaBtn = document.getElementById("ieIdeaTabBtn");
         const replicationBtn = document.getElementById("ieReplicationTabBtn");
-        if (!wrap || !ideaBtn || !replicationBtn) return;
+        const councilBtn = document.getElementById("ieCouncilTabBtn");
+        if (!wrap || !ideaBtn || !replicationBtn || !councilBtn) return;
         const isIe = currentRole === "ie_manager";
         wrap.classList.toggle("hidden", !isIe);
         if (!isIe) return;
@@ -602,6 +684,9 @@
         replicationBtn.className = currentIeApprovalTab === "replication_review"
           ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
           : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+        councilBtn.className = currentIeApprovalTab === "council_review"
+          ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
+          : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
       }
 
       function renderBodApprovalTabs() {
@@ -609,9 +694,13 @@
         const moneyBtn = document.getElementById("bodMoneyTabBtn");
         const councilBtn = document.getElementById("bodCouncilTabBtn");
         if (!wrap || !moneyBtn || !councilBtn) return;
-        const isBod = currentRole === "bod_manager";
-        wrap.classList.toggle("hidden", !isBod);
-        if (!isBod) return;
+        const canUseTabs = ["bod_manager", "admin"].includes(currentRole);
+        wrap.classList.toggle("hidden", !canUseTabs);
+        if (!canUseTabs) return;
+
+        const showMoneyTab = currentRole === "bod_manager";
+        moneyBtn.classList.toggle("hidden", !showMoneyTab);
+        if (!showMoneyTab) currentBodApprovalTab = "council_review";
 
         moneyBtn.className = currentBodApprovalTab === "register_slip"
           ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
@@ -624,14 +713,16 @@
       function setBodApprovalTab(tab) {
         currentBodApprovalTab = tab === "council_review" ? "council_review" : "register_slip";
         renderBodApprovalTabs();
+        renderCouncilFilterOptions();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
         renderKpis(getActiveMetrics());
         renderQueue(getDisplayedQueueItems());
       }
 
       function setIeApprovalTab(tab) {
-        currentIeApprovalTab = tab === "replication_review" ? "replication_review" : "idea_review";
+        currentIeApprovalTab = tab === "replication_review" ? "replication_review" : (tab === "council_review" ? "council_review" : "idea_review");
         renderIeApprovalTabs();
+        renderCouncilFilterOptions();
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
         renderKpis(getActiveMetrics());
@@ -661,13 +752,17 @@
         }
         const items = Array.isArray(queueData?.items) ? queueData.items : [];
         let base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
-        if (currentRole === "bod_manager") {
-          if (currentBodApprovalTab === "register_slip") {
-            const allowed = new Set(allowedBodMoneyResultTypes());
-            base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
-          } else {
-            const allowed = new Set(allowedBodCouncilResultTypes());
-            base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          const allowed = new Set(allowedBodMoneyResultTypes());
+          base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+        } else if (isCouncilReviewMode()) {
+          const allowed = new Set(allowedBodCouncilResultTypes());
+          base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          if (currentCouncilQuarterFilter) {
+            base = base.filter((item) => String(itemQuarterFromDate(item?.submitted_at) || "") === String(currentCouncilQuarterFilter));
+          }
+          if (currentCouncilYearFilter) {
+            base = base.filter((item) => String(itemYearFromDate(item?.submitted_at) || "") === String(currentCouncilYearFilter));
           }
         }
         const q = normalizeSearchText(queueSearchTerm);
@@ -801,7 +896,7 @@
           `;
           return;
         }
-        if (currentRole === "bod_manager" && currentBodApprovalTab === "council_review") {
+        if (isCouncilReviewMode()) {
           head.innerHTML = `
             <tr>
               <th class="text-left px-6 py-4 font-bold text-text-main">Tên ý tưởng</th>
@@ -826,7 +921,7 @@
             <th class="text-left px-4 py-4 font-bold text-text-main">Người gửi</th>
             <th class="text-left px-4 py-4 font-bold text-text-main">Lĩnh vực</th>
             <th class="text-left px-4 py-4 font-bold text-text-main">Trạng thái</th>
-            <th class="text-left px-4 py-4 font-bold text-text-main">Điểm cấp 1</th>
+            <th class="text-left px-4 py-4 font-bold text-text-main">Điểm đơn vị</th>
             <th class="text-left px-4 py-4 font-bold text-text-main">Điểm BCT</th>
             <th class="text-left px-4 py-4 font-bold text-text-main">Cấp xét duyệt</th>
             <th class="text-right px-4 py-4 font-bold text-text-main">In phiếu</th>
@@ -951,7 +1046,7 @@
           ? 6
           : currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
             ? 6
-            : (currentRole === "bod_manager" && currentBodApprovalTab === "council_review" ? 10 : 10);
+            : (isCouncilReviewMode() ? 10 : 10);
         if (!items.length) {
           const hasSearch = Boolean(normalizeSearchText(queueSearchTerm));
           const msg = hasSearch ? "Không có kết quả phù hợp." : "Không có phiếu trong phạm vi hiện tại.";
@@ -1020,7 +1115,7 @@
           return;
         }
 
-        if (currentRole === "bod_manager" && currentBodApprovalTab === "council_review") {
+        if (isCouncilReviewMode()) {
           items.forEach((item) => {
             const tr = document.createElement("tr");
             tr.className = "cursor-pointer hover:bg-[#f8fbff] transition-colors";
@@ -2085,6 +2180,7 @@
           renderKpis(getActiveMetrics());
           renderIeApprovalTabs();
           renderBodApprovalTabs();
+          renderCouncilFilterOptions();
           renderPendingFilterButton();
           renderQueue(getDisplayedQueueItems());
           document.getElementById("roleHint").textContent = currentRoleHint(queueData);
@@ -2109,8 +2205,10 @@
         scoreCriteria = typeof api.getScoreCriteria === "function" ? await api.getScoreCriteria().catch(() => null) : null;
         renderSessionInfo();
         syncStatusFilterOptions();
+        if (currentRole === "admin") currentBodApprovalTab = "council_review";
         renderIeApprovalTabs();
         renderBodApprovalTabs();
+        renderCouncilFilterOptions();
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint({});
 
@@ -2128,5 +2226,4 @@
     </script>
   </body>
 </html>
-
 

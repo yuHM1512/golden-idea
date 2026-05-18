@@ -103,7 +103,8 @@
               <span class="text-[#dbe1ff] italic">đúng quyền, đúng bước.</span>
             </h1>
             <p class="mt-5 max-w-3xl text-white/80 leading-relaxed">
-              Trang này giúp người dùng hiểu app có những gì, mỗi role được truy cập chức năng nào, và nên thao tác theo trình tự nào để gửi, duyệt, tra cứu và chi thưởng ý tưởng.
+              Trang này giúp người dùng hiểu app có những gì, mỗi role được truy cập chức năng nào, và nên thao tác theo
+              trình tự nào để gửi, duyệt, tra cứu và chi thưởng ý tưởng.
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
               <a href="/pages/submit-idea" class="inline-flex items-center gap-2 rounded-full bg-white text-primary px-5 py-3 font-semibold shadow-lg hover:opacity-95">
@@ -144,7 +145,8 @@
             <h2 class="mt-2 text-3xl md:text-4xl font-black font-manrope text-primary">App gồm những module nào?</h2>
           </div>
           <p class="max-w-2xl text-on-surface-variant">
-            Đây là 5 nhóm chức năng chính đang có trên hệ thống. Tùy role mà người dùng sẽ thấy hoặc không thấy một số module trong menu.
+            Đây là 5 nhóm chức năng chính đang có trên hệ thống. Tùy role mà người dùng sẽ thấy hoặc không thấy một số
+            module trong menu.
           </p>
         </div>
         <div id="featureGrid" class="mt-8 flex flex-wrap justify-center gap-6"></div>
@@ -155,7 +157,8 @@
           <div class="text-xs uppercase tracking-widest text-on-surface-variant">Luồng xử lý</div>
           <h2 class="mt-2 text-3xl font-black font-manrope text-primary">Ý tưởng đi qua những bước nào?</h2>
           <p class="mt-3 text-on-surface-variant">
-            Từ lúc người dùng gửi form đến lúc được duyệt và chi thưởng, hệ thống ghi lại toàn bộ trạng thái để các bên theo dõi minh bạch.
+            Từ lúc người dùng gửi form đến lúc được duyệt và chi thưởng, hệ thống ghi lại toàn bộ trạng thái để các bên
+            theo dõi minh bạch.
           </p>
           <div id="workflowSteps" class="mt-8 space-y-4"></div>
         </div>
@@ -189,7 +192,7 @@
                 <span class="material-symbols-outlined">payments</span>
               </div>
               <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn phụ trách chi thưởng</h3>
-              <p class="mt-3 text-on-surface-variant">Vào Chi thưởng để xem phiếu đủ điều kiện, xác nhận đã chi và xuất danh sách phục vụ đối soát.</p>
+              <p class="mt-3 text-on-surface-variant">Vào Chi thưởng để xem phiếu đủ điều kiện, xác nhận đã chi và lập đợt thưởng theo quý / năm.</p>
             </div>
           </div>
         </div>
@@ -202,7 +205,8 @@
             <h2 class="mt-2 text-3xl md:text-4xl font-black font-manrope text-primary">Mỗi role dùng app ra sao?</h2>
           </div>
           <p class="max-w-2xl text-on-surface-variant">
-            Danh sách dưới đây dùng để training user nội bộ: mỗi role sẽ biết mục nào xuất hiện trên menu, mục tiêu sử dụng của họ là gì, và thứ tự thao tác nên làm.
+            Danh sách dưới đây dùng để training user nội bộ: mỗi role sẽ biết mục nào xuất hiện trên menu, mục tiêu sử
+            dụng của họ là gì, và thứ tự thao tác nên làm.
           </p>
         </div>
         <div id="roleGuideGrid" class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
@@ -250,12 +254,11 @@
       ];
 
       const WORKFLOW_STEPS = [
-        { status: "Đã gửi ý tưởng", title: "Người dùng gửi ý tưởng", desc: "Form được lưu thành hồ sơ chính thức và sẵn sàng cho bước xem xét ban đầu." },
-        { status: "Đang xem xét / chấm điểm", title: "Cấp đầu nhận xét / chấm điểm", desc: "Người phụ trách đầu tiên kiểm tra nội dung, minh chứng và chấm K1/K2/K3 nếu cần." },
-        { status: "Đơn vị đã phê duyệt", title: "Trưởng đơn vị phê duyệt", desc: "Phiếu đủ điều kiện sẽ được xác nhận ở cấp đơn vị trước khi chuyển tiếp." },
-        { status: "BCT đang xem xét", title: "BCT xem xét", desc: "Ban cải tiến đánh giá sâu hơn trước khi trình lãnh đạo." },
-        { status: "Lãnh đạo đang xem xét", title: "Lãnh đạo duyệt cuối", desc: "Phiếu được ra quyết định cuối cùng: duyệt hoặc không duyệt." },
-        { status: "Đã duyệt / đã chi thưởng", title: "Hoàn tất và chi thưởng", desc: "Phiếu đã duyệt có thể in giấy nhận tiền, xác nhận đã chi và vào thư viện tra cứu." },
+        { status: "Đã gửi ý tưởng", title: "Người dùng gửi ý tưởng", desc: "Form được lưu thành hồ sơ chính thức và sẵn sàng đi vào 3 cấp duyệt." },
+        { status: "Duyệt đơn vị", title: "Đơn vị xem xét / chấm điểm", desc: "Cấp đơn vị kiểm tra nội dung, minh chứng, chấm K1/K2/K3 và phê duyệt ban đầu trước khi chuyển Ban cải tiến." },
+        { status: "Duyệt Ban cải tiến", title: "Ban cải tiến ra kết luận", desc: "Ban cải tiến có 3 hướng xử lý: không duyệt thì ý tưởng không nhận thưởng đăng ký; đưa về XN tự xét duyệt thì được nhận tiền đăng ký nhưng không lên Hội đồng; đạt thì vừa nhận thưởng đăng ký vừa được đưa ra Hội đồng sáng kiến." },
+        { status: "Duyệt Lãnh đạo", title: "Lãnh đạo xử lý 2 nghiệp vụ", desc: "Lãnh đạo duyệt chi thưởng đăng ký 100.000 VND / ý tưởng, đồng thời đại diện Hội đồng sáng kiến chấm điểm cuối, xác định ý tưởng nổi trội và hệ số khen thưởng." },
+        { status: "Tạo đợt khen thưởng / chi thưởng", title: "Hoàn tất xét thưởng", desc: "Sau khi có điểm cuối và tạo đợt khen thưởng, hệ thống tổng hợp kết quả theo quý, gửi email về đơn vị và phục vụ chi thưởng." },
       ];
 
       const ROLE_GUIDES = {
@@ -305,24 +308,27 @@
         },
         ie_manager: {
           name: "Ban cải tiến (BCT)",
-          desc: "Role xem xét cấp công ty và có quyền truy cập một phần cấu hình hệ thống.",
+          desc: "Role duyệt cấp 2, xác nhận hướng xử lý cuối cùng ở cấp Ban cải tiến và cấu hình một số tham số liên quan.",
           modules: ["Kho ý tưởng", "Phê duyệt", "Cài đặt"],
           firstStep: "Vào Phê duyệt để xử lý các ý tưởng chờ BCT.",
           tasks: [
-            "Đánh giá hồ sơ đã qua cấp đơn vị và quyết định đạt / không đạt chuẩn hóa.",
-            "Chuyển ý tưởng phù hợp lên lãnh đạo hoặc dừng với lý do rõ ràng.",
+            "Đánh giá hồ sơ đã qua duyệt đơn vị và ra 1 trong 3 kết luận: BCT không duyệt, XN tự xét duyệt, hoặc Đạt.",
+            "Nếu BCT không duyệt: ý tưởng dừng quy trình, không nhận thưởng đăng ký và không được đưa lên Hội đồng.",
+            "Nếu đưa về XN tự xét duyệt: ý tưởng được nhận tiền đăng ký nhưng không tham gia xét thưởng cuối quý.",
+            "Nếu Đạt: chấm điểm BCT, xác định đưa / không đưa vào chuẩn hóa và chuyển lên lãnh đạo / Hội đồng sáng kiến.",
             "Quản lý một số cấu hình / tiêu chí cần thiết trong phần Cài đặt.",
           ],
         },
         bod_manager: {
           name: "Lãnh đạo công ty",
-          desc: "Role phê duyệt cuối cùng trước khi ý tưởng đủ điều kiện chi thưởng.",
+          desc: "Role duyệt cấp 3 với 2 nghiệp vụ: duyệt chi thưởng đăng ký và đại diện Hội đồng sáng kiến chốt kết quả cuối.",
           modules: ["Kho ý tưởng", "Phê duyệt"],
           firstStep: "Vào Phê duyệt để xem danh sách chờ lãnh đạo quyết định cuối.",
           tasks: [
-            "Xem hồ sơ, nhận xét và toàn bộ lịch sử duyệt trước đó.",
-            "Phê duyệt cuối hoặc từ chối với lý do cụ thể.",
-            "Theo dõi bức tranh tổng quan qua dữ liệu đã duyệt trong Kho ý tưởng.",
+            "Duyệt chi thưởng đăng ký cho các ý tưởng thỏa tiêu chí, mức 100.000 VND / ý tưởng.",
+            "Đại diện Hội đồng sáng kiến chấm điểm cuối cùng cho các ý tưởng Đạt được đưa lên xét.",
+            "Xác định ý tưởng nổi trội và hệ số khen thưởng để phục vụ tạo đợt thưởng cuối quý.",
+            "Theo dõi toàn bộ lịch sử duyệt, kết quả chấm điểm và quyết định cuối cùng.",
           ],
         },
         treasurer: {

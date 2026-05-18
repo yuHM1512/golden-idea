@@ -886,8 +886,8 @@ async def approve_replication(replication_id: int, payload: ReplicationApprovalR
 @router.post("/{idea_id}/council-final-score", response_model=ApprovalIdeaDetail)
 async def submit_council_final_score(idea_id: int, payload: CouncilFinalScoreRequest, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
-    if _scope_kind(user) not in {"bod", "admin"}:
-        raise HTTPException(status_code=403, detail="Chỉ lãnh đạo hoặc admin được chốt điểm hội đồng")
+    if _scope_kind(user) not in {"bod", "ie", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ Ban cải tiến, lãnh đạo hoặc admin được chốt điểm hội đồng")
 
     idea = (
         db.query(Idea)
