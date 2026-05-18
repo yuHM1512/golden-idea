@@ -11,6 +11,23 @@ const API_BASE = (() => {
   return 'http://localhost:8015/api';
 })();
 
+function formatApiError(error, fallback) {
+  const detail = error?.detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        const path = Array.isArray(item?.loc) ? item.loc.join('.') : '';
+        return [path, item?.msg].filter(Boolean).join(': ');
+      })
+      .filter(Boolean)
+      .join('; ') || fallback;
+  }
+  if (detail && typeof detail === 'object') {
+    return detail.message || JSON.stringify(detail);
+  }
+  return detail || fallback;
+}
+
 const api = {
   // Submit new idea
   async submitIdea(formData) {
@@ -383,6 +400,28 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error('Save actual benefit error:', error);
+      throw error;
+    }
+  },
+
+  async updateIeScore(ideaId, payload) {
+    try {
+      const normalizedPayload = {
+        ...payload,
+        employee_code: (payload?.employee_code || '').trim().toUpperCase(),
+      };
+      const response = await fetch(`${API_BASE}/reviews/${ideaId}/ie-score`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(normalizedPayload),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(formatApiError(error, 'Không cập nhật được nội dung chấm điểm Ban cải tiến'));
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update IE score error:', error);
       throw error;
     }
   },

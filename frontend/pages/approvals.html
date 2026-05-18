@@ -500,6 +500,7 @@
       let replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
       let currentCouncilQuarterFilter = "";
       let currentCouncilYearFilter = "";
+      let currentIeModalMode = "view";
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -664,6 +665,18 @@
         return ["UNIT_REVIEW", "APPROVED_NO_STANDARDIZATION", "APPROVED_STANDARDIZATION"];
       }
 
+      function canApproveRegisterSlip(item) {
+        const allowed = new Set(allowedBodMoneyResultTypes());
+        const resultType = String(item?.ie_result_type || "").trim().toUpperCase();
+        const status = String(item?.status || "").trim().toUpperCase();
+        return currentRole === "bod_manager"
+          && currentBodApprovalTab === "register_slip"
+          && allowed.has(resultType)
+          && Boolean(item?.eligible_register_reward)
+          && !Boolean(item?.bod_register_approved)
+          && ["LEADERSHIP_REVIEW", "APPROVED"].includes(status);
+      }
+
       function allowedBodCouncilResultTypes() {
         return [...BOD_COUNCIL_RESULT_TYPES];
       }
@@ -755,6 +768,9 @@
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
           const allowed = new Set(allowedBodMoneyResultTypes());
           base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          if (showPendingReviewOnly) {
+            base = base.filter((item) => canApproveRegisterSlip(item));
+          }
         } else if (isCouncilReviewMode()) {
           const allowed = new Set(allowedBodCouncilResultTypes());
           base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
@@ -1087,8 +1103,8 @@
           items.forEach((item) => {
             const tr = document.createElement("tr");
             const approved = Boolean(item.bod_register_approved);
-            tr.className = "cursor-pointer hover:bg-[#f8fbff] transition-colors";
-            tr.onclick = () => openReviewModal(item.id);
+            const canApproveSlip = canApproveRegisterSlip(item);
+            tr.className = "hover:bg-[#f8fbff] transition-colors";
             tr.innerHTML = `
               <td class="px-6 py-5 align-top">
                 <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title)}</div>
@@ -1100,16 +1116,37 @@
               <td class="px-4 py-5 align-top">
                 <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${safeText(IE_RESULT_TYPE_LABELS[item.ie_result_type] || item.ie_result_type || "—")}</span>
               </td>
-              <td class="px-6 py-5 align-top text-center">
+              <td class="px-6 py-5 align-top text-center pointer-events-auto" data-register-approve-cell="${item.id}">
                 ${
-                  !approved && item.can_review
-                    ? `<button class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt phiếu nhận tiền" onclick="event.stopPropagation(); approveBodRegisterSlip(${item.id})"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
+                  canApproveSlip
+                    ? `<button type="button" class="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt phiếu nhận tiền" data-register-approve="${item.id}"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
                     : approved
                       ? '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8bd3a8] bg-[#eef9f2] text-[#0f7a43]"><span class="material-symbols-outlined text-[22px]">check_box</span></span>'
                       : '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-300"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></span>'
                 }
               </td>
             `;
+            Array.from(tr.children).slice(0, 5).forEach((cell) => {
+              cell.classList.add("cursor-pointer");
+              cell.addEventListener("click", () => openReviewModal(item.id));
+            });
+            const approveCell = tr.querySelector(`[data-register-approve-cell="${item.id}"]`);
+            if (approveCell) {
+              approveCell.addEventListener("click", (event) => {
+                event.stopPropagation();
+                if (canApproveSlip) {
+                  approveBodRegisterSlip(item.id);
+                }
+              });
+            }
+            const approveBtn = tr.querySelector(`[data-register-approve="${item.id}"]`);
+            if (approveBtn) {
+              approveBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                approveBodRegisterSlip(item.id);
+              });
+            }
             tbody.appendChild(tr);
           });
           return;
@@ -1155,13 +1192,21 @@
         items.forEach((item) => {
           const tr = document.createElement("tr");
           const isRejected = item.status === "REJECTED";
+          const isIeIdeaQueue = currentRole === "ie_manager" && currentIeApprovalTab === "idea_review";
+          const hasIeScore = item.ie_score !== null && item.ie_score !== undefined;
+          const allowIeRowEdit = isIeIdeaQueue && hasIeScore;
+          const rowModalMode = allowIeRowEdit ? "edit" : "view";
+          const buttonModalMode = "view";
           const rowMutedClass = isRejected ? "opacity-55" : "";
           const primaryTextClass = isRejected ? "text-slate-400" : "text-text-main";
           const secondaryTextClass = isRejected ? "text-slate-300" : "text-text-soft";
           const chipClass = isRejected
             ? "inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-400 font-semibold"
             : "inline-flex items-center px-3 py-1 rounded-full bg-surface-low text-text-main font-semibold";
-          tr.className = rowMutedClass;
+          tr.className = `${rowMutedClass} ${allowIeRowEdit ? "cursor-pointer hover:bg-[#f8fbff] transition-colors" : ""}`.trim();
+          if (allowIeRowEdit) {
+            tr.onclick = () => openReviewModal(item.id, rowModalMode);
+          }
           tr.innerHTML = `
             <td class="px-6 py-5 align-top">
               <div class="font-semibold ${primaryTextClass} line-clamp-2">${safeText(item.title)}</div>
@@ -1189,9 +1234,16 @@
               }
             </td>
             <td class="px-6 py-5 align-top text-right">
-              <button class="px-4 py-2 rounded-xl ${item.can_review ? "bg-primary text-white" : isRejected ? "bg-slate-100 text-slate-400" : "bg-surface-low text-text-main"} font-semibold" onclick="openReviewModal(${item.id})">
-                ${item.can_review ? "Phê duyệt" : "Xem"}
-              </button>
+              ${
+                isIeIdeaQueue && hasIeScore
+                  ? `<div class="inline-flex items-center gap-2">
+                      <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'edit')">Sửa điểm</button>
+                      <button class="px-4 py-2 rounded-xl bg-surface-low text-text-main font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'view')">Xem</button>
+                    </div>`
+                  : `<button class="px-4 py-2 rounded-xl ${item.can_review ? "bg-primary text-white" : isRejected ? "bg-slate-100 text-slate-400" : "bg-surface-low text-text-main"} font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, '${buttonModalMode}')">
+                      ${item.can_review ? "Phê duyệt" : "Xem"}
+                    </button>`
+              }
             </td>
           `;
           tbody.appendChild(tr);
@@ -1304,8 +1356,29 @@
         return inferCriteriaLabelByScore(groupKey, score.k3_score);
       }
 
+      function resolveK1ValueForForm(score) {
+        const options = getCriteriaGroup("K1");
+        if (!options.length) return "";
+        const raw = String(score?.k1_type || "").trim();
+        const normalized = LEGACY_K1_CODES[raw] || raw;
+        if (options.some((item) => item.code === normalized)) {
+          return normalized;
+        }
+        const byScore = options.find((item) => Number(item.score) === Number(score?.k1_score));
+        return byScore?.code || options[0]?.code || "";
+      }
+
       function latestIeScore(scores = []) {
         return scores.find((score) => score.scorer_role === "ie_manager") || null;
+      }
+
+      function latestCouncilReview(reviews = []) {
+        return reviews.find((review) => review.level === "COUNCIL") || null;
+      }
+
+      function isIeEditMode(detail = activeDetail) {
+        const scores = Array.isArray(detail?.scores) ? detail.scores : [];
+        return currentRole === "ie_manager" && currentIeModalMode === "edit" && Boolean(latestIeScore(scores));
       }
 
       function ieDecisionValue() {
@@ -1323,6 +1396,9 @@
       }
 
       function canEvaluateActualBenefit(detail, scores = []) {
+        if (detail?.actual_benefit) {
+          return true;
+        }
         if (currentRole === "ie_manager" && detail?.can_review) {
           return ieMeasuredBenefitEnabled();
         }
@@ -1338,55 +1414,106 @@
         return Number(value || 0).toLocaleString("vi-VN", { maximumFractionDigits: 0 });
       }
 
-      function renderActualBenefitSection(detail, scores = [], options = {}) {
-        const shouldRender = (currentRole === "ie_manager" && detail?.can_review) || canEvaluateActualBenefit(detail, scores);
-        if (!shouldRender) return "";
-        const item = detail.actual_benefit || {};
-        const sectionClassName = options.embedded
-          ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
-          : "rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5";
+      function renderActualBenefitSummary(detail) {
+        const item = detail?.actual_benefit || {};
+        const benefitValue = item.benefit_value ?? detail?.benefit_value;
+        if (benefitValue === null || benefitValue === undefined) return "";
         return `
-          <section id="actualBenefitSection" class="${sectionClassName} ${(currentRole === "ie_manager" && detail?.can_review) ? "hidden" : ""}">
+          <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Đánh giá sau áp dụng</div>
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Giá trị làm lợi</div>
                 <h4 class="mt-2 text-xl font-black text-primary font-display">Giá trị làm lợi thực tế</h4>
               </div>
               ${item.evaluated_at ? `<div class="text-xs text-text-soft">Cập nhật: ${formatDate(item.evaluated_at)}</div>` : ""}
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Trước cải tiến</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.before_seconds ?? "—")} giây</div>
+              </div>
+              <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Sau cải tiến</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.after_seconds ?? "—")} giây</div>
+              </div>
+              <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Số lượng</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.quantity ?? "—")}</div>
+              </div>
+              <div class="rounded-2xl bg-[#e8f6ee] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Tổng giá trị làm lợi</div>
+                <div class="mt-2 text-xl font-black text-[#0f7a43]">${formatVnd(benefitValue)} VND</div>
+              </div>
+            </div>
+            ${
+              item.note
+                ? `<div class="rounded-2xl bg-surface-low px-4 py-3 text-sm text-text-soft"><span class="font-semibold text-text-main">Ghi chú:</span> ${safeText(item.note)}</div>`
+                : ""
+            }
+          </section>
+        `;
+      }
+
+      function renderActualBenefitSection(detail, scores = [], options = {}) {
+        const shouldRender = (currentRole === "ie_manager" && detail?.can_review) || canEvaluateActualBenefit(detail, scores);
+        if (!shouldRender) return "";
+        const item = detail.actual_benefit || {};
+        const readOnly = Boolean(options.readOnly);
+        const editMode = isIeEditMode(detail);
+        const hideUntilIeDecision = currentRole === "ie_manager" && detail?.can_review && !editMode && !readOnly;
+        const sectionClassName = options.embedded
+          ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
+          : "rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5";
+        return `
+          <section id="actualBenefitSection" class="${sectionClassName} ${hideUntilIeDecision ? "hidden" : ""}">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">\u0110\u00e1nh gi\u00e1 sau \u00e1p d\u1ee5ng</div>
+                <h4 class="mt-2 text-xl font-black text-primary font-display">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i th\u1ef1c t\u1ebf</h4>
+              </div>
+              ${item.evaluated_at ? `<div class="text-xs text-text-soft">C\u1eadp nh\u1eadt: ${formatDate(item.evaluated_at)}</div>` : ""}
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <label class="space-y-2">
-                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Trước cải tiến (giây)</span>
-                <input id="actualBeforeSeconds" type="number" min="0" step="0.01" value="${safeText(item.before_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Tr\u01b0\u1edbc c\u1ea3i ti\u1ebfn (gi\u00e2y)</span>
+                <input id="actualBeforeSeconds" type="number" min="0" step="0.01" value="${safeText(item.before_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" ${readOnly ? "readonly disabled" : ""} />
               </label>
               <label class="space-y-2">
-                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Sau cải tiến (giây)</span>
-                <input id="actualAfterSeconds" type="number" min="0" step="0.01" value="${safeText(item.after_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Sau c\u1ea3i ti\u1ebfn (gi\u00e2y)</span>
+                <input id="actualAfterSeconds" type="number" min="0" step="0.01" value="${safeText(item.after_seconds ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" ${readOnly ? "readonly disabled" : ""} />
               </label>
               <label class="space-y-2">
-                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Số lượng</span>
-                <input id="actualQuantity" type="number" min="0" step="1" value="${safeText(item.quantity ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">S\u1ed1 l\u01b0\u1ee3ng</span>
+                <input id="actualQuantity" type="number" min="0" step="1" value="${safeText(item.quantity ?? "")}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" ${readOnly ? "readonly disabled" : ""} />
               </label>
               <label class="space-y-2">
-                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Đơn giá giây CN</span>
-                <input id="actualLaborSecondPrice" type="number" min="0" step="0.01" value="${safeText(item.labor_second_price ?? 6.14)}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" />
+                <span class="text-xs uppercase tracking-[0.2em] text-text-soft">\u0110\u01a1n gi\u00e1 gi\u00e2y CN</span>
+                <input id="actualLaborSecondPrice" type="number" min="0" step="0.01" value="${safeText(item.labor_second_price ?? 6.14)}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" ${readOnly ? "readonly disabled" : ""} />
               </label>
               <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
-                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Hiệu suất cải thiện</div>
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Hi\u1ec7u su\u1ea5t c\u1ea3i thi\u1ec7n</div>
                 <div id="actualImprovementPreview" class="mt-2 text-2xl font-black text-primary">0%</div>
               </div>
               <div class="rounded-2xl bg-[#e8f6ee] px-4 py-3">
-                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Giá trị làm lợi</div>
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i</div>
                 <div id="actualBenefitPreview" class="mt-2 text-2xl font-black text-[#0f7a43]">0 VND</div>
               </div>
             </div>
             <label class="block space-y-2">
-              <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Ghi chú</span>
-              <textarea id="actualBenefitNote" class="w-full rounded-2xl border-none bg-surface-low" rows="3" placeholder="Ghi chú kiểm tra thực tế">${safeText(item.note || "")}</textarea>
+              <span class="text-xs uppercase tracking-[0.2em] text-text-soft">Ghi ch\u00fa</span>
+              <textarea id="actualBenefitNote" class="w-full rounded-2xl border-none bg-surface-low" rows="3" placeholder="Ghi ch\u00fa ki\u1ec3m tra th\u1ef1c t\u1ebf" ${readOnly ? "readonly disabled" : ""}>${safeText(item.note || "")}</textarea>
             </label>
-            <div class="flex justify-end">
-              <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="saveActualBenefit()">Lưu giá trị làm lợi</button>
-            </div>
+            ${
+              readOnly
+                ? '<div class="rounded-2xl bg-[#f6f8ff] px-4 py-3 text-sm text-text-soft">Th\u00f4ng tin n\u00e0y \u0111ang \u1edf ch\u1ebf \u0111\u1ed9 xem. Click v\u00e0o d\u00f2ng \u00fd t\u01b0\u1edfng ho\u1eb7c b\u1ea5m S\u1eeda \u0111i\u1ec3m \u0111\u1ec3 m\u1edf ch\u1ebf \u0111\u1ed9 ch\u1ec9nh s\u1eeda.</div>'
+                : editMode
+                ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i s\u1ebd \u0111\u01b0\u1ee3c l\u01b0u c\u00f9ng l\u00fac khi b\u1ea5m n\u00fat L\u01b0u ch\u1ec9nh s\u1eeda.</div>'
+                : currentRole === "ie_manager" && detail?.can_review
+                ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i s\u1ebd \u0111\u01b0\u1ee3c l\u01b0u c\u00f9ng l\u00fac khi b\u1ea5m n\u00fat duy\u1ec7t \u1edf cu\u1ed1i popup.</div>'
+                : `<div class="flex justify-end">
+                    <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="saveActualBenefit()">L\u01b0u gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i</button>
+                  </div>`
+            }
           </section>
         `;
       }
@@ -1660,20 +1787,24 @@
       }
 
       function renderScoreForm(detail, scores = []) {
-        if (!activeDetail?.can_review || !["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return "";
+        const allowIeEdit = isIeEditMode(detail);
+        if (!(detail?.can_review || allowIeEdit) || !["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return "";
         const k1Options = getCriteriaGroup("K1");
         const k2EasyOptions = getCriteriaGroup("K2_EASY");
         const k2HardOptions = getCriteriaGroup("K2_HARD");
         const k3UnmeasurableOptions = getCriteriaGroup("K3_UNMEASURABLE");
         const isIeManager = currentRole === "ie_manager";
-
+        const showIeDecisionBlock = isIeManager && detail?.can_review;
+        const scoreIntro = allowIeEdit
+          ? "Bạn có thể chỉnh sửa lại bảng điểm Ban cải tiến đã chấm và cập nhật giá trị làm lợi nếu cần."
+          : (isIeManager ? "IE chọn kết luận xét duyệt trước. Chỉ khi chọn BCT Duyệt mới cần chấm điểm và nhập giá trị làm lợi." : "Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí.");
         return `
           <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-6">
             <div>
               <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Chấm điểm</div>
-              <div class="mt-2 text-sm text-text-soft">${isIeManager ? "IE chọn kết luận xét duyệt trước. Chỉ khi chọn BCT Duyệt mới cần chấm điểm và nhập giá trị làm lợi." : "Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí."}</div>
+              <div class="mt-2 text-sm text-text-soft">${scoreIntro}</div>
             </div>
-            ${isIeManager ? `
+            ${showIeDecisionBlock ? `
               <div class="rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-4">
                 <div class="flex items-start justify-between gap-4">
                   <div>
@@ -1698,7 +1829,7 @@
                 </div>
               </div>
             ` : ""}
-            <div id="scoreWizardWrap" class="${isIeManager ? "hidden" : ""} space-y-6">
+            <div id="scoreWizardWrap" class="${showIeDecisionBlock ? "hidden" : ""} space-y-6">
             <div class="grid grid-cols-3 gap-3">
               <button type="button" id="scoreStepTab1" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(1)">Bước 1 • K1</button>
               <button type="button" id="scoreStepTab2" class="rounded-2xl px-4 py-3 text-sm font-semibold transition-all" onclick="goToScoreStep(2)">Bước 2 • K2</button>
@@ -1777,8 +1908,8 @@
                 <div class="text-sm text-text-soft">Hoàn tất K3 rồi dùng nút "Duyệt phiếu" phía dưới.</div>
               </div>
             </div>
-            ${isIeManager && detail?.can_review ? renderActualBenefitSection(detail, scores, { embedded: true }) : ""}
-            ${isIeManager ? `
+            ${isIeManager && (detail?.can_review || allowIeEdit) ? renderActualBenefitSection(detail, scores, { embedded: true }) : ""}
+            ${showIeDecisionBlock ? `
               <div id="ieStandardizationWrap" class="hidden space-y-3 rounded-[1.5rem] border border-slate-100 bg-[#fbfcfd] p-6">
                 <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Loại ý tưởng đưa lên Hội đồng</label>
                 <select id="ieStandardizationDecision" class="w-full rounded-2xl border-none bg-surface-low">
@@ -1796,11 +1927,15 @@
       function renderModal(detail) {
         const body = document.getElementById("modalBody");
         const actions = document.getElementById("modalActions");
+        const canEditIeScore = isIeEditMode(detail);
+        const isIeViewMode = currentRole === "ie_manager" && currentIeModalMode === "view";
         const canApprove = detail.can_review
           && ["dept_manager", "sub_dept_manager", "ie_manager", "admin"].includes(currentRole);
         const isIeManager = currentRole === "ie_manager";
         const reviews = Array.isArray(detail.reviews) ? detail.reviews : [];
         const scores = Array.isArray(detail.scores) ? detail.scores : [];
+        const hasIeScoreDetail = Boolean(latestIeScore(scores));
+        const showStandaloneActualBenefit = !(isIeManager && (detail?.can_review || canEditIeScore)) || (isIeViewMode && hasIeScoreDetail);
         const attachments = Array.isArray(detail.attachments) ? detail.attachments : [];
         document.getElementById("modalTitle").textContent = detail.title;
 
@@ -1851,11 +1986,19 @@
               </div>
             </div>
           </section>
-          ${renderScoreResultTable(scores)}
-          ${!(isIeManager && detail?.can_review) ? renderActualBenefitSection(detail, scores) : ""}
-          ${renderScoreForm(detail, scores)}
+          ${canEditIeScore ? `
+            <section class="rounded-[1.5rem] border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f8fbff_100%)] p-6">
+              <div class="text-xs uppercase tracking-[0.25em] text-primary">Chế độ chỉnh sửa</div>
+              <div class="mt-2 text-lg font-black text-primary font-display">Bạn đang chỉnh sửa lại nội dung chấm điểm Ban cải tiến</div>
+              <div class="mt-2 text-sm text-text-soft">Form chấm điểm bên dưới đã được điền sẵn từ kết quả cũ. Sửa lại tiêu chí, ghi chú hoặc Giá trị làm lợi rồi bấm "Lưu chỉnh sửa".</div>
+            </section>
+          ` : ""}
+          ${!canEditIeScore ? renderActualBenefitSummary(detail) : ""}
+          ${canEditIeScore ? renderScoreForm(detail, scores) : renderScoreResultTable(scores)}
+          ${canEditIeScore && showStandaloneActualBenefit ? renderActualBenefitSection(detail, scores, { readOnly: isIeViewMode }) : ""}
+          ${canEditIeScore ? renderScoreResultTable(scores) : renderScoreForm(detail, scores)}
           ${
-            canApprove
+            (canApprove || canEditIeScore)
               ? `
             <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
               <label class="text-xs uppercase tracking-[0.25em] text-text-soft">${isIeManager ? "Ghi chú cấp 2" : "Ghi chú / lý do không duyệt"}</label>
@@ -1867,11 +2010,19 @@
         `;
         attachApprovalAttachmentUrls(attachments);
 
-        actions.innerHTML = `
-          <button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>
-          ${canApprove ? `<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Xác nhận cấp 2" : "Duyệt phiếu"}</button>` : ""}
-          ${canApprove && !isIeManager ? `<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision('REJECT')">Không duyệt</button>` : ""}
-        `;
+        const actionButtons = [
+          '<button class="px-5 py-3 rounded-2xl bg-surface-low font-semibold" onclick="closeModal()">Đóng</button>',
+        ];
+        if (canEditIeScore) {
+          actionButtons.push('<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitIeScoreEdit()">Lưu chỉnh sửa</button>');
+        }
+        if (canApprove) {
+          actionButtons.push(`<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Xác nhận cấp 2" : "Duyệt phiếu"}</button>`);
+        }
+        if (canApprove && !isIeManager) {
+          actionButtons.push('<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision(\'REJECT\')">Không duyệt</button>');
+        }
+        actions.innerHTML = actionButtons.join("");
       }
 
       function openModal() {
@@ -1975,6 +2126,27 @@
         const meta = document.getElementById("ieResultDecisionMeta");
         const scoreWrap = document.getElementById("scoreWizardWrap");
         const actualBenefitSection = document.getElementById("actualBenefitSection");
+        if (currentRole !== "ie_manager") {
+          if (scoreWrap) {
+            scoreWrap.classList.remove("hidden");
+          }
+          if (standardWrap) {
+            standardWrap.classList.add("hidden");
+          }
+          return;
+        }
+        if (isIeEditMode()) {
+          if (scoreWrap) {
+            scoreWrap.classList.remove("hidden");
+          }
+          if (standardWrap) {
+            standardWrap.classList.add("hidden");
+          }
+          if (actualBenefitSection) {
+            actualBenefitSection.classList.remove("hidden");
+          }
+          return;
+        }
         const selected = IE_RESULT_OPTIONS.find((item) => item.value === (decision?.value || ""));
         if (meta) {
           meta.textContent = selected ? selected.note : "Chọn 1 kết luận để tiếp tục.";
@@ -2074,16 +2246,78 @@
         }
       }
 
-      async function openReviewModal(ideaId) {
+      function applyIeScoreFormValues(detail) {
+        if (currentRole !== "ie_manager") return;
+        const scores = Array.isArray(detail?.scores) ? detail.scores : [];
+        const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
+        const score = latestIeScore(scores);
+        const review = latestCouncilReview(reviews);
+        if (review) {
+          const reviewComment = document.getElementById("reviewComment");
+          if (reviewComment) reviewComment.value = review.comment || "";
+          const decision = document.getElementById("ieResultDecision");
+          const standard = document.getElementById("ieStandardizationDecision");
+          const resultType = String(review.council_result_type || "").trim().toUpperCase();
+          if (decision) {
+            if (["APPROVED_NO_STANDARDIZATION", "APPROVED_STANDARDIZATION"].includes(resultType)) {
+              decision.value = "BCT_APPROVED";
+              if (standard) standard.value = resultType;
+            } else {
+              decision.value = resultType;
+            }
+          }
+        }
+        if (!score) return;
+        const k1 = document.getElementById("scoreK1");
+        const k1Note = document.getElementById("scoreK1Note");
+        const k2Type = document.getElementById("scoreK2Type");
+        const k2Note = document.getElementById("scoreK2Note");
+        const k3Type = document.getElementById("scoreK3Type");
+        const k3Note = document.getElementById("scoreK3Note");
+        if (k1) k1.value = resolveK1ValueForForm(score);
+        if (k1Note) k1Note.value = score.k1_note || "";
+        if (k2Type) k2Type.value = ["HARD", "NORMAL_HARD", "DIGITAL_OUTSOURCE"].includes(score.k2_type) ? "HARD" : "EASY";
+        if (k2Note) k2Note.value = score.k2_note || "";
+        onK2TypeChange();
+        document.querySelectorAll('input[id^="scoreK2Easy_"], input[id^="scoreK2Hard_"]').forEach((input) => {
+          input.checked = false;
+        });
+        (score.k2_selected_codes || []).forEach((code) => {
+          const input = document.getElementById(`scoreK2Easy_${code}`) || document.getElementById(`scoreK2Hard_${code}`);
+          if (input) input.checked = true;
+        });
+        if (k3Type) k3Type.value = score.k3_measure_type || "TIME_SAVED";
+        if (k3Note) k3Note.value = score.k3_note || "";
+        onK3TypeChange();
+        if (score.k3_measure_type === "UNMEASURABLE") {
+          document.querySelectorAll('input[id^="scoreK3Unmeasurable_"]').forEach((input) => {
+            input.checked = false;
+          });
+          (score.k3_selected_codes || []).forEach((code) => {
+            const input = document.getElementById(`scoreK3Unmeasurable_${code}`);
+            if (input) input.checked = true;
+          });
+        } else {
+          const option = document.getElementById("scoreK3OptionCode");
+          if (option) option.value = score.k3_option_code || option.value;
+        }
+        onK1Change();
+        if (currentRole === "ie_manager") {
+          onIeDecisionChange();
+        }
+      }
+
+      async function openReviewModal(ideaId, mode = "view") {
         const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
         showLoading(true);
         try {
           currentScoreStep = 1;
+          currentIeModalMode = mode;
           activeDetail = await api.getApprovalDetail(ideaId, code);
           renderModal(activeDetail);
           openModal();
+          applyIeScoreFormValues(activeDetail);
           onK1Change();
-          onIeDecisionChange();
           onK2TypeChange();
           onK3TypeChange();
           applyScoreWizardState();
@@ -2097,20 +2331,85 @@
 
       function buildScorePayload() {
         if (!["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return null;
-        const k3Type = document.getElementById("scoreK3Type").value;
-        const k2Type = document.getElementById("scoreK2Type").value;
+        const k1Type = document.getElementById("scoreK1")?.value || "";
+        const k3Type = document.getElementById("scoreK3Type")?.value || "";
+        const k2Type = document.getElementById("scoreK2Type")?.value || "";
+        if (!k1Type) {
+          throw new Error("K1 chưa có giá trị. Vui lòng chọn lại tiêu chí K1 trước khi lưu.");
+        }
         return {
-          k1_type: document.getElementById("scoreK1").value,
-          k1_note: document.getElementById("scoreK1Note").value.trim() || null,
+          k1_type: k1Type,
+          k1_note: document.getElementById("scoreK1Note")?.value.trim() || null,
           k2_type: k2Type,
           k2_selected_codes: k2Type === "HARD" ? selectedCheckboxCodes("scoreK2Hard") : selectedCheckboxCodes("scoreK2Easy"),
-          k2_note: document.getElementById("scoreK2Note").value.trim() || null,
+          k2_note: document.getElementById("scoreK2Note")?.value.trim() || null,
           k3_measure_type: k3Type,
-          k3_option_code: k3Type === "UNMEASURABLE" ? null : document.getElementById("scoreK3OptionCode").value || null,
+          k3_option_code: k3Type === "UNMEASURABLE" ? null : document.getElementById("scoreK3OptionCode")?.value || null,
           k3_selected_codes: k3Type === "UNMEASURABLE" ? selectedCheckboxCodes("scoreK3Unmeasurable") : [],
           k3_value: null,
-          k3_note: document.getElementById("scoreK3Note").value.trim() || null,
+          k3_note: document.getElementById("scoreK3Note")?.value.trim() || null,
         };
+      }
+
+      function buildActualBenefitPayload() {
+        const beforeRaw = document.getElementById("actualBeforeSeconds")?.value ?? "";
+        const afterRaw = document.getElementById("actualAfterSeconds")?.value ?? "";
+        const quantityRaw = document.getElementById("actualQuantity")?.value ?? "";
+        const laborRaw = document.getElementById("actualLaborSecondPrice")?.value ?? "";
+        if ([beforeRaw, afterRaw, quantityRaw].every((value) => String(value).trim() === "")) {
+          return null;
+        }
+        const beforeSeconds = Number(beforeRaw);
+        const afterSeconds = Number(afterRaw);
+        const quantity = Number(quantityRaw);
+        const laborSecondPrice = String(laborRaw).trim() === "" ? 6.14 : Number(laborRaw);
+        const invalidFields = [];
+        if (!Number.isFinite(beforeSeconds) || beforeSeconds <= 0) invalidFields.push("Trước cải tiến");
+        if (!Number.isFinite(afterSeconds) || afterSeconds < 0) invalidFields.push("Sau cải tiến");
+        if (!Number.isFinite(quantity) || quantity < 0) invalidFields.push("Số lượng");
+        if (!Number.isFinite(laborSecondPrice) || laborSecondPrice < 0) invalidFields.push("Đơn giá giây CN");
+        if (afterSeconds > beforeSeconds) invalidFields.push("Sau cải tiến không được lớn hơn trước cải tiến");
+        if (invalidFields.length) {
+          throw new Error(`Giá trị làm lợi không hợp lệ: ${invalidFields.join(", ")}`);
+        }
+        return {
+          before_seconds: beforeSeconds,
+          after_seconds: afterSeconds,
+          quantity: Math.trunc(quantity),
+          labor_second_price: laborSecondPrice,
+          note: document.getElementById("actualBenefitNote")?.value.trim() || null,
+        };
+      }
+
+      async function submitIeScoreEdit() {
+        if (!activeDetail) return;
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const payload = {
+          employee_code: employeeCode,
+          comment: document.getElementById("reviewComment")?.value.trim() || null,
+        };
+        try {
+          payload.score = buildScorePayload();
+          const actualBenefitPayload = buildActualBenefitPayload();
+          if (actualBenefitPayload) {
+            payload.actual_benefit = actualBenefitPayload;
+          }
+        } catch (error) {
+          showNotification(error.message, "error");
+          return;
+        }
+
+        showLoading(true);
+        try {
+          await api.updateIeScore(activeDetail.id, payload);
+          closeModal();
+          await loadQueue();
+          showNotification("Đã cập nhật lại nội dung chấm điểm Ban cải tiến", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
       }
 
       async function submitDecision(action) {
@@ -2142,6 +2441,12 @@
         }
         if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole) && ieRequiresScore()) {
           payload.score = buildScorePayload();
+        }
+        if (action === "APPROVE" && currentRole === "ie_manager" && ieMeasuredBenefitEnabled()) {
+          const actualBenefitPayload = buildActualBenefitPayload();
+          if (actualBenefitPayload) {
+            payload.actual_benefit = actualBenefitPayload;
+          }
         }
 
         showLoading(true);
@@ -2226,4 +2531,3 @@
     </script>
   </body>
 </html>
-

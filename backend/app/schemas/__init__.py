@@ -17,6 +17,7 @@ from .score import (
 )
 from .review import (
     ActualBenefitInput,
+    ApprovalActualBenefitInput,
     ActualBenefitView,
     ApprovalAttachmentView,
     ApprovalIdeaDetail,
@@ -27,6 +28,7 @@ from .review import (
     ApprovalScoreInput,
     ApprovalScoreView,
     ApprovalSubmitRequest,
+    IeScoreEditRequest,
     ApprovalReplicationItem,
     ApprovalReplicationQueueResponse,
     BodRegisterApprovalRequest,
@@ -65,10 +67,10 @@ __all__ = [
     "ScoreCriteriaItemInput", "ScoreCriteriaItemResponse",
     "ScoreCriteriaSetCreate", "ScoreCriteriaSetResponse", "ScoreCriteriaSetUpdate",
     # Review
-    "ActualBenefitInput", "ActualBenefitView",
+    "ActualBenefitInput", "ApprovalActualBenefitInput", "ActualBenefitView",
     "ApprovalAttachmentView", "ApprovalIdeaDetail", "ApprovalIdeaItem", "ApprovalMetrics", "ApprovalQueueResponse",
     "ApprovalReplicationItem", "ApprovalReplicationQueueResponse",
-    "ApprovalReviewView", "ApprovalScoreInput", "ApprovalScoreView", "ApprovalSubmitRequest",
+    "ApprovalReviewView", "ApprovalScoreInput", "ApprovalScoreView", "ApprovalSubmitRequest", "IeScoreEditRequest",
     "BodRegisterApprovalRequest", "CouncilFinalScoreRequest",
     "ReplicationApprovalRequest",
     "IdeaReviewCreate", "IdeaReviewResponse", "ReviewHistoryResponse", "ReviewLevel", "ReviewAction",

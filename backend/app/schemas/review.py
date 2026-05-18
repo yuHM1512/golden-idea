@@ -43,6 +43,14 @@ class ActualBenefitInput(BaseModel):
     note: Optional[str] = None
 
 
+class ApprovalActualBenefitInput(BaseModel):
+    before_seconds: float
+    after_seconds: float
+    quantity: int
+    labor_second_price: float = 6.14
+    note: Optional[str] = None
+
+
 class ActualBenefitView(BaseModel):
     id: int
     idea_id: int
@@ -66,6 +74,14 @@ class ApprovalSubmitRequest(BaseModel):
     recommend_unit_reward: bool = False
     ie_result_type: Optional[str] = None
     score: Optional[ApprovalScoreInput] = None
+    actual_benefit: Optional[ApprovalActualBenefitInput] = None
+
+
+class IeScoreEditRequest(BaseModel):
+    employee_code: str
+    score: ApprovalScoreInput
+    actual_benefit: Optional[ApprovalActualBenefitInput] = None
+    comment: Optional[str] = None
 
 
 class BodRegisterApprovalRequest(BaseModel):
