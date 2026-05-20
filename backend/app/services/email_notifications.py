@@ -4,11 +4,11 @@ import json
 import smtplib
 import ssl
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from email.message import EmailMessage
 from html import escape
 from typing import Iterable
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy.orm import Session
 
@@ -83,7 +83,10 @@ IE_RESULT_MESSAGES = {
     ),
 }
 
-DISPLAY_TIME_ZONE = ZoneInfo("Asia/Bangkok")
+try:
+    DISPLAY_TIME_ZONE = ZoneInfo("Asia/Bangkok")
+except ZoneInfoNotFoundError:
+    DISPLAY_TIME_ZONE = timezone(timedelta(hours=7))
 
 K2_TYPE_LABELS = {
     K2Type.EASY.value: "Dễ áp dụng",
