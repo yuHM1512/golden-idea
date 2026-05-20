@@ -864,6 +864,19 @@ def migrate_ie_review_logic_columns() -> None:
         }
         if "council_result_type" not in review_columns:
             conn.execute(text("ALTER TABLE public.idea_reviews ADD COLUMN council_result_type varchar(64)"))
+        conn.execute(
+            text(
+                """
+                UPDATE public.idea_reviews
+                SET council_result_type = CASE
+                    WHEN upper(btrim(council_result_type)) IN ('XN XÉT DUYỆT', 'XN XET DUYET', 'ĐƠN VỊ TỰ XÉT DUYỆT', 'DON VI TU XET DUYET') THEN 'UNIT_REVIEW'
+                    WHEN upper(btrim(council_result_type)) IN ('BCT KHÔNG DUYỆT', 'BCT KHONG DUYET') THEN 'BCT_REJECTED'
+                    ELSE council_result_type
+                END
+                WHERE council_result_type IS NOT NULL
+                """
+            )
+        )
 
 
 def migrate_file_attachments_drive_columns() -> None:

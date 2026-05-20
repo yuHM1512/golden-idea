@@ -204,22 +204,44 @@
           </div>
         </div>
         <div id="councilFiltersWrap" class="hidden px-6 md:px-8 pb-6">
-          <div class="flex flex-wrap items-end gap-4 rounded-[1.5rem] bg-[#f6f8ff] px-5 py-4">
-            <div>
-              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Qu&#253;</label>
-              <select id="councilQuarterFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
-                <option value="">T&#7845;t c&#7843; qu&#253;</option>
-                <option value="1">Q1</option>
-                <option value="2">Q2</option>
-                <option value="3">Q3</option>
-                <option value="4">Q4</option>
-              </select>
+          <div class="flex flex-wrap items-end justify-between gap-4 rounded-[1.5rem] bg-[#f6f8ff] px-5 py-4">
+            <div class="flex flex-wrap items-end gap-4">
+              <div>
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Qu&#253;</label>
+                <select id="councilQuarterFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
+                  <option value="">T&#7845;t c&#7843; qu&#253;</option>
+                  <option value="1">Q1</option>
+                  <option value="2">Q2</option>
+                  <option value="3">Q3</option>
+                  <option value="4">Q4</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">N&#259;m</label>
+                <select id="councilYearFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
+                  <option value="">T&#7845;t c&#7843; n&#259;m</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label class="text-xs uppercase tracking-[0.25em] text-text-soft">N&#259;m</label>
-              <select id="councilYearFilter" class="mt-2 w-40 rounded-2xl border-none bg-white" onchange="onCouncilFilterChange()">
-                <option value="">T&#7845;t c&#7843; n&#259;m</option>
-              </select>
+            <div id="councilRewardHistoryAction" class="hidden">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-[0px_14px_28px_rgba(0,43,115,0.08)] transition hover:bg-[#edf3ff]"
+                onclick="openRewardHistoryPage()"
+              >
+                <span class="material-symbols-outlined text-[18px]">history</span>
+                Lịch sử khen thưởng
+              </button>
+            </div>
+            <div id="councilRewardBatchAction" class="hidden">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)] transition hover:bg-primary-strong"
+                onclick="openCouncilRewardBatchModal()"
+              >
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                Tạo đợt khen thưởng
+              </button>
             </div>
           </div>
         </div>
@@ -341,6 +363,43 @@
       </div>
     </div>
 
+    <div id="councilRewardBatchModal" class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm hidden items-center justify-center z-[66] p-4" onclick="closeCouncilRewardBatchModal()">
+      <div class="w-full max-w-3xl rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(25,28,29,0.22)] overflow-hidden" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur md:px-8">
+          <div>
+            <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Hội đồng sáng kiến</div>
+            <h3 class="mt-2 text-2xl font-black font-display text-primary">Tạo đợt khen thưởng</h3>
+            <p class="mt-2 text-sm text-text-soft">Dữ liệu sẽ lấy theo bộ lọc Quý/Năm đang chọn trong tab Duyệt Hội đồng sáng kiến.</p>
+          </div>
+          <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="closeCouncilRewardBatchModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="space-y-6 px-6 py-6 md:px-8">
+          <section class="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold uppercase tracking-widest text-text-soft">Quý</label>
+                <input id="rewardBatchQuarterDisplay" type="text" readonly class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm text-text-main" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold uppercase tracking-widest text-text-soft">Năm</label>
+                <input id="rewardBatchYearDisplay" type="text" readonly class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm text-text-main" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-semibold uppercase tracking-widest text-text-soft">Hệ số k (VNĐ/điểm)</label>
+                <input id="rewardBatchCoefficientInput" type="number" min="1" step="1" class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm text-text-main" placeholder="50000" />
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="flex flex-wrap justify-end gap-3 border-t border-slate-100 bg-white/95 px-6 py-5 backdrop-blur md:px-8">
+          <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="closeCouncilRewardBatchModal()">Đóng</button>
+          <button type="button" class="rounded-2xl bg-primary px-5 py-3 font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]" onclick="createCouncilRewardBatch()">Lưu và tạo biên bản</button>
+        </div>
+      </div>
+    </div>
+
     <script src="../js/api.js?v=20260428-print-dept"></script>
     <script>
       const CATEGORY_LABELS = {
@@ -387,8 +446,8 @@
         },
         {
           value: "UNIT_REVIEW",
-          label: "XN xét duyệt",
-          note: "Đủ điều kiện nhận tiền đăng ký, XN tự xét thưởng thêm - Ý tưởng không đưa ra Hội đồng",
+          label: "Đơn vị tự xét duyệt",
+          note: "Đủ điều kiện nhận tiền đăng ký, đơn vị tự xét thưởng thêm - Ý tưởng không đưa ra Hội đồng",
         },
         {
           value: "BCT_APPROVED",
@@ -407,8 +466,9 @@
         },
       ];
       const IE_RESULT_TYPE_LABELS = {
+        DEPT_REJECTED: "Đơn vị không duyệt",
         BCT_REJECTED: "BCT Không duyệt",
-        UNIT_REVIEW: "XN xét duyệt",
+        UNIT_REVIEW: "Đơn vị tự xét duyệt",
         BCT_APPROVED: "BCT Duyệt",
         APPROVED_NO_STANDARDIZATION: "Đạt - Không đưa vào chuẩn hoá",
         APPROVED_STANDARDIZATION: "Đạt - Đưa vào chuẩn hoá",
@@ -542,7 +602,7 @@
         if (["bod_manager", "admin"].includes(currentRole)) {
           return currentBodApprovalTab === "register_slip"
             ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
-            : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu và chốt điểm cuối cùng. Bạn có thể lọc theo quý / năm để chọn danh sách phù hợp.";
+            : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu, chốt điểm cuối cùng và tạo đợt khen thưởng theo Quý / Năm.";
         }
         return roleHint(currentRole, queue || {});
       }
@@ -593,7 +653,29 @@
       function onCouncilFilterChange() {
         currentCouncilQuarterFilter = document.getElementById("councilQuarterFilter")?.value || "";
         currentCouncilYearFilter = document.getElementById("councilYearFilter")?.value || "";
+        renderCouncilRewardBatchAction();
         renderQueue(getDisplayedQueueItems());
+      }
+
+      function canCreateCouncilRewardBatch() {
+        return ["ie_manager", "bod_manager"].includes(currentRole)
+          && isCouncilReviewMode()
+          && Boolean(currentCouncilQuarterFilter)
+          && Boolean(currentCouncilYearFilter);
+      }
+
+      function canOpenRewardHistory() {
+        return ["ie_manager", "bod_manager"].includes(currentRole) && isCouncilReviewMode();
+      }
+
+      function renderCouncilRewardBatchAction() {
+        const wrap = document.getElementById("councilRewardBatchAction");
+        if (!wrap) return;
+        wrap.classList.toggle("hidden", !canCreateCouncilRewardBatch());
+        const historyWrap = document.getElementById("councilRewardHistoryAction");
+        if (historyWrap) {
+          historyWrap.classList.toggle("hidden", !canOpenRewardHistory());
+        }
       }
 
       function renderCouncilFilterOptions() {
@@ -602,7 +684,10 @@
         const quarterSelect = document.getElementById("councilQuarterFilter");
         if (!wrap || !yearSelect || !quarterSelect) return;
         wrap.classList.toggle("hidden", !isCouncilReviewMode());
-        if (!isCouncilReviewMode()) return;
+        if (!isCouncilReviewMode()) {
+          renderCouncilRewardBatchAction();
+          return;
+        }
 
         const source = Array.isArray(queueData?.items) ? queueData.items : [];
         const years = [...new Set(source.map((item) => itemYearFromDate(item?.submitted_at)).filter(Boolean))].sort((a, b) => b - a);
@@ -611,6 +696,7 @@
           .join('');
         yearSelect.value = currentCouncilYearFilter;
         quarterSelect.value = currentCouncilQuarterFilter;
+        renderCouncilRewardBatchAction();
       }
       function safeText(text) {
         return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
@@ -1041,6 +1127,70 @@
         modal.classList.remove("flex");
       }
 
+      function openCouncilRewardBatchModal() {
+        if (!canCreateCouncilRewardBatch()) return;
+        const quarterInput = document.getElementById("rewardBatchQuarterDisplay");
+        const yearInput = document.getElementById("rewardBatchYearDisplay");
+        const coefficientInput = document.getElementById("rewardBatchCoefficientInput");
+        if (quarterInput) quarterInput.value = `Quý ${currentCouncilQuarterFilter}`;
+        if (yearInput) yearInput.value = String(currentCouncilYearFilter || "");
+        if (coefficientInput && !coefficientInput.value) coefficientInput.value = "";
+        const modal = document.getElementById("councilRewardBatchModal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeCouncilRewardBatchModal() {
+        const modal = document.getElementById("councilRewardBatchModal");
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function openRewardHistoryPage() {
+        window.location.href = "/pages/reward-history";
+      }
+
+      async function createCouncilRewardBatch() {
+        if (!currentUser?.employee_code || !canCreateCouncilRewardBatch()) return;
+        const coefficient = Number(document.getElementById("rewardBatchCoefficientInput")?.value || 0);
+        if (!Number.isFinite(coefficient) || coefficient <= 0) {
+          showNotification("Vui lòng nhập Hệ số k (VNĐ/điểm) hợp lệ", "error");
+          return;
+        }
+
+        const previewWindow = window.open("", "_blank");
+        if (previewWindow && previewWindow.document) {
+          previewWindow.document.title = "Đang tạo biên bản...";
+          previewWindow.document.body.innerHTML = '<div style="font-family: Inter, Arial, sans-serif; padding: 24px; color: #1f2937;">Đang tạo biên bản, vui lòng chờ...</div>';
+        }
+        showLoading(true);
+        try {
+          const batch = await api.createRewardBatch({
+            quarter: Number(currentCouncilQuarterFilter),
+            year: Number(currentCouncilYearFilter),
+            coefficient,
+            special_rewards: [],
+            employee_code: currentUser.employee_code,
+          });
+          closeCouncilRewardBatchModal();
+          const url = api.getRewardBatchMinutesPdfUrl(batch.id, currentUser.employee_code);
+          if (previewWindow) {
+            previewWindow.location.href = url;
+          } else {
+            window.open(url, "_blank", "noopener");
+          }
+          showNotification("Đã tạo đợt khen thưởng và mở biên bản xem trước", "success");
+        } catch (error) {
+          if (previewWindow && !previewWindow.closed) {
+            previewWindow.close();
+          }
+          showNotification(error.message || "Không tạo được đợt khen thưởng", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
       function toggleCouncilFeaturedFields() {
         const checked = Boolean(document.getElementById("councilFeaturedIdea")?.checked);
         const wrap = document.getElementById("councilRewardMultiplierWrap");
@@ -1093,7 +1243,7 @@
           ? 6
           : currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
             ? 6
-            : (isCouncilReviewMode() ? 10 : 10);
+            : 10;
         if (!items.length) {
           const hasSearch = Boolean(normalizeSearchText(queueSearchTerm));
           const msg = hasSearch ? "Không có kết quả phù hợp." : "Không có phiếu trong phạm vi hiện tại.";
@@ -1849,7 +1999,7 @@
                 <div class="flex items-start justify-between gap-4">
                   <div>
                     <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Kết luận cấp 2</div>
-                    <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">BCT / XN xét duyệt</div>
+                    <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">BCT / Đơn vị tự xét duyệt</div>
                   </div>
                   <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bắt buộc chọn</div>
                 </div>
@@ -1858,7 +2008,7 @@
                     <span>Kết luận BCT</span>
                     <span
                       class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#eef4ff] text-[10px] font-black text-primary cursor-help"
-                      title="BCT Không duyệt: Không đủ điều kiện nhận tiền đăng ký. XN xét duyệt: Đủ điều kiện nhận tiền đăng ký, XN tự xét thưởng thêm và vẫn chuyển tiếp cho lãnh đạo. BCT Duyệt: Đủ điều kiện nhận tiền đăng ký, được đưa lên Hội đồng và cần chấm điểm."
+                      title="BCT Không duyệt: Không đủ điều kiện nhận tiền đăng ký. Đơn vị tự xét duyệt: Đủ điều kiện nhận tiền đăng ký, đơn vị tự xét thưởng thêm và vẫn chuyển tiếp cho lãnh đạo. BCT Duyệt: Đủ điều kiện nhận tiền đăng ký, được đưa lên Hội đồng và cần chấm điểm."
                     >i</span>
                   </label>
                   <select id="ieResultDecision" class="w-full rounded-2xl border-none bg-surface-low" onchange="onIeDecisionChange()">

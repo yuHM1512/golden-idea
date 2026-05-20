@@ -55,6 +55,29 @@ def _can_manage_rewards(user: User) -> bool:
     return _role_name(user) in {"admin", "treasurer"}
 
 
+def _has_dept_approved_review(idea: Idea) -> bool:
+    for review in idea.reviews or []:
+        if _normalize_status(review.level) == ReviewLevel.DEPT_HEAD.value and _normalize_status(review.action) == ReviewAction.APPROVE.value:
+            return True
+    return False
+
+
+def _latest_council_result_type(idea: Idea) -> str | None:
+    ordered = sorted(idea.reviews or [], key=lambda item: item.reviewed_at or datetime.min, reverse=True)
+    for review in ordered:
+        if _normalize_status(review.level) == ReviewLevel.COUNCIL.value:
+            return str(review.council_result_type or "").strip().upper() or None
+    return None
+
+
+def _is_register_slip_eligible(idea: Idea) -> bool:
+    return _has_dept_approved_review(idea) and _latest_council_result_type(idea) in {
+        "UNIT_REVIEW",
+        "APPROVED_NO_STANDARDIZATION",
+        "APPROVED_STANDARDIZATION",
+    }
+
+
 def _require_user(db: Session, employee_code: str) -> User:
     code = (employee_code or "").strip().upper()
     if not code:
@@ -407,7 +430,6 @@ async def list_register_bonuses(
             joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
         )
         .filter(
-            Idea.eligible_register_reward.is_(True),
             Idea.bod_register_approved.is_(True),
             Idea.status.in_([IdeaStatus.LEADERSHIP_REVIEW, IdeaStatus.APPROVED, IdeaStatus.REWARDED]),
         )
@@ -417,6 +439,8 @@ async def list_register_bonuses(
 
     rows: list[dict[str, Any]] = []
     for idea in ideas:
+        if not _is_register_slip_eligible(idea):
+            continue
         participants = _parse_participants(idea.participants_json, idea.full_name or "", idea.employee_code)
         full_name, primary_codes = _participant_display(participants)
         slip = idea.payment_slip
@@ -472,8 +496,8 @@ async def settle_register_bonus(
     )
     if idea is None:
         raise HTTPException(status_code=404, detail="Ý tưởng không tồn tại")
-    if not idea.eligible_register_reward:
-        raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng đăng ký")
+        if not _is_register_slip_eligible(idea):
+            raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng đăng ký")
     if not idea.bod_register_approved:
         raise HTTPException(status_code=400, detail="Phiếu chưa được lãnh đạo duyệt ở luồng phiếu nhận tiền")
     if _normalize_status(idea.status) not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
@@ -530,7 +554,7 @@ async def print_payment_slip_for_idea(
         raise HTTPException(status_code=403, detail="Ý tưởng không thuộc đơn vị của bạn")
 
     status_value = _normalize_status(idea.status)
-    if not idea.eligible_register_reward:
+    if not _is_register_slip_eligible(idea):
         raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đủ điều kiện nhận tiền đăng ký")
     if not idea.bod_register_approved:
         raise HTTPException(status_code=400, detail="Chỉ in phiếu sau khi lãnh đạo duyệt ở tab Duyệt phiếu nhận tiền")

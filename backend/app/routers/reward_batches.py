@@ -180,6 +180,21 @@ def _serialize_batch(batch: RewardBatch) -> dict:
     }
 
 
+def _serialize_batch_with_summary(db: Session, batch: RewardBatch) -> dict:
+    payload = _serialize_batch(batch)
+    ideas = _load_eligible_ideas(db, int(batch.year), int(batch.quarter))
+    special_rewards = _special_reward_map(batch.special_coefficients)
+    total_amount = 0
+    for idea in ideas:
+        score_value = _reward_score_for_idea(idea)
+        reward_multiplier = float(special_rewards.get(idea.id, _reward_multiplier_for_idea(idea)))
+        participants = _parse_participants(idea.participants_json, idea.full_name or "", idea.employee_code or "")
+        total_amount += sum(round(score_value * float(batch.coefficient) * reward_multiplier) for _ in participants)
+    payload["total_ideas"] = len(ideas)
+    payload["total_amount"] = total_amount
+    return payload
+
+
 def _format_vnd(value: float | int) -> str:
     return f"{int(round(value or 0)):,}".replace(",", ".")
 
@@ -384,7 +399,7 @@ def _render_reward_minutes_html(*, batch: RewardBatch, items: list[dict], total_
 @router.post("/")
 def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
-    if user.role not in {"admin", "treasurer"}:
+    if user.role not in {"admin", "ie_manager", "bod_manager"}:
         raise HTTPException(status_code=403, detail="Không có quyền tạo đợt khen thưởng")
 
     eligible_ideas = _load_eligible_ideas(db, payload.year, payload.quarter)
@@ -417,7 +432,7 @@ def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db
 @router.get("/")
 def list_reward_batches(db: Session = Depends(get_db)):
     batches = db.query(RewardBatch).order_by(RewardBatch.year.desc(), RewardBatch.quarter.desc()).all()
-    return [_serialize_batch(batch) for batch in batches]
+    return [_serialize_batch_with_summary(db, batch) for batch in batches]
 
 
 @router.get("/candidates")
@@ -495,7 +510,7 @@ def get_batch_minutes_pdf(
     db: Session = Depends(get_db),
 ):
     user = _require_user(db, employee_code)
-    if user.role not in {"admin", "treasurer"}:
+    if user.role not in {"admin", "ie_manager", "bod_manager"}:
         raise HTTPException(status_code=403, detail="Không có quyền in biên bản")
 
     report = get_batch_report(batch_id, db)
@@ -520,5 +535,5 @@ def get_batch_minutes_pdf(
     return FileResponse(
         output_path,
         media_type="application/pdf",
-        filename=filename,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )

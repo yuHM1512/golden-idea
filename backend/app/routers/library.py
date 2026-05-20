@@ -105,6 +105,14 @@ def _latest_council_result_type(idea: Idea) -> str | None:
     )
     for review in reviews:
         value = (review.council_result_type or "").strip().upper()
+        value = {
+            "XN XÉT DUYỆT": "UNIT_REVIEW",
+            "XN XET DUYET": "UNIT_REVIEW",
+            "ĐƠN VỊ TỰ XÉT DUYỆT": "UNIT_REVIEW",
+            "DON VI TU XET DUYET": "UNIT_REVIEW",
+            "BCT KHÔNG DUYỆT": "BCT_REJECTED",
+            "BCT KHONG DUYET": "BCT_REJECTED",
+        }.get(value, value)
         if value:
             return value
     return None

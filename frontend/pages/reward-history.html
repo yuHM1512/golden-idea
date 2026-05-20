@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Lịch sử khen thưởng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#002b73",
+              "primary-strong": "#0a43a7",
+            },
+            fontFamily: {
+              display: ["Manrope"],
+              body: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-[#f8f9fa] font-body text-slate-900">
+    <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-xl shadow-[0px_18px_40px_rgba(25,28,29,0.06)]">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-8">
+        <a href="/pages/approvals" class="flex items-center gap-3 text-slate-700 hover:text-slate-900">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span class="font-semibold">Quay lại phê duyệt</span>
+        </a>
+        <a href="/menu" class="block">
+          <div class="flex h-10 w-48 items-center justify-center overflow-hidden bg-transparent md:h-12 md:w-56">
+            <img src="../static/Marex.png" alt="Marex" class="block h-full w-full object-contain" />
+          </div>
+        </a>
+        <button class="rounded-xl px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100" onclick="logout()">Đăng xuất</button>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl space-y-8 px-4 py-10 md:px-8">
+      <section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div class="xl:col-span-8 rounded-[2rem] bg-gradient-to-br from-primary to-primary-strong p-8 text-white shadow-[0px_30px_70px_rgba(0,43,115,0.18)] md:p-10">
+          <div class="text-xs uppercase tracking-[0.3em] text-white/70">Lưu hồ sơ</div>
+          <h1 class="mt-4 font-display text-3xl font-black leading-tight md:text-5xl">Lịch sử khen thưởng ý tưởng</h1>
+          <p class="mt-4 max-w-3xl leading-relaxed text-white/80">
+            Tra cứu các đợt khen thưởng đã tạo, tổng số Ý tưởng vàng theo đợt, tổng tiền khen thưởng và xem lại biên bản.
+          </p>
+        </div>
+        <div class="xl:col-span-4 rounded-[2rem] bg-white p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+          <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Tài khoản</div>
+          <div id="whoami" class="mt-4 text-lg font-bold">—</div>
+          <div id="roleHint" class="mt-2 text-sm text-slate-500">Đang tải quyền truy cập...</div>
+          <div class="mt-6 grid grid-cols-2 gap-4">
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Tổng đợt</div>
+              <div id="kpiBatches" class="mt-2 font-display text-3xl font-black text-primary">0</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Tổng tiền</div>
+              <div id="kpiAmount" class="mt-2 font-display text-3xl font-black text-emerald-600">0</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="overflow-hidden rounded-[2rem] bg-white shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
+        <div class="flex flex-col gap-4 border-b border-slate-100 px-6 py-6 md:flex-row md:items-center md:justify-between md:px-8">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Danh sách</div>
+            <h2 class="mt-2 font-display text-2xl font-black text-primary md:text-3xl">Các đợt khen thưởng đã tạo</h2>
+          </div>
+          <div class="flex items-center gap-3">
+            <div id="tableMeta" class="text-sm text-slate-500">0 đợt</div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+              onclick="loadRewardHistory()"
+            >
+              <span class="material-symbols-outlined text-[18px]">refresh</span>
+              Tải lại
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="border-b border-slate-200 bg-slate-50 text-slate-700">
+              <tr>
+                <th class="px-6 py-4 text-left font-bold">Đợt</th>
+                <th class="px-4 py-4 text-right font-bold">Tổng số YTV</th>
+                <th class="px-4 py-4 text-right font-bold">Tổng tiền khen thưởng</th>
+                <th class="px-6 py-4 text-right font-bold">Biên bản</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="loadingOverlay" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/25 backdrop-blur-sm">
+      <div class="rounded-2xl bg-white px-5 py-4 text-sm font-semibold text-slate-700 shadow-xl">Đang xử lý...</div>
+    </div>
+
+    <div id="notification" class="fixed right-4 top-4 z-[90] hidden max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-xl"></div>
+
+    <script src="../js/api.js?v=20260520-reward-history"></script>
+    <script>
+      const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+      let currentUser = null;
+      let rewardBatches = [];
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function showLoading(show) {
+        const overlay = document.getElementById("loadingOverlay");
+        if (!overlay) return;
+        overlay.classList.toggle("hidden", !show);
+        overlay.classList.toggle("flex", show);
+      }
+
+      function showNotification(message, type = "success") {
+        const el = document.getElementById("notification");
+        if (!el) return;
+        const typeClass = type === "error"
+          ? "bg-rose-500 text-white"
+          : "bg-emerald-50 text-emerald-700 border border-emerald-200";
+        el.className = `fixed right-4 top-4 z-[90] max-w-sm rounded-2xl px-4 py-3 text-sm font-semibold shadow-xl ${typeClass}`;
+        el.textContent = message || "";
+        el.classList.remove("hidden");
+        window.clearTimeout(showNotification._timer);
+        showNotification._timer = window.setTimeout(() => el.classList.add("hidden"), 2800);
+      }
+
+      function formatDate(value) {
+        if (!value) return "—";
+        try {
+          return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
+        } catch {
+          return "—";
+        }
+      }
+
+      function formatMoney(value) {
+        return Number(value || 0).toLocaleString("vi-VN");
+      }
+
+      function safeText(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderHistoryTable() {
+        const tbody = document.getElementById("historyBody");
+        const tableMeta = document.getElementById("tableMeta");
+        tbody.innerHTML = "";
+        tableMeta.textContent = `${rewardBatches.length} đợt`;
+
+        if (!rewardBatches.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-slate-500">Chưa có đợt khen thưởng nào.</td></tr>';
+          return;
+        }
+
+        rewardBatches.forEach((batch) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-[#f8fbff] transition-colors";
+          tr.innerHTML = `
+            <td class="px-6 py-5 align-top">
+              <div class="font-semibold text-slate-900">Quý ${safeText(batch.quarter)}/${safeText(batch.year)}</div>
+              <div class="mt-2 text-xs text-slate-500">Tạo lúc ${safeText(formatDate(batch.created_at))}</div>
+            </td>
+            <td class="px-4 py-5 align-top text-right font-semibold text-slate-900">${formatMoney(batch.total_ideas || 0)}</td>
+            <td class="px-4 py-5 align-top text-right font-bold text-primary">${formatMoney(batch.total_amount || 0)} VND</td>
+            <td class="px-6 py-5 align-top text-right">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)] transition hover:bg-primary-strong"
+                onclick="openMinutesPdf(${Number(batch.id)})"
+              >
+                <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                Xem biên bản
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderKpis() {
+        const totalAmount = rewardBatches.reduce((sum, batch) => sum + Number(batch.total_amount || 0), 0);
+        document.getElementById("kpiBatches").textContent = formatMoney(rewardBatches.length);
+        document.getElementById("kpiAmount").textContent = formatMoney(totalAmount);
+      }
+
+      function openMinutesPdf(batchId) {
+        if (!currentUser?.employee_code) return;
+        const url = api.getRewardBatchMinutesPdfUrl(batchId, currentUser.employee_code);
+        window.open(url, "_blank", "noopener");
+      }
+
+      async function loadRewardHistory() {
+        showLoading(true);
+        try {
+          rewardBatches = await api.listRewardBatches();
+          renderKpis();
+          renderHistoryTable();
+        } catch (error) {
+          showNotification(error.message || "Không tải được lịch sử khen thưởng", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        if (!employeeCode) {
+          window.location.href = "/pages/login";
+          return;
+        }
+
+        showLoading(true);
+        try {
+          const user = await api.getUserByCode(employeeCode);
+          if (!["admin", "ie_manager", "bod_manager"].includes(user?.role || "")) {
+            showNotification("Bạn không có quyền xem lịch sử khen thưởng", "error");
+            window.location.href = "/pages/approvals";
+            return;
+          }
+          currentUser = user;
+          document.getElementById("whoami").textContent = `${user.employee_code} • ${user.full_name || "Chưa có tên"}`;
+          document.getElementById("roleHint").textContent = user.role === "bod_manager"
+            ? "Lịch sử các đợt khen thưởng đã tạo từ luồng Hội đồng."
+            : "Tra cứu nhanh batch khen thưởng và biên bản đã phát hành.";
+          await loadRewardHistory();
+        } catch (error) {
+          showNotification(error.message || "Không tải được thông tin người dùng", "error");
+          window.location.href = "/pages/approvals";
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

@@ -256,7 +256,7 @@
       const WORKFLOW_STEPS = [
         { status: "Đã gửi ý tưởng", title: "Người dùng gửi ý tưởng", desc: "Form được lưu thành hồ sơ chính thức và sẵn sàng đi vào 3 cấp duyệt." },
         { status: "Duyệt đơn vị", title: "Đơn vị xem xét / chấm điểm", desc: "Cấp đơn vị kiểm tra nội dung, minh chứng, chấm K1/K2/K3 và phê duyệt ban đầu trước khi chuyển Ban cải tiến." },
-        { status: "Duyệt Ban cải tiến", title: "Ban cải tiến ra kết luận", desc: "Ban cải tiến có 3 hướng xử lý: không duyệt thì ý tưởng không nhận thưởng đăng ký; đưa về XN tự xét duyệt thì được nhận tiền đăng ký nhưng không lên Hội đồng; đạt thì vừa nhận thưởng đăng ký vừa được đưa ra Hội đồng sáng kiến." },
+        { status: "Duyệt Ban cải tiến", title: "Ban cải tiến ra kết luận", desc: "Ban cải tiến có 3 hướng xử lý: không duyệt thì ý tưởng không nhận thưởng đăng ký; đưa về Đơn vị tự xét duyệt thì được nhận tiền đăng ký nhưng không lên Hội đồng; đạt thì vừa nhận thưởng đăng ký vừa được đưa ra Hội đồng sáng kiến." },
         { status: "Duyệt Lãnh đạo", title: "Lãnh đạo xử lý 2 nghiệp vụ", desc: "Lãnh đạo duyệt chi thưởng đăng ký 100.000 VND / ý tưởng, đồng thời đại diện Hội đồng sáng kiến chấm điểm cuối, xác định ý tưởng nổi trội và hệ số khen thưởng." },
         { status: "Tạo đợt khen thưởng / chi thưởng", title: "Hoàn tất xét thưởng", desc: "Sau khi có điểm cuối và tạo đợt khen thưởng, hệ thống tổng hợp kết quả theo quý, gửi email về đơn vị và phục vụ chi thưởng." },
       ];
@@ -312,9 +312,9 @@
           modules: ["Kho ý tưởng", "Phê duyệt", "Cài đặt"],
           firstStep: "Vào Phê duyệt để xử lý các ý tưởng chờ BCT.",
           tasks: [
-            "Đánh giá hồ sơ đã qua duyệt đơn vị và ra 1 trong 3 kết luận: BCT không duyệt, XN tự xét duyệt, hoặc Đạt.",
+            "Đánh giá hồ sơ đã qua duyệt đơn vị và ra 1 trong 3 kết luận: BCT không duyệt, Đơn vị tự xét duyệt, hoặc Đạt.",
             "Nếu BCT không duyệt: ý tưởng dừng quy trình, không nhận thưởng đăng ký và không được đưa lên Hội đồng.",
-            "Nếu đưa về XN tự xét duyệt: ý tưởng được nhận tiền đăng ký nhưng không tham gia xét thưởng cuối quý.",
+            "Nếu đưa về Đơn vị tự xét duyệt: ý tưởng được nhận tiền đăng ký nhưng không tham gia xét thưởng cuối quý.",
             "Nếu Đạt: chấm điểm BCT, xác định đưa / không đưa vào chuẩn hóa và chuyển lên lãnh đạo / Hội đồng sáng kiến.",
             "Quản lý một số cấu hình / tiêu chí cần thiết trong phần Cài đặt.",
           ],

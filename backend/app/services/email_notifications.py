@@ -55,7 +55,7 @@ IE_RESULT_APPROVED_STANDARDIZATION = "APPROVED_STANDARDIZATION"
 
 IE_RESULT_LABELS = {
     IE_RESULT_BCT_REJECTED: "BCT không duyệt",
-    IE_RESULT_UNIT_REVIEW: "XN xét duyệt",
+    IE_RESULT_UNIT_REVIEW: "Đơn vị tự xét duyệt",
     IE_RESULT_APPROVED_NO_STANDARDIZATION: "Đạt - Không đưa vào chuẩn hoá",
     IE_RESULT_APPROVED_STANDARDIZATION: "Đạt - Đưa vào chuẩn hoá",
 }
@@ -67,7 +67,7 @@ IE_RESULT_MESSAGES = {
     ),
     IE_RESULT_UNIT_REVIEW: (
         "Ý tưởng của đơn vị bạn đã đủ tiêu chí để nhận thưởng đăng ký nhưng không được tiếp tục "
-        "đưa ra Hội đồng sáng kiến để tiếp tục xét. Đề nghị đơn vị tự khen thưởng riêng (nếu có) "
+        "đưa ra Hội đồng sáng kiến để tiếp tục xét. Đơn vị tự xét duyệt khen thưởng riêng (nếu có) "
         "và theo dõi phê duyệt từ lãnh đạo để in phiếu nhận thưởng đăng ký."
     ),
     IE_RESULT_APPROVED_NO_STANDARDIZATION: (
@@ -361,7 +361,15 @@ def _latest_council_result_type(idea: Idea) -> str | None:
     ordered = sorted(idea.reviews, key=lambda item: (item.reviewed_at or datetime.min, item.id or 0), reverse=True)
     for review in ordered:
         if _normalize_status(review.level) == ReviewLevel.COUNCIL.value and review.council_result_type:
-            return review.council_result_type.strip().upper()
+            value = review.council_result_type.strip().upper()
+            return {
+                "XN XÉT DUYỆT": IE_RESULT_UNIT_REVIEW,
+                "XN XET DUYET": IE_RESULT_UNIT_REVIEW,
+                "ĐƠN VỊ TỰ XÉT DUYỆT": IE_RESULT_UNIT_REVIEW,
+                "DON VI TU XET DUYET": IE_RESULT_UNIT_REVIEW,
+                "BCT KHÔNG DUYỆT": IE_RESULT_BCT_REJECTED,
+                "BCT KHONG DUYET": IE_RESULT_BCT_REJECTED,
+            }.get(value, value)
     return None
 
 

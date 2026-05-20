@@ -64,6 +64,7 @@ COUNCIL_FINAL_ELIGIBLE_IE_TYPES = {
     IE_RESULT_APPROVED_NO_STANDARDIZATION,
     IE_RESULT_APPROVED_STANDARDIZATION,
 }
+DEPT_REJECTED_DISPLAY = "DEPT_REJECTED"
 
 DEPT_VISIBLE_STATUSES = {
     IdeaStatus.SUBMITTED.value,
@@ -98,6 +99,15 @@ def _normalize_status(value: Any) -> str:
 
 def _normalize_ie_result_type(value: Any) -> str | None:
     normalized = str(value or "").strip().upper()
+    legacy_map = {
+        "XN XÉT DUYỆT": IE_RESULT_UNIT_REVIEW,
+        "XN XET DUYET": IE_RESULT_UNIT_REVIEW,
+        "ĐƠN VỊ TỰ XÉT DUYỆT": IE_RESULT_UNIT_REVIEW,
+        "DON VI TU XET DUYET": IE_RESULT_UNIT_REVIEW,
+        "BCT KHÔNG DUYỆT": IE_RESULT_BCT_REJECTED,
+        "BCT KHONG DUYET": IE_RESULT_BCT_REJECTED,
+    }
+    normalized = legacy_map.get(normalized, normalized)
     return normalized or None
 
 
@@ -500,6 +510,17 @@ def _latest_council_result_type(idea: Idea) -> str | None:
     return None
 
 
+def _has_dept_approved_review(idea: Idea) -> bool:
+    for review in idea.reviews or []:
+        if _normalize_status(review.level) == ReviewLevel.DEPT_HEAD.value and _normalize_status(review.action) == ReviewAction.APPROVE.value:
+            return True
+    return False
+
+
+def _is_register_slip_eligible(idea: Idea) -> bool:
+    return _has_dept_approved_review(idea) and _latest_council_result_type(idea) in REGISTER_SLIP_ELIGIBLE_IE_TYPES
+
+
 def _latest_ie_score_row(idea: Idea) -> IdeaScore | None:
     ordered = sorted(idea.scores, key=lambda item: item.scored_at or datetime.min, reverse=True)
     for score in ordered:
@@ -513,6 +534,21 @@ def _latest_council_review_row(idea: Idea) -> IdeaReview | None:
     for review in ordered:
         if _normalize_status(review.level) == ReviewLevel.COUNCIL.value:
             return review
+    return None
+
+
+def _display_ie_result_type(idea: Idea) -> str | None:
+    result_type = _latest_council_result_type(idea)
+    if result_type:
+        return result_type
+    if _normalize_status(idea.status) != IdeaStatus.REJECTED.value:
+        return None
+    ordered = sorted(idea.reviews, key=lambda item: item.reviewed_at or datetime.min, reverse=True)
+    for review in ordered:
+        if _normalize_status(review.action) != ReviewAction.REJECT.value:
+            continue
+        if _normalize_status(review.level) == ReviewLevel.DEPT_HEAD.value:
+            return DEPT_REJECTED_DISPLAY
     return None
 
 
@@ -557,7 +593,8 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
     dept_score, ie_score, _ = _get_latest_scores(idea)
     latest_review, _ = _get_latest_review(idea)
     slip = idea.payment_slip
-    ie_result_type = _latest_council_result_type(idea)
+    ie_result_type = _display_ie_result_type(idea)
+    eligible_register_reward = _is_register_slip_eligible(idea)
     return ApprovalIdeaItem(
         id=idea.id,
         title=_build_title(idea),
@@ -574,7 +611,7 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
         rejection_reason=idea.rejection_reason,
         can_review=can_review,
         employee_received=bool(slip and slip.employee_received),
-        eligible_register_reward=bool(idea.eligible_register_reward),
+        eligible_register_reward=eligible_register_reward,
         bod_register_approved=bool(idea.bod_register_approved),
         ie_result_type=ie_result_type,
         council_final_score=idea.council_final_score,
@@ -1012,7 +1049,7 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
     result_type = _latest_council_result_type(idea)
     if result_type not in REGISTER_SLIP_ELIGIBLE_IE_TYPES:
         raise HTTPException(status_code=400, detail="Phiếu này không thuộc diện duyệt phiếu nhận tiền")
-    if not idea.eligible_register_reward:
+    if not _is_register_slip_eligible(idea):
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận tiền đăng ký")
 
     idea.bod_register_approved = True
