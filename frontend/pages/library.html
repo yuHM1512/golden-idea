@@ -515,6 +515,18 @@
 
       const DISPLAY_TIME_ZONE = "Asia/Bangkok";
 
+      function parseUtcDate(value) {
+        if (!value) return null;
+        if (value instanceof Date) {
+          return Number.isNaN(value.getTime()) ? null : value;
+        }
+        const raw = String(value).trim();
+        if (!raw) return null;
+        const normalized = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw) ? raw : `${raw}Z`;
+        const date = new Date(normalized);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
       function getVietnamDateValue(date = new Date()) {
         return new Intl.DateTimeFormat("en-CA", {
           timeZone: DISPLAY_TIME_ZONE,
@@ -533,7 +545,9 @@
 
       function formatDateTimeVN(value) {
         if (!value) return "—";
-        return new Date(value).toLocaleString("vi-VN", {
+        const date = parseUtcDate(value);
+        if (!date) return "—";
+        return date.toLocaleString("vi-VN", {
           timeZone: DISPLAY_TIME_ZONE,
         });
       }

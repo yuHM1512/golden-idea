@@ -20,6 +20,7 @@ from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
 from app.services.email_notifications import send_approval_stage_email
+from app.time_utils import now_utc
 from app.schemas import (
     ActualBenefitInput,
     ActualBenefitView,
@@ -468,7 +469,7 @@ def _upsert_actual_benefit_record(
     evaluation.labor_second_price = payload.labor_second_price
     evaluation.benefit_value = benefit_value
     evaluation.note = (payload.note or "").strip() or None
-    evaluation.updated_at = datetime.utcnow()
+    evaluation.updated_at = now_utc()
     return evaluation
 
 
@@ -655,7 +656,7 @@ def _replication_to_item(replication: StandardizedIdeaReplication, can_review: b
         apply_date=datetime.combine(replication.apply_date, datetime.min.time()),
         approve=bool(replication.approve),
         can_review=can_review and not bool(replication.approve),
-        created_at=replication.created_at or datetime.utcnow(),
+        created_at=replication.created_at or now_utc(),
     )
 
 
@@ -973,7 +974,7 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
             comment=comment,
             recommend_unit_reward=recommend_unit_reward,
             council_result_type=ie_result_type if scope == "ie" else None,
-            reviewed_at=datetime.utcnow(),
+            reviewed_at=now_utc(),
         )
     )
 
@@ -982,18 +983,18 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
     else:
         next_status = _next_status(user, action)
     idea.status = next_status
-    idea.reviewed_at = datetime.utcnow()
+    idea.reviewed_at = now_utc()
     if scope == "ie":
         idea.eligible_register_reward = ie_result_type in {
             *REGISTER_SLIP_ELIGIBLE_IE_TYPES,
         }
     if next_status == IdeaStatus.REJECTED:
-        idea.rejected_at = datetime.utcnow()
+        idea.rejected_at = now_utc()
         idea.rejection_reason = comment
     else:
         idea.rejection_reason = None
         if next_status == IdeaStatus.APPROVED:
-            idea.approved_at = datetime.utcnow()
+            idea.approved_at = now_utc()
 
     db.commit()
 
@@ -1053,7 +1054,7 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận tiền đăng ký")
 
     idea.bod_register_approved = True
-    idea.bod_register_approved_at = datetime.utcnow()
+    idea.bod_register_approved_at = now_utc()
     idea.bod_register_approved_by_id = user.id
     db.add(
         IdeaReview(
@@ -1063,7 +1064,7 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
             action=ReviewAction.APPROVE,
             comment="Duyệt phiếu nhận tiền đăng ký",
             recommend_unit_reward=False,
-            reviewed_at=datetime.utcnow(),
+            reviewed_at=now_utc(),
         )
     )
     db.commit()
@@ -1121,12 +1122,12 @@ async def update_ie_score(idea_id: int, payload: IeScoreEditRequest, db: Session
         setattr(latest_score, field, value)
     latest_score.scorer_id = user.id
     latest_score.is_final = True
-    latest_score.scored_at = datetime.utcnow()
+    latest_score.scored_at = now_utc()
 
     latest_review = _latest_council_review_row(idea)
     if latest_review is not None:
         latest_review.comment = (payload.comment or "").strip() or latest_review.comment
-        latest_review.reviewed_at = datetime.utcnow()
+        latest_review.reviewed_at = now_utc()
 
     if payload.actual_benefit is not None:
         _upsert_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
@@ -1211,7 +1212,7 @@ async def update_ie_review(idea_id: int, payload: IeReviewEditRequest, db: Sessi
                 setattr(latest_score, field, value)
             latest_score.scorer_id = user.id
             latest_score.is_final = True
-            latest_score.scored_at = datetime.utcnow()
+            latest_score.scored_at = now_utc()
         else:
             db.add(
                 IdeaScore(
@@ -1226,15 +1227,15 @@ async def update_ie_review(idea_id: int, payload: IeReviewEditRequest, db: Sessi
     latest_review.comment = comment
     latest_review.recommend_unit_reward = bool(payload.recommend_unit_reward) if ie_result_type == IE_RESULT_UNIT_REVIEW else False
     latest_review.council_result_type = ie_result_type
-    latest_review.reviewed_at = datetime.utcnow()
+    latest_review.reviewed_at = now_utc()
 
     next_status = IdeaStatus.REJECTED if ie_result_type == IE_RESULT_BCT_REJECTED else IdeaStatus.LEADERSHIP_REVIEW
     idea.status = next_status
-    idea.reviewed_at = datetime.utcnow()
+    idea.reviewed_at = now_utc()
     idea.eligible_register_reward = ie_result_type in REGISTER_SLIP_ELIGIBLE_IE_TYPES
 
     if next_status == IdeaStatus.REJECTED:
-        idea.rejected_at = datetime.utcnow()
+        idea.rejected_at = now_utc()
         idea.rejection_reason = comment
         idea.approved_at = None
     else:
@@ -1287,7 +1288,7 @@ async def approve_replication(replication_id: int, payload: ReplicationApprovalR
         raise HTTPException(status_code=404, detail="Bản ghi nhân rộng không tồn tại")
 
     replication.approve = True
-    replication.updated_at = datetime.utcnow()
+    replication.updated_at = now_utc()
     db.commit()
     db.refresh(replication)
 
@@ -1335,7 +1336,7 @@ async def submit_council_final_score(idea_id: int, payload: CouncilFinalScoreReq
         payload.reward_multiplier = None
 
     idea.council_final_score = int(payload.total_score)
-    idea.council_final_scored_at = datetime.utcnow()
+    idea.council_final_scored_at = now_utc()
     idea.council_final_scored_by_id = user.id
     idea.council_final_note = (payload.comment or "").strip() or None
     idea.council_is_featured = bool(payload.is_featured)
@@ -1343,7 +1344,7 @@ async def submit_council_final_score(idea_id: int, payload: CouncilFinalScoreReq
     if _normalize_status(idea.status) != IdeaStatus.REWARDED.value:
         idea.status = IdeaStatus.APPROVED
     if idea.approved_at is None:
-        idea.approved_at = datetime.utcnow()
+        idea.approved_at = now_utc()
     db.add(
         IdeaReview(
             idea_id=idea.id,
@@ -1352,7 +1353,7 @@ async def submit_council_final_score(idea_id: int, payload: CouncilFinalScoreReq
             action=ReviewAction.APPROVE,
             comment=(payload.comment or "").strip() or f"Chốt điểm Hội đồng: {int(payload.total_score)}",
             recommend_unit_reward=False,
-            reviewed_at=datetime.utcnow(),
+            reviewed_at=now_utc(),
         )
     )
     db.commit()
@@ -1429,7 +1430,7 @@ async def upsert_actual_benefit(idea_id: int, payload: ActualBenefitInput, db: S
     evaluation.labor_second_price = payload.labor_second_price
     evaluation.benefit_value = benefit_value
     evaluation.note = (payload.note or "").strip() or None
-    evaluation.updated_at = datetime.utcnow()
+    evaluation.updated_at = now_utc()
 
     db.commit()
     db.refresh(evaluation)

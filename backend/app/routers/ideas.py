@@ -1,6 +1,5 @@
 import json
 import mimetypes
-from datetime import datetime
 from pathlib import Path
 from tempfile import SpooledTemporaryFile
 from typing import List
@@ -35,6 +34,7 @@ from app.services.google_drive import (
     upload_attachment_to_drive,
 )
 from app.services.email_notifications import send_approval_stage_email
+from app.time_utils import now_utc
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
@@ -220,7 +220,7 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
             is_anonymous=idea.is_anonymous,
             unit_id=idea.unit_id,
             status=IdeaStatus.SUBMITTED,
-            submitted_at=datetime.utcnow(),
+            submitted_at=now_utc(),
         )
 
         db.add(new_idea)

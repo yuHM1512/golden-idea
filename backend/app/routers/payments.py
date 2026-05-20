@@ -18,6 +18,7 @@ from app.models.idea import Idea, IdeaStatus
 from app.models.payment import PaymentSlip
 from app.models.review import IdeaReview, ReviewAction, ReviewLevel
 from app.models.user import User
+from app.time_utils import format_display_datetime, now_utc, to_display_tz
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -174,9 +175,7 @@ def _latest_approved_review_name(idea: Idea, level: ReviewLevel) -> str:
 
 
 def _format_short_date(value: datetime | None) -> str:
-    if value is None:
-        return ""
-    return value.strftime("%d/%m/%Y")
+    return format_display_datetime(value, "%d/%m/%Y")
 
 
 def _build_signature_block(title: str, signer_name: str) -> str:
@@ -245,9 +244,10 @@ def _render_payment_slip_html(
     dept_name: str,
 ) -> str:
     amount_text = "100.000 VND"
-    printed_day = printed_at.strftime("%d")
-    printed_month = printed_at.strftime("%m")
-    printed_year = printed_at.strftime("%Y")
+    display_printed_at = to_display_tz(printed_at) or printed_at
+    printed_day = display_printed_at.strftime("%d")
+    printed_month = display_printed_at.strftime("%m")
+    printed_year = display_printed_at.strftime("%Y")
 
     signatures_html = "".join(
         [
@@ -514,7 +514,7 @@ async def settle_register_bonus(
         raise HTTPException(status_code=400, detail="Phiếu chưa in, chưa thể xác nhận chi thưởng")
     if paid:
         slip.employee_received = True
-        slip.paid_at = datetime.now()
+        slip.paid_at = now_utc()
         slip.paid_by_user_id = user.id
     else:
         slip.employee_received = False
@@ -568,7 +568,7 @@ async def print_payment_slip_for_idea(
         raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã đủ điều kiện nhận tiền đăng ký")
 
     slip = _get_or_create_payment_slip(db, idea)
-    printed_at = datetime.now()
+    printed_at = now_utc()
     slip.printed_by_manager_id = user.id
     slip.print_date = printed_at
     slip.is_printed = True

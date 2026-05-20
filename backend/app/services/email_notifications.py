@@ -4,11 +4,10 @@ import json
 import smtplib
 import ssl
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime
 from email.message import EmailMessage
 from html import escape
 from typing import Iterable
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy.orm import Session
 
@@ -19,6 +18,7 @@ from app.models.review import ReviewLevel
 from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
 from app.models.user import User, UserRole
+from app.time_utils import format_display_datetime
 
 
 EMAIL_FOOTER_HTML = """
@@ -82,11 +82,6 @@ IE_RESULT_MESSAGES = {
         "và chờ đón điểm xét thưởng chính thức tại cuối quý."
     ),
 }
-
-try:
-    DISPLAY_TIME_ZONE = ZoneInfo("Asia/Bangkok")
-except ZoneInfoNotFoundError:
-    DISPLAY_TIME_ZONE = timezone(timedelta(hours=7))
 
 K2_TYPE_LABELS = {
     K2Type.EASY.value: "Dễ áp dụng",
@@ -209,11 +204,7 @@ def _query_unit_leadership_recipients(db: Session, idea: Idea) -> list[str]:
 
 
 def _format_submitted_at(value: datetime | None) -> str:
-    if value is None:
-        return ""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
-    return value.astimezone(DISPLAY_TIME_ZONE).strftime("%d/%m/%Y %H:%M")
+    return format_display_datetime(value)
 
 
 def _table_html(idea: Idea) -> str:

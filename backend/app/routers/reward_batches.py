@@ -18,6 +18,7 @@ from app.models.score import IdeaScore
 from app.models.user import User
 from app.routers.payments import _render_pdf_via_browser
 from app.services.email_notifications import send_reward_batch_summary_emails
+from app.time_utils import now_display_tz
 
 router = APIRouter(prefix="/reward-batches", tags=["reward-batches"])
 
@@ -216,7 +217,7 @@ def _build_signature_block(title: str) -> str:
 
 
 def _render_reward_minutes_html(*, batch: RewardBatch, items: list[dict], total_amount: float) -> str:
-    now = datetime.now()
+    now = now_display_tz()
     rows_html = "".join(
         f"""
           <tr>

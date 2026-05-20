@@ -133,13 +133,27 @@
       APPROVED_STANDARDIZATION: "Duyệt thưởng và nhân rộng",
     };
 
+    function parseUtcDate(value) {
+      if (!value) return null;
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+      }
+      const raw = String(value).trim();
+      if (!raw) return null;
+      const normalized = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw) ? raw : `${raw}Z`;
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
     function safeText(text) {
       return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
     }
 
     function formatDate(value) {
       try {
-        return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
+        const date = parseUtcDate(value);
+        if (!date) return "—";
+        return date.toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
       } catch {
         return "—";
       }
