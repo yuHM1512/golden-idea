@@ -236,6 +236,7 @@ def _render_payment_slip_html(
     unit_name: str,
     bo_phan: str,
     position: str,
+    title: str,
     description: str,
     created_at_text: str,
     printed_at: datetime,
@@ -394,6 +395,11 @@ def _render_payment_slip_html(
         <div class="row amount-row">
           <div class="amount-cell"><span class="label">Có nhận tiền:</span> <span class="value">{amount_text}</span></div>
           <div class="amount-cell right"><span class="label">Bằng chữ:</span> <span class="value">Một trăm ngàn đồng chẵn</span></div>
+        </div>
+
+        <div class="row">
+          <div class="label">Tên ý tưởng:</div>
+          <div class="desc">{escape(title or "—")}</div>
         </div>
 
         <div class="row">
@@ -580,6 +586,7 @@ async def print_payment_slip_for_idea(
         unit_name=(idea.unit.name if idea.unit else "") or "",
         bo_phan=(idea.bo_phan or "").strip(),
         position=(idea.position or "").strip(),
+        title=(idea.title or "").strip(),
         description=idea.description or "",
         created_at_text=_format_short_date(idea.submitted_at or idea.created_at),
         printed_at=printed_at,

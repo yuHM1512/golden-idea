@@ -189,10 +189,10 @@
             </div>
             <div class="rounded-[1.5rem] bg-surface-container-lowest p-6 soft-panel">
               <div class="w-12 h-12 rounded-2xl bg-surface-container text-primary flex items-center justify-center">
-                <span class="material-symbols-outlined">payments</span>
+                <span class="material-symbols-outlined">workspace_premium</span>
               </div>
-              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn phụ trách chi thưởng</h3>
-              <p class="mt-3 text-on-surface-variant">Vào Chi thưởng để xem phiếu đủ điều kiện, xác nhận đã chi và lập đợt thưởng theo quý / năm.</p>
+              <h3 class="mt-5 text-xl font-bold font-manrope text-primary">Nếu bạn phụ trách xét thưởng</h3>
+              <p class="mt-3 text-on-surface-variant">Vào Phê duyệt Hội đồng để chốt điểm cuối, tạo đợt khen thưởng theo quý và xem lại lịch sử hoặc biên bản đã lập.</p>
             </div>
           </div>
         </div>
@@ -353,6 +353,147 @@
             "Theo dõi tổng thể toàn bộ dữ liệu và luồng hoạt động của app.",
           ],
         },
+      };
+
+      FEATURE_CARDS.length = 0;
+      FEATURE_CARDS.push(
+        {
+          title: "Đăng ký ý tưởng",
+          icon: "edit_note",
+          href: "/pages/submit-idea",
+          summary: "Điền form, thêm người cùng tham gia, tải ảnh/video minh chứng, tự lưu nội dung đang nhập theo mã nhân viên và gửi ý tưởng về đơn vị.",
+          audience: "Tất cả nhân viên",
+        },
+        {
+          title: "Xem ý tưởng của bạn",
+          icon: "visibility",
+          href: "/pages/my-ideas",
+          summary: "Xem lại các phiếu có liên quan đến mã nhân viên đang đăng nhập, theo dõi trạng thái duyệt và kết quả qua từng cấp.",
+          audience: "Nhân viên / người gửi",
+        },
+        {
+          title: "Kho ý tưởng vàng",
+          icon: "inventory_2",
+          href: "/pages/library",
+          summary: "Tra cứu ý tưởng đã duyệt, xem dashboard tổng quan và tham khảo các ý tưởng đã chuẩn hóa hoặc nhân rộng.",
+          audience: "Tất cả user",
+        },
+        {
+          title: "Phê duyệt",
+          icon: "fact_check",
+          href: "/pages/approvals",
+          summary: "Xem phiếu chờ xử lý, chấm điểm, sửa cấp 2, duyệt phiếu nhận tiền, chốt điểm Hội đồng và tạo đợt khen thưởng theo quý.",
+          audience: "Role quản lý / duyệt",
+        },
+        {
+          title: "Cài đặt",
+          icon: "settings",
+          href: "/pages/settings",
+          summary: "Quản lý user, đơn vị, bộ tiêu chí chấm điểm và cấu hình phục vụ vận hành.",
+          audience: "Admin / BCT",
+        },
+      );
+
+      WORKFLOW_STEPS.length = 0;
+      WORKFLOW_STEPS.push(
+        { status: "Đăng ký", title: "Người dùng gửi ý tưởng", desc: "Form được tự lưu nội dung đang nhập theo mã nhân viên. Khi bấm Gửi ý tưởng, hồ sơ chính thức được tạo và chuyển sang cấp duyệt đơn vị." },
+        { status: "Duyệt đơn vị", title: "Đơn vị xem xét / chấm điểm", desc: "Cấp đơn vị kiểm tra nội dung, minh chứng, chấm K1/K2/K3 và phê duyệt ban đầu trước khi chuyển Ban cải tiến." },
+        { status: "Duyệt Ban cải tiến", title: "Ban cải tiến ra kết luận cấp 2", desc: "BCT có 3 hướng xử lý: BCT không duyệt; Đơn vị tự xét duyệt; hoặc Đạt (Đưa vào chuẩn hóa / Không đưa vào chuẩn hóa). Nếu cần, BCT có thể sửa lại kết luận cấp 2 trước khi Hội đồng chốt điểm." },
+        { status: "Phiếu nhận tiền 100k", title: "Lãnh đạo duyệt phiếu nhận tiền đăng ký", desc: "Các ý tưởng đủ điều kiện nhận thưởng đăng ký chỉ được in phiếu nhận tiền sau khi đã qua duyệt đơn vị, có kết luận BCT hợp lệ và được bod_manager tick duyệt ở tab Duyệt phiếu nhận tiền." },
+        { status: "Hội đồng sáng kiến", title: "Chốt điểm cuối và hệ số thưởng", desc: "Các ý tưởng Đạt được đưa lên Hội đồng sẽ được chấm điểm cuối, xác định ý tưởng nổi trội và hệ số khen thưởng. Sau bước này BCT không còn được sửa lại điểm cấp 2." },
+        { status: "Đợt khen thưởng", title: "Tạo batch và biên bản theo quý", desc: "Trong tab Duyệt Hội đồng sáng kiến, IE Manager hoặc BOD Manager chọn Quý / Năm, nhập hệ số k (VNĐ/điểm), tạo đợt khen thưởng, mở biên bản PDF preview và tra cứu lại ở Lịch sử khen thưởng." },
+      );
+
+      ROLE_GUIDES.employee = {
+        name: "Nhân viên",
+        desc: "Role gửi ý tưởng, theo dõi tình trạng xử lý theo mã nhân viên và tham khảo kho ý tưởng.",
+        modules: ["Đăng ký", "Xem ý tưởng của bạn", "Kho ý tưởng"],
+        firstStep: "Vào Đăng ký để điền form; nếu nhập dở thì hệ thống sẽ tự lưu lại theo mã nhân viên.",
+        tasks: [
+          "Điền thông tin ý tưởng, người tham gia, mô tả và minh chứng.",
+          "Quay lại form sau khi refresh hoặc đăng nhập lại để tiếp tục phần nội dung đang nhập dở.",
+          "Vào Xem ý tưởng của bạn để theo dõi trạng thái duyệt của các phiếu có chứa mã nhân viên của mình.",
+          "Tra cứu kho ý tưởng để học hỏi sáng kiến đã được áp dụng.",
+        ],
+      };
+
+      ROLE_GUIDES.sub_dept_manager = {
+        name: "Phó phòng / Phó GĐ XN",
+        desc: "Role duyệt cấp đầu, đánh giá nội dung và chấm điểm ý tưởng.",
+        modules: ["Kho ý tưởng", "Phê duyệt"],
+        firstStep: "Vào Phê duyệt và lọc danh sách phiếu cần xử lý.",
+        tasks: [
+          "Xem phiếu mới gửi, kiểm tra minh chứng và tính khả thi.",
+          "Chấm điểm theo bộ tiêu chí và ghi nhận xét.",
+          "Phê duyệt hoặc từ chối theo đúng nghiệp vụ cấp đơn vị.",
+        ],
+      };
+
+      ROLE_GUIDES.dept_manager = {
+        name: "Trưởng bộ phận / GĐ Xưởng",
+        desc: "Role phê duyệt cấp đơn vị và xử lý các phiếu liên quan đơn vị phụ trách.",
+        modules: ["Kho ý tưởng", "Phê duyệt"],
+        firstStep: "Xem các phiếu đã qua bước đánh giá ban đầu trong Phê duyệt.",
+        tasks: [
+          "Xem kết quả chấm điểm, hồ sơ và minh chứng của ý tưởng.",
+          "Ra quyết định phê duyệt cấp đơn vị hoặc từ chối.",
+          "In phiếu nhận tiền cho ý tưởng thuộc đơn vị khi đủ điều kiện và đã được lãnh đạo duyệt phiếu nhận tiền.",
+        ],
+      };
+
+      ROLE_GUIDES.unit_represent = {
+        name: "Đại diện đơn vị",
+        desc: "Role hỗ trợ thao tác phiếu nhận tiền cho đơn vị, không chấm điểm duyệt.",
+        modules: ["Kho ý tưởng", "Phê duyệt"],
+        firstStep: "Vào Phê duyệt để tìm các phiếu đủ điều kiện in giấy nhận tiền.",
+        tasks: [
+          "Xem danh sách phiếu đã đủ điều kiện chi thưởng của đơn vị.",
+          "Mở hoặc in phiếu nhận tiền phục vụ quy trình nội bộ.",
+          "Theo dõi trạng thái phiếu liên quan đơn vị mình.",
+        ],
+      };
+
+      ROLE_GUIDES.ie_manager = {
+        name: "Ban cải tiến (BCT)",
+        desc: "Role duyệt cấp 2, xác nhận hướng xử lý cuối cùng ở cấp Ban cải tiến và cấu hình một số tham số liên quan.",
+        modules: ["Kho ý tưởng", "Phê duyệt", "Cài đặt"],
+        firstStep: "Vào Phê duyệt để xử lý các ý tưởng chờ BCT.",
+        tasks: [
+          "Đánh giá hồ sơ đã qua duyệt đơn vị và ra 1 trong 3 kết luận: BCT không duyệt, Đơn vị tự xét duyệt, hoặc Đạt.",
+          "Nếu BCT không duyệt: ý tưởng dừng quy trình, không nhận thưởng đăng ký và không được đưa lên Hội đồng.",
+          "Nếu đưa về Đơn vị tự xét duyệt: ý tưởng được nhận tiền đăng ký nhưng không tham gia xét thưởng cuối quý.",
+          "Nếu Đạt: chấm điểm BCT, xác định đưa hoặc không đưa vào chuẩn hóa và chuyển lên lãnh đạo / Hội đồng sáng kiến.",
+          "Có thể sửa lại kết luận cấp 2 và bảng điểm BCT trước khi Hội đồng đã chốt điểm cuối.",
+          "Quản lý cấu hình / tiêu chí cần thiết trong Cài đặt và tạo batch thưởng trong tab Hội đồng khi cần.",
+        ],
+      };
+
+      ROLE_GUIDES.bod_manager = {
+        name: "Lãnh đạo công ty",
+        desc: "Role duyệt cấp 3 với 2 nghiệp vụ: duyệt phiếu nhận tiền đăng ký và đại diện Hội đồng sáng kiến chốt kết quả cuối.",
+        modules: ["Kho ý tưởng", "Phê duyệt"],
+        firstStep: "Vào Phê duyệt để xem danh sách chờ lãnh đạo quyết định cuối.",
+        tasks: [
+          "Duyệt phiếu nhận tiền đăng ký cho các ý tưởng thỏa tiêu chí, mức 100.000 VND / ý tưởng.",
+          "Đại diện Hội đồng sáng kiến chấm điểm cuối cùng cho các ý tưởng Đạt được đưa lên xét.",
+          "Xác định ý tưởng nổi trội và hệ số khen thưởng để phục vụ tạo đợt thưởng cuối quý.",
+          "Tạo đợt khen thưởng theo Quý / Năm, mở biên bản PDF preview và xem lại ở Lịch sử khen thưởng.",
+          "Theo dõi toàn bộ lịch sử duyệt, kết quả chấm điểm và quyết định cuối cùng.",
+        ],
+      };
+
+      delete ROLE_GUIDES.treasurer;
+
+      ROLE_GUIDES.admin = {
+        name: "Admin",
+        desc: "Role toàn quyền, vừa vận hành dữ liệu vừa theo dõi các nghiệp vụ chính.",
+        modules: ["Đăng ký", "Xem ý tưởng của bạn", "Kho ý tưởng", "Phê duyệt", "Cài đặt"],
+        firstStep: "Kiểm tra Cài đặt và các module vận hành chính trên Menu.",
+        tasks: [
+          "Quản lý user, đơn vị, tiêu chí chấm điểm và tham số hệ thống.",
+          "Can thiệp các module duyệt / thưởng khi cần hỗ trợ vận hành.",
+          "Theo dõi tổng thể toàn bộ dữ liệu và luồng hoạt động của app.",
+        ],
       };
 
       function logout() {
