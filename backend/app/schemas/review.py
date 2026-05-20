@@ -84,6 +84,15 @@ class IeScoreEditRequest(BaseModel):
     comment: Optional[str] = None
 
 
+class IeReviewEditRequest(BaseModel):
+    employee_code: str
+    ie_result_type: str
+    score: Optional[ApprovalScoreInput] = None
+    actual_benefit: Optional[ApprovalActualBenefitInput] = None
+    comment: Optional[str] = None
+    recommend_unit_reward: bool = False
+
+
 class BodRegisterApprovalRequest(BaseModel):
     employee_code: str
 

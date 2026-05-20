@@ -558,18 +558,36 @@
         return false;
       }
 
-      function itemQuarterFromDate(value) {
+      const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+
+      function getTimeZoneDateParts(value) {
         if (!value) return null;
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return null;
-        return Math.floor(date.getMonth() / 3) + 1;
+        const parts = new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(date);
+        const mapped = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return {
+          year: Number(mapped.year),
+          month: Number(mapped.month),
+          day: Number(mapped.day),
+        };
+      }
+
+      function itemQuarterFromDate(value) {
+        const parts = getTimeZoneDateParts(value);
+        if (!parts) return null;
+        return Math.floor((parts.month - 1) / 3) + 1;
       }
 
       function itemYearFromDate(value) {
-        if (!value) return null;
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return null;
-        return date.getFullYear();
+        const parts = getTimeZoneDateParts(value);
+        if (!parts) return null;
+        return parts.year;
       }
 
       function onCouncilFilterChange() {
@@ -609,7 +627,7 @@
 
       function formatDate(value) {
         try {
-          return new Date(value).toLocaleString("vi-VN");
+          return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
         } catch {
           return "—";
         }
@@ -639,7 +657,7 @@
         const rejectedOption = Array.from(statusFilter.options).find((option) => option.value === "REJECTED");
         if (!rejectedOption) return;
 
-        if (["ie_manager", "bod_manager"].includes(currentRole)) {
+        if (currentRole === "bod_manager") {
           if (statusFilter.value === "REJECTED") {
             statusFilter.value = "";
           }
@@ -831,6 +849,19 @@
       function scoreChip(score) {
         if (!score) return '<span class="text-text-soft">—</span>';
         return `<span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e8f0ff] text-primary font-semibold">${score.total_score}</span>`;
+      }
+
+      function councilScoreChip(item) {
+        const baseScore = Number(item?.council_final_score);
+        if (!Number.isFinite(baseScore)) return '<span class="text-text-soft">â€”</span>';
+        const multiplier = Number(item?.council_reward_multiplier);
+        const effectiveMultiplier = Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
+        const finalScore = baseScore * effectiveMultiplier;
+        const scoreText = Number.isInteger(finalScore)
+          ? String(finalScore)
+          : finalScore.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+        const multiplierText = effectiveMultiplier.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+        return `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff3df] text-[#a55b00] font-semibold" title="${safeAttr(`${baseScore} x ${multiplierText}`)}">${item?.council_is_featured ? '<span class="material-symbols-outlined text-[16px]">stars</span>' : ''}${safeText(scoreText)}</span>`;
       }
 
       function canPrintPaymentSlip(item) {
@@ -1184,6 +1215,9 @@
                 <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openCouncilScoreModalById(${item.id})">Đánh giá</button>
               </td>
             `;
+            if (tr.children[8]) {
+              tr.children[8].innerHTML = councilScoreChip(item);
+            }
             tbody.appendChild(tr);
           });
           return;
@@ -1194,7 +1228,9 @@
           const isRejected = item.status === "REJECTED";
           const isIeIdeaQueue = currentRole === "ie_manager" && currentIeApprovalTab === "idea_review";
           const hasIeScore = item.ie_score !== null && item.ie_score !== undefined;
-          const allowIeRowEdit = isIeIdeaQueue && hasIeScore;
+          const hasIeDecision = Boolean(item.ie_result_type);
+          const councilLocked = isCouncilScored(item);
+          const allowIeRowEdit = isIeIdeaQueue && hasIeDecision && !councilLocked;
           const rowModalMode = allowIeRowEdit ? "edit" : "view";
           const buttonModalMode = "view";
           const rowMutedClass = isRejected ? "opacity-55" : "";
@@ -1235,9 +1271,9 @@
             </td>
             <td class="px-6 py-5 align-top text-right">
               ${
-                isIeIdeaQueue && hasIeScore
+                isIeIdeaQueue && hasIeDecision
                   ? `<div class="inline-flex items-center gap-2">
-                      <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'edit')">Sửa điểm</button>
+                      <button class="px-4 py-2 rounded-xl ${councilLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-primary text-white"} font-semibold" ${councilLocked ? 'disabled title="Hội đồng đã chốt điểm, không thể sửa duyệt cấp 2 của Ban cải tiến"' : `onclick="event.stopPropagation(); openReviewModal(${item.id}, 'edit')"`}>Sửa cấp 2</button>
                       <button class="px-4 py-2 rounded-xl bg-surface-low text-text-main font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'view')">Xem</button>
                     </div>`
                   : `<button class="px-4 py-2 rounded-xl ${item.can_review ? "bg-primary text-white" : isRejected ? "bg-slate-100 text-slate-400" : "bg-surface-low text-text-main"} font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, '${buttonModalMode}')">
@@ -1376,9 +1412,13 @@
         return reviews.find((review) => review.level === "COUNCIL") || null;
       }
 
+      function isCouncilScored(detail = activeDetail) {
+        return detail?.council_final_score !== null && detail?.council_final_score !== undefined;
+      }
+
       function isIeEditMode(detail = activeDetail) {
-        const scores = Array.isArray(detail?.scores) ? detail.scores : [];
-        return currentRole === "ie_manager" && currentIeModalMode === "edit" && Boolean(latestIeScore(scores));
+        const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
+        return currentRole === "ie_manager" && currentIeModalMode === "edit" && Boolean(latestCouncilReview(reviews)) && !isCouncilScored(detail);
       }
 
       function ieDecisionValue() {
@@ -1455,11 +1495,11 @@
       }
 
       function renderActualBenefitSection(detail, scores = [], options = {}) {
-        const shouldRender = (currentRole === "ie_manager" && detail?.can_review) || canEvaluateActualBenefit(detail, scores);
+        const editMode = isIeEditMode(detail);
+        const shouldRender = (currentRole === "ie_manager" && (detail?.can_review || editMode)) || canEvaluateActualBenefit(detail, scores);
         if (!shouldRender) return "";
         const item = detail.actual_benefit || {};
         const readOnly = Boolean(options.readOnly);
-        const editMode = isIeEditMode(detail);
         const hideUntilIeDecision = currentRole === "ie_manager" && detail?.can_review && !editMode && !readOnly;
         const sectionClassName = options.embedded
           ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
@@ -1794,7 +1834,7 @@
         const k2HardOptions = getCriteriaGroup("K2_HARD");
         const k3UnmeasurableOptions = getCriteriaGroup("K3_UNMEASURABLE");
         const isIeManager = currentRole === "ie_manager";
-        const showIeDecisionBlock = isIeManager && detail?.can_review;
+        const showIeDecisionBlock = isIeManager && (detail?.can_review || allowIeEdit);
         const scoreIntro = allowIeEdit
           ? "Bạn có thể chỉnh sửa lại bảng điểm Ban cải tiến đã chấm và cập nhật giá trị làm lợi nếu cần."
           : (isIeManager ? "IE chọn kết luận xét duyệt trước. Chỉ khi chọn BCT Duyệt mới cần chấm điểm và nhập giá trị làm lợi." : "Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí.");
@@ -1822,7 +1862,6 @@
                     >i</span>
                   </label>
                   <select id="ieResultDecision" class="w-full rounded-2xl border-none bg-surface-low" onchange="onIeDecisionChange()">
-                    <option value="">Chọn kết luận cấp 2</option>
                     ${IE_RESULT_OPTIONS.map((item) => `<option value="${item.value}" title="${safeAttr(item.note)}">${safeText(item.label)}</option>`).join("")}
                   </select>
                   <div id="ieResultDecisionMeta" class="rounded-2xl border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f7fbff_100%)] px-5 py-4 text-[15px] font-semibold leading-7 text-[#0b3d91] shadow-[0px_10px_24px_rgba(24,71,169,0.08)]">Chọn 1 kết luận để tiếp tục.</div>
@@ -1851,17 +1890,13 @@
                 <div id="scoreK1Meta" class="rounded-2xl bg-[#f6f8ff] px-4 py-3 text-sm text-text-soft"></div>
                 <textarea id="scoreK1Note" class="w-full rounded-2xl border-none bg-surface-low text-text-main" rows="2" placeholder="Ghi chú K1 (nếu cần)"></textarea>
               </div>
-              <div class="flex justify-end">
-                <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="goToScoreStep(2)">Tiếp sang K2</button>
-              </div>
             </div>
-            <div id="scoreStep2" class="hidden rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-5">
+            <div id="scoreStep2" class="rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bước 2</div>
                   <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">K2. Khả năng áp dụng</div>
                 </div>
-                <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Tick theo thực tế</div>
               </div>
               <div class="space-y-3">
                 <select id="scoreK2Type" class="w-full rounded-2xl border-none bg-surface-low" onchange="onK2TypeChange()">
@@ -1872,18 +1907,13 @@
                 <div id="scoreK2HardGroup" class="hidden space-y-3">${renderCriteriaCheckboxes(k2HardOptions, "scoreK2Hard")}</div>
                 <textarea id="scoreK2Note" class="w-full rounded-2xl border-none bg-surface-low" rows="2" placeholder="Ghi chú K2"></textarea>
               </div>
-              <div class="flex items-center justify-between gap-3">
-                <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="goToScoreStep(1)">Quay lại K1</button>
-                <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="goToScoreStep(3)">Tiếp sang K3</button>
-              </div>
             </div>
-            <div id="scoreStep3" class="hidden rounded-[1.75rem] border border-slate-100 bg-white p-6 space-y-5">
+            <div id="scoreStep3" class="rounded-[1.75rem] border border-slate-100 bg-white p-6 space-y-5">
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Bước 3</div>
                   <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">K3. Hiệu quả, giá trị làm lợi</div>
                 </div>
-                <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bước cuối</div>
               </div>
               <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div class="space-y-3">
@@ -1903,17 +1933,13 @@
                 <div id="scoreK3Meta" class="mt-3 text-sm text-text-soft leading-7"></div>
               </div>
               </div>
-            <div class="flex items-center justify-between gap-3">
-                <button type="button" class="rounded-2xl bg-surface-low px-5 py-3 font-semibold text-text-main" onclick="goToScoreStep(2)">Quay lại K2</button>
-                <div class="text-sm text-text-soft">Hoàn tất K3 rồi dùng nút "Duyệt phiếu" phía dưới.</div>
-              </div>
+            <div class="text-sm text-text-soft">Hoàn tất K3 rồi dùng nút "Duyệt phiếu" phía dưới.</div>
             </div>
             ${isIeManager && (detail?.can_review || allowIeEdit) ? renderActualBenefitSection(detail, scores, { embedded: true }) : ""}
             ${showIeDecisionBlock ? `
               <div id="ieStandardizationWrap" class="hidden space-y-3 rounded-[1.5rem] border border-slate-100 bg-[#fbfcfd] p-6">
                 <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Loại ý tưởng đưa lên Hội đồng</label>
                 <select id="ieStandardizationDecision" class="w-full rounded-2xl border-none bg-surface-low">
-                  <option value="">Chọn loại chuyển sang Hội đồng</option>
                   ${IE_STANDARDIZATION_OPTIONS.map((item) => `<option value="${item.value}">${safeText(item.label)}</option>`).join("")}
                 </select>
                 <div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Cả 2 loại đều chuyển lên Hội đồng. "Đưa vào chuẩn hoá" là dấu hiệu để Hội đồng ưu tiên đánh giá cao hơn.</div>
@@ -1989,8 +2015,8 @@
           ${canEditIeScore ? `
             <section class="rounded-[1.5rem] border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f8fbff_100%)] p-6">
               <div class="text-xs uppercase tracking-[0.25em] text-primary">Chế độ chỉnh sửa</div>
-              <div class="mt-2 text-lg font-black text-primary font-display">Bạn đang chỉnh sửa lại nội dung chấm điểm Ban cải tiến</div>
-              <div class="mt-2 text-sm text-text-soft">Form chấm điểm bên dưới đã được điền sẵn từ kết quả cũ. Sửa lại tiêu chí, ghi chú hoặc Giá trị làm lợi rồi bấm "Lưu chỉnh sửa".</div>
+              <div class="mt-2 text-lg font-black text-primary font-display">Bạn đang chỉnh sửa lại duyệt cấp 2 của Ban cải tiến</div>
+              <div class="mt-2 text-sm text-text-soft">Bạn có thể đổi lại kết luận cấp 2, cập nhật điểm, ghi chú và Giá trị làm lợi rồi bấm "Lưu chỉnh sửa".</div>
             </section>
           ` : ""}
           ${!canEditIeScore ? renderActualBenefitSummary(detail) : ""}
@@ -2132,18 +2158,6 @@
           }
           if (standardWrap) {
             standardWrap.classList.add("hidden");
-          }
-          return;
-        }
-        if (isIeEditMode()) {
-          if (scoreWrap) {
-            scoreWrap.classList.remove("hidden");
-          }
-          if (standardWrap) {
-            standardWrap.classList.add("hidden");
-          }
-          if (actualBenefitSection) {
-            actualBenefitSection.classList.remove("hidden");
           }
           return;
         }
@@ -2314,6 +2328,10 @@
           currentScoreStep = 1;
           currentIeModalMode = mode;
           activeDetail = await api.getApprovalDetail(ideaId, code);
+          if (mode === "edit" && isCouncilScored(activeDetail)) {
+            currentIeModalMode = "view";
+            showNotification("Hội đồng đã chốt điểm cho ý tưởng này, không thể sửa duyệt cấp 2 của Ban cải tiến", "error");
+          }
           renderModal(activeDetail);
           openModal();
           applyIeScoreFormValues(activeDetail);
@@ -2384,15 +2402,33 @@
       async function submitIeScoreEdit() {
         if (!activeDetail) return;
         const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        const ieDecision = ieDecisionValue();
+        if (!ieDecision) {
+          showNotification("IE phải chọn kết luận xét duyệt cấp 2", "error");
+          return;
+        }
         const payload = {
           employee_code: employeeCode,
           comment: document.getElementById("reviewComment")?.value.trim() || null,
+          recommend_unit_reward: false,
         };
+        payload.ie_result_type = ieDecision;
+        const requiresScore = ieDecision === "BCT_APPROVED";
+        if (requiresScore) {
+          const standardDecision = document.getElementById("ieStandardizationDecision")?.value || "";
+          if (!standardDecision) {
+            showNotification("Chọn loại ý tưởng trước khi chuyển sang Hội đồng", "error");
+            return;
+          }
+          payload.ie_result_type = standardDecision;
+        }
         try {
-          payload.score = buildScorePayload();
-          const actualBenefitPayload = buildActualBenefitPayload();
-          if (actualBenefitPayload) {
-            payload.actual_benefit = actualBenefitPayload;
+          if (requiresScore) {
+            payload.score = buildScorePayload();
+            const actualBenefitPayload = buildActualBenefitPayload();
+            if (actualBenefitPayload) {
+              payload.actual_benefit = actualBenefitPayload;
+            }
           }
         } catch (error) {
           showNotification(error.message, "error");
@@ -2401,10 +2437,10 @@
 
         showLoading(true);
         try {
-          await api.updateIeScore(activeDetail.id, payload);
+          await api.updateIeReview(activeDetail.id, payload);
           closeModal();
           await loadQueue();
-          showNotification("Đã cập nhật lại nội dung chấm điểm Ban cải tiến", "success");
+          showNotification("Đã cập nhật lại duyệt cấp 2 của Ban cải tiến", "success");
         } catch (error) {
           showNotification(error.message, "error");
         } finally {

@@ -2,6 +2,7 @@ from .user import User
 from .unit import Unit
 from .idea import Idea
 from .score import IdeaScore
+from .score_revision import IdeaScoreRevision
 from .review import IdeaReview
 from .payment import PaymentSlip
 from .attachment import FileAttachment
@@ -16,6 +17,7 @@ __all__ = [
     "Unit",
     "Idea",
     "IdeaScore",
+    "IdeaScoreRevision",
     "IdeaReview",
     "PaymentSlip",
     "FileAttachment",

@@ -345,6 +345,21 @@ const api = {
     }
   },
 
+  async getMyIdeas(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/reviews/mine?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được danh sách ý tưởng của bạn');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Get my ideas error:', error);
+      throw error;
+    }
+  },
+
   async getApprovalDetail(ideaId, employeeCode) {
     try {
       const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
@@ -422,6 +437,28 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error('Update IE score error:', error);
+      throw error;
+    }
+  },
+
+  async updateIeReview(ideaId, payload) {
+    try {
+      const normalizedPayload = {
+        ...payload,
+        employee_code: (payload?.employee_code || '').trim().toUpperCase(),
+      };
+      const response = await fetch(`${API_BASE}/reviews/${ideaId}/ie-review`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(normalizedPayload),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(formatApiError(error, 'Không cập nhật được duyệt cấp 2 của Ban cải tiến'));
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update IE review error:', error);
       throw error;
     }
   },
@@ -605,6 +642,11 @@ const api = {
       console.error('Get reward batch report error:', error);
       throw error;
     }
+  },
+
+  getRewardBatchMinutesPdfUrl(batchId, employeeCode) {
+    const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+    return `${API_BASE}/reward-batches/${batchId}/minutes-pdf?${qs.toString()}`;
   },
 
   async getScoreCriteria() {

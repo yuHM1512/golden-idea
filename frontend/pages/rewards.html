@@ -169,9 +169,9 @@
                     <div id="reportMeta" class="mt-2 text-sm text-slate-500">Chọn 1 đợt để xem dữ liệu.</div>
                   </div>
                   <div class="flex items-center gap-3">
-                    <button id="exportRecognitionBtn" type="button" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/15 hover:bg-[#0a43a7] transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="exportRecognitionExcel()" disabled>
-                      <span class="material-symbols-outlined text-[18px]">download</span>
-                      Tải Excel
+                    <button id="exportRecognitionBtn" type="button" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/15 hover:bg-[#0a43a7] transition-all disabled:opacity-50 disabled:cursor-not-allowed" onclick="printRecognitionMinutes()" disabled>
+                      <span class="material-symbols-outlined text-[18px]">print</span>
+                      In biên bản
                     </button>
                   </div>
                 </div>
@@ -184,7 +184,7 @@
                         <th class="px-4 py-3 text-left font-semibold">Họ tên</th>
                         <th class="px-4 py-3 text-left font-semibold">Đơn vị</th>
                         <th class="px-4 py-3 text-left font-semibold">Mã số</th>
-                        <th class="px-4 py-3 text-left font-semibold">Nội dung</th>
+                        <th class="px-4 py-3 text-left font-semibold">Tên ý tưởng</th>
                         <th class="px-4 py-3 text-right font-semibold">Điểm xét</th>
                         <th class="px-4 py-3 text-right font-semibold">Hệ số khen thưởng</th>
                         <th class="px-4 py-3 text-right font-semibold">Thành tiền</th>
@@ -308,10 +308,19 @@
         }, 2800);
       }
 
+      const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+
+      function getCurrentTimeZoneYear() {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+        }).format(new Date());
+      }
+
       function formatDate(value) {
         if (!value) return "—";
         try {
-          return new Date(value).toLocaleString("vi-VN");
+          return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
         } catch {
           return "—";
         }
@@ -439,7 +448,7 @@
             <td class="px-4 py-4 align-top">${safeText(item.unit_name || "—")}</td>
             <td class="px-4 py-4 align-top text-slate-700">${safeText(item.employee_code || "—")}</td>
             <td class="px-4 py-4 align-top text-slate-700">
-              <div class="max-w-[520px] whitespace-pre-wrap break-words">${safeText(item.description || "")}</div>
+              <div class="max-w-[520px] whitespace-pre-wrap break-words">${safeText(item.title || "—")}</div>
             </td>
             <td class="px-4 py-4 align-top text-right font-semibold">${Number(item.ie_score || 0)}</td>
             <td class="px-4 py-4 align-top text-right font-semibold ${rewardMultiplier > 1 ? "text-amber-600" : "text-slate-700"}">${formatMultiplier(rewardMultiplier)}</td>
@@ -585,6 +594,12 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+      }
+
+      function printRecognitionMinutes() {
+        if (!activeBatch || !recognitionItems.length || !currentUser?.employee_code) return;
+        const url = api.getRewardBatchMinutesPdfUrl(activeBatch.id, currentUser.employee_code);
+        window.open(url, "_blank", "noopener");
       }
 
       function renderKpis() {
@@ -770,7 +785,7 @@
           : "Bạn đang quản trị module chi thưởng.";
 
         const yearInput = document.getElementById("batchYear");
-        if (yearInput && !yearInput.value) yearInput.value = String(new Date().getFullYear());
+        if (yearInput && !yearInput.value) yearInput.value = getCurrentTimeZoneYear();
 
         bindRecognitionFormEvents();
         switchTab(activeTab);

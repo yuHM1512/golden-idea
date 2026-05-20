@@ -130,6 +130,12 @@
                     <span class="font-label-md text-primary uppercase tracking-widest mb-4 block">Gửi đề xuất mới</span>
                     <h1 class="font-display-lg text-headline-md md:text-display-lg text-primary mb-4">Đăng ký Ý tưởng Vàng</h1>
                     <p class="text-on-surface-variant max-w-lg">Mỗi ý tưởng của bạn là một bước tiến quan trọng cho sự phát triển của toàn công ty. Hãy mô tả chi tiết để chúng tôi có thể hiện thực hóa nó.</p>
+                    <div class="mt-6">
+                        <button type="button" onclick="goToMyIdeas()" class="inline-flex items-center gap-2 rounded-xl border border-outline-variant bg-white px-5 py-3 font-headline-md text-[16px] text-primary shadow-sm transition-all hover:bg-surface-container-low">
+                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            Xem ý tưởng của bạn
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -250,9 +256,6 @@
 
                     <!-- Buttons -->
                     <div class="flex justify-end gap-4 pb-8">
-                        <button type="button" class="px-8 py-3 rounded-xl font-headline-md text-[16px] text-primary hover:bg-surface-container-low transition-all" onclick="saveDraft()">
-                            Lưu nháp
-                        </button>
                         <button type="submit" class="px-10 py-3 rounded-xl font-headline-md text-[16px] text-white bg-gradient-to-br from-primary to-primary-container shadow-lg hover:shadow-primary/20 transition-all">
                             Gửi ý tưởng
                         </button>
@@ -274,8 +277,8 @@
                         <button type="button" onclick="goBackToMenu()" class="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 font-headline-md text-[16px] text-white shadow-lg transition-all hover:bg-primary-container">
                             Quay về menu
                         </button>
-                        <button type="button" onclick="startNewIdeaSubmission()" class="inline-flex items-center justify-center rounded-xl border border-outline-variant bg-white px-6 py-3 font-headline-md text-[16px] text-primary transition-all hover:bg-surface-container-low">
-                            Gửi ý tưởng mới
+                        <button type="button" onclick="goToMyIdeas()" class="inline-flex items-center justify-center rounded-xl border border-outline-variant bg-white px-6 py-3 font-headline-md text-[16px] text-primary transition-all hover:bg-surface-container-low">
+                            Theo dõi ý tưởng đã gửi
                         </button>
                     </div>
                 </div>
@@ -288,7 +291,52 @@
         const MAX_FILE_SIZE_MB = 300;
         const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
         const ALLOWED_FILE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov'];
+        const IDEA_DRAFT_STORAGE_PREFIX = 'ideaDraft:';
         let participantRowId = 0;
+        let selectedFiles = { before: [], after: [] };
+        let isDraftSyncPaused = false;
+
+        function currentEmployeeCode() {
+            return (localStorage.getItem('employee_code') || '').trim().toUpperCase();
+        }
+
+        function currentFullName() {
+            return (localStorage.getItem('full_name') || '').trim();
+        }
+
+        function getIdeaDraftStorageKey(employeeCode = currentEmployeeCode()) {
+            const normalizedCode = String(employeeCode || '').trim().toUpperCase();
+            return normalizedCode ? `${IDEA_DRAFT_STORAGE_PREFIX}${normalizedCode}` : '';
+        }
+
+        function readCachedIdeaDraft(employeeCode = currentEmployeeCode()) {
+            const storageKey = getIdeaDraftStorageKey(employeeCode);
+            if (!storageKey) return null;
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return parsed && typeof parsed === 'object' ? parsed : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function removeCachedIdeaDraft(employeeCode = currentEmployeeCode()) {
+            const storageKey = getIdeaDraftStorageKey(employeeCode);
+            if (storageKey) {
+                localStorage.removeItem(storageKey);
+            }
+        }
+
+        function runWithoutDraftSync(callback) {
+            isDraftSyncPaused = true;
+            try {
+                return callback();
+            } finally {
+                isDraftSyncPaused = false;
+            }
+        }
 
         function participantInputClass() {
             return 'w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all';
@@ -307,7 +355,7 @@
                 </div>
                 <div class="space-y-2">
                     <label data-code-label class="font-label-md text-on-surface-variant px-1">Mã nhân viên ${participantRowId}</label>
-                    <input data-participant-code class="${participantInputClass()}" placeholder="VD: H3724" type="text" value="${escapeHtml(data.employee_code || '')}"/>
+                    <input data-participant-code class="${participantInputClass()}" placeholder="VD: A1234" type="text" value="${escapeHtml(data.employee_code || '')}"/>
                 </div>
                 <div class="flex md:items-end">
                     <button type="button" class="remove-participant-btn w-full md:w-12 h-12 rounded-xl bg-surface-container-low text-slate-500 hover:bg-error-container hover:text-on-error-container transition-colors" onclick="removeParticipant(this)" title="Xóa người này">
@@ -317,11 +365,13 @@
             `;
             list.appendChild(row);
             updateParticipantRemoveButtons();
+            persistIdeaDraft();
         }
 
         function removeParticipant(button) {
             button.closest('[data-participant-row="true"]').remove();
             updateParticipantRemoveButtons();
+            persistIdeaDraft();
         }
 
         function updateParticipantRemoveButtons() {
@@ -331,7 +381,7 @@
                 const button = row.querySelector('.remove-participant-btn');
                 button.classList.toggle('hidden', rows.length === 1);
                 row.querySelector('[data-participant-name]').placeholder = `Nhập họ tên người ${num}`;
-                row.querySelector('[data-participant-code]').placeholder = index === 0 ? 'VD: H3724' : `Mã người ${num}`;
+                row.querySelector('[data-participant-code]').placeholder = index === 0 ? 'VD: A1234' : `Mã người ${num}`;
                 row.querySelector('[data-name-label]').textContent = `Họ và tên ${num} *`;
                 row.querySelector('[data-code-label]').textContent = `Mã nhân viên ${num}`;
             });
@@ -367,6 +417,23 @@
             document.getElementById('participantsList').innerHTML = '';
             addParticipant();
             syncPrimaryParticipant([]);
+        }
+
+        function syncLoggedInEmployeeToForm() {
+            const employeeCode = currentEmployeeCode();
+            const fullName = currentFullName();
+            if (!employeeCode && !fullName) return;
+            const firstRow = document.querySelector('[data-participant-row="true"]');
+            if (!firstRow) return;
+            const nameInput = firstRow.querySelector('[data-participant-name]');
+            const codeInput = firstRow.querySelector('[data-participant-code]');
+            if (nameInput && !nameInput.value.trim() && fullName) {
+                nameInput.value = fullName;
+            }
+            if (codeInput && !codeInput.value.trim() && employeeCode) {
+                codeInput.value = employeeCode;
+            }
+            syncPrimaryParticipant(readParticipants());
         }
 
         function escapeHtml(value) {
@@ -412,7 +479,13 @@
 
         // Load units on page load
         window.addEventListener('DOMContentLoaded', async () => {
-            resetParticipants();
+            if (localStorage.getItem('is_logged_in') !== 'true') {
+                window.location.href = '/pages/login';
+                return;
+            }
+            runWithoutDraftSync(() => {
+                resetParticipants();
+            });
             try {
                 const units = await api.getUnits();
                 const unitSelect = document.getElementById('unitId');
@@ -424,6 +497,13 @@
                 });
 
                 renderCategoryOptions(api.getCategories());
+                const restored = restoreIdeaDraft();
+                if (restored) {
+                    showNotification('Đã khôi phục nội dung đang nhập dở dang', 'success');
+                } else {
+                    syncLoggedInEmployeeToForm();
+                }
+                bindDraftPersistence();
             } catch (error) {
                 showNotification('Lỗi: ' + error.message, 'error');
             }
@@ -433,7 +513,8 @@
             const wrap = document.getElementById('categoryOptions');
             const hiddenInput = document.getElementById('category');
             wrap.innerHTML = '';
-            hiddenInput.value = '';
+            const currentValue = hiddenInput.value;
+            hiddenInput.value = currentValue;
 
             categories.forEach((cat, index) => {
                 const item = document.createElement('label');
@@ -446,10 +527,101 @@
                     <span class="text-lg text-on-surface">${cat.label}</span>
                 `;
                 const input = item.querySelector('input');
+                input.checked = input.value === currentValue;
                 input.addEventListener('change', () => {
                     hiddenInput.value = input.value;
+                    persistIdeaDraft();
                 });
                 wrap.appendChild(item);
+            });
+        }
+
+        function buildIdeaDraftPayload() {
+            const participants = readParticipants();
+            syncPrimaryParticipant(participants);
+            return {
+                full_name: document.getElementById('fullName').value,
+                employee_code: document.getElementById('employeeCode').value || currentEmployeeCode(),
+                participants,
+                phone_number: document.getElementById('phone').value.trim(),
+                bo_phan: document.getElementById('boPhan').value.trim(),
+                position: document.getElementById('position').value.trim(),
+                title: document.getElementById('title').value.trim(),
+                product_code: document.getElementById('productCode').value.trim(),
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value.trim(),
+                unit_id: parseInt(document.getElementById('unitId').value, 10) || null,
+                updated_at: new Date().toISOString(),
+            };
+        }
+
+        function hasMeaningfulDraftData(draft) {
+            if (!draft || typeof draft !== 'object') return false;
+            const participants = Array.isArray(draft.participants) ? draft.participants : [];
+            return Boolean(
+                draft.unit_id ||
+                draft.phone_number ||
+                draft.bo_phan ||
+                draft.position ||
+                draft.title ||
+                draft.product_code ||
+                draft.category ||
+                draft.description ||
+                participants.some((participant) => participant?.full_name || participant?.employee_code)
+            );
+        }
+
+        function persistIdeaDraft() {
+            if (isDraftSyncPaused) return;
+            const storageKey = getIdeaDraftStorageKey();
+            if (!storageKey) return;
+            const draft = buildIdeaDraftPayload();
+            if (!hasMeaningfulDraftData(draft)) {
+                localStorage.removeItem(storageKey);
+                return;
+            }
+            localStorage.setItem(storageKey, JSON.stringify(draft));
+        }
+
+        function restoreIdeaDraft() {
+            const draft = readCachedIdeaDraft();
+            if (!hasMeaningfulDraftData(draft)) {
+                syncLoggedInEmployeeToForm();
+                return false;
+            }
+
+            runWithoutDraftSync(() => {
+                const participants = Array.isArray(draft.participants) && draft.participants.length
+                    ? draft.participants
+                    : [{ full_name: currentFullName(), employee_code: currentEmployeeCode() }];
+                participantRowId = 0;
+                document.getElementById('participantsList').innerHTML = '';
+                participants.forEach((participant) => addParticipant(participant));
+                document.getElementById('unitId').value = draft.unit_id ? String(draft.unit_id) : '';
+                document.getElementById('phone').value = draft.phone_number || '';
+                document.getElementById('boPhan').value = draft.bo_phan || '';
+                document.getElementById('position').value = draft.position || '';
+                document.getElementById('title').value = draft.title || '';
+                document.getElementById('productCode').value = draft.product_code || '';
+                document.getElementById('description').value = draft.description || '';
+                document.getElementById('category').value = draft.category || '';
+                renderCategoryOptions(api.getCategories());
+                syncPrimaryParticipant(readParticipants());
+            });
+            return true;
+        }
+
+        function bindDraftPersistence() {
+            const form = document.getElementById('ideaForm');
+            form.addEventListener('input', (event) => {
+                if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+                    persistIdeaDraft();
+                }
+            });
+            form.addEventListener('change', (event) => {
+                if (event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+                    persistIdeaDraft();
+                }
             });
         }
 
@@ -464,8 +636,9 @@
             document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
                 input.checked = false;
             });
-            localStorage.removeItem('ideaDraft');
+            removeCachedIdeaDraft();
             resetParticipants();
+            syncLoggedInEmployeeToForm();
         }
 
         function showSubmitSuccess(message) {
@@ -484,6 +657,10 @@
 
         function goBackToMenu() {
             window.location.href = '/pages/menu';
+        }
+
+        function goToMyIdeas() {
+            window.location.href = '/pages/my-ideas';
         }
 
         // Form submission
@@ -566,7 +743,6 @@
         const uploadAreaAfter = document.getElementById('uploadAreaAfter');
         const fileInputBefore = document.getElementById('fileInputBefore');
         const fileInputAfter = document.getElementById('fileInputAfter');
-        let selectedFiles = { before: [], after: [] };
 
         function bindUploadArea(area, input, attachmentType) {
             area.addEventListener('click', () => input.click());
@@ -645,43 +821,10 @@
             renderFilePreviews();
         }
 
-        function saveDraft() {
-            if (!document.getElementById('unitId').value) {
-                showNotification('Vui l\u00f2ng ch\u1ecdn \u0111\u01a1n v\u1ecb', 'error');
-                return;
-            }
-            if (!document.getElementById('category').value) {
-                showNotification('Vui lòng chọn nội dung ý tưởng liên quan', 'error');
-                return;
-            }
-            const participants = validateParticipants();
-            if (!participants) {
-                return;
-            }
-            const title = document.getElementById('title').value.trim();
-            if (!title) {
-                showNotification('Vui lòng nhập tên ý tưởng', 'error');
-                return;
-            }
-            const formData = {
-                full_name: document.getElementById('fullName').value,
-                employee_code: document.getElementById('employeeCode').value,
-                participants,
-                phone_number: document.getElementById('phone').value,
-                bo_phan: document.getElementById('boPhan').value,
-                position: document.getElementById('position').value,
-                title,
-                product_code: document.getElementById('productCode').value,
-                category: document.getElementById('category').value,
-                description: document.getElementById('description').value,
-                unit_id: parseInt(document.getElementById('unitId').value) || null,
-            };
-            localStorage.setItem('ideaDraft', JSON.stringify(formData));
-            showNotification('✓ Đã lưu nháp', 'success');
-        }
-
         function logout() {
-            localStorage.clear();
+            localStorage.removeItem('is_logged_in');
+            localStorage.removeItem('employee_code');
+            localStorage.removeItem('full_name');
             window.location.href = '/pages/login';
         }
     </script>

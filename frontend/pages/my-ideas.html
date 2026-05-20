@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#002b73",
+            "primary-strong": "#17479e",
+            "surface-low": "#f3f6fb",
+            "text-main": "#15233b",
+            "text-soft": "#6b7a93",
+          },
+          fontFamily: {
+            headline: ["Manrope"],
+            body: ["Inter"],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-[#f5f7fb] font-body text-text-main">
+  <header class="fixed top-0 z-40 w-full bg-white/90 backdrop-blur shadow-sm">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+      <div class="flex items-center gap-4">
+        <a href="/pages/menu" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span>Menu</span>
+        </a>
+        <a href="/pages/submit-idea" class="hidden rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow md:inline-flex">
+          Tạo ý tưởng mới
+        </a>
+      </div>
+      <button type="button" onclick="logout()" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Đăng xuất</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 pb-16 pt-28 md:px-8">
+    <section class="rounded-[2rem] bg-gradient-to-r from-primary to-primary-strong px-8 py-10 text-white shadow-[0px_20px_45px_rgba(0,43,115,0.18)]">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl">
+          <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/75">Theo dõi phiếu của bạn</p>
+          <h1 class="mt-4 font-headline text-4xl font-extrabold tracking-tight md:text-5xl">Ý tưởng liên quan đến mã nhân viên của bạn</h1>
+          <p class="mt-4 max-w-2xl text-white/80">Danh sách này hiển thị tất cả phiếu có chứa mã nhân viên đang đăng nhập trong người đăng ký chính hoặc danh sách người cùng đăng ký.</p>
+        </div>
+        <div id="whoami" class="rounded-2xl bg-white/10 px-5 py-4 text-sm font-semibold text-white/90">Đang tải...</div>
+      </div>
+    </section>
+
+    <section class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div class="rounded-[1.75rem] bg-white p-6 shadow-sm">
+        <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Tổng phiếu</div>
+        <div id="kpiTotal" class="mt-3 font-headline text-4xl font-extrabold text-primary">0</div>
+      </div>
+      <div class="rounded-[1.75rem] bg-white p-6 shadow-sm">
+        <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Đang theo dõi</div>
+        <div id="kpiPending" class="mt-3 font-headline text-4xl font-extrabold text-[#a55b00]">0</div>
+      </div>
+      <div class="rounded-[1.75rem] bg-white p-6 shadow-sm">
+        <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Đã duyệt</div>
+        <div id="kpiApproved" class="mt-3 font-headline text-4xl font-extrabold text-[#0f7a43]">0</div>
+      </div>
+      <div class="rounded-[1.75rem] bg-white p-6 shadow-sm">
+        <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Không duyệt</div>
+        <div id="kpiRejected" class="mt-3 font-headline text-4xl font-extrabold text-[#b42318]">0</div>
+      </div>
+    </section>
+
+    <section class="mt-8 overflow-hidden rounded-[2rem] bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+        <div>
+          <h2 class="font-headline text-2xl font-extrabold text-primary">Danh sách phiếu</h2>
+          <p id="tableMeta" class="mt-1 text-sm text-text-soft">0 phiếu</p>
+        </div>
+        <a href="/pages/submit-idea" class="inline-flex rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-primary hover:bg-surface-low">
+          Gửi thêm ý tưởng
+        </a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-surface-low text-left text-xs font-semibold uppercase tracking-[0.24em] text-text-soft">
+            <tr>
+              <th class="px-6 py-4">Phiếu</th>
+              <th class="px-4 py-4">Đơn vị</th>
+              <th class="px-4 py-4">Người gửi</th>
+              <th class="px-4 py-4">Loại</th>
+              <th class="px-4 py-4">Trạng thái</th>
+              <th class="px-4 py-4">Điểm đơn vị</th>
+              <th class="px-4 py-4">Điểm BCT</th>
+              <th class="px-6 py-4">Kết luận</th>
+            </tr>
+          </thead>
+          <tbody id="ideasTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/api.js?v=20260519-my-ideas"></script>
+  <script>
+    const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+    const CATEGORY_LABELS = {
+      TOOLS: "Công cụ",
+      PROCESS: "Phương pháp quy trình",
+      DIGITIZATION: "Số hoá",
+      OTHER: "Khác",
+    };
+    const STATUS_LABELS = {
+      SUBMITTED: "Chờ duyệt cấp đơn vị",
+      UNDER_REVIEW: "Đang xem xét cấp đơn vị",
+      DEPT_APPROVED: "Đơn vị đã duyệt, chờ BCT",
+      COUNCIL_REVIEW: "Đang duyệt BCT",
+      LEADERSHIP_REVIEW: "BCT đã duyệt, chờ lãnh đạo",
+      APPROVED: "Đã duyệt đủ 3 cấp",
+      REWARDED: "Đã in phiếu nhận tiền",
+      REJECTED: "Không duyệt",
+      CANCELLED: "Đã huỷ",
+    };
+    const IE_RESULT_TYPE_LABELS = {
+      BCT_REJECTED: "BCT không duyệt",
+      UNIT_REVIEW: "XN xét duyệt",
+      APPROVED_NO_STANDARDIZATION: "Duyệt thưởng, không nhân rộng",
+      APPROVED_STANDARDIZATION: "Duyệt thưởng và nhân rộng",
+    };
+
+    function safeText(text) {
+      return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
+    }
+
+    function formatDate(value) {
+      try {
+        return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
+      } catch {
+        return "—";
+      }
+    }
+
+    function scoreChip(score) {
+      if (!score) return '<span class="text-text-soft">—</span>';
+      return `<span class="inline-flex items-center rounded-full bg-[#e8f0ff] px-3 py-1 font-semibold text-primary">${safeText(score.total_score)}</span>`;
+    }
+
+    function statusChip(item) {
+      const label = item.status === "REWARDED" && item.employee_received
+        ? "Đã nhận tiền"
+        : (STATUS_LABELS[item.status] || item.status || "—");
+      if (item.status === "REJECTED") {
+        return `<span class="inline-flex items-center rounded-full bg-[#fff1f3] px-3 py-1 font-semibold text-[#b42318]">${safeText(label)}</span>`;
+      }
+      if (["APPROVED", "REWARDED"].includes(item.status)) {
+        return `<span class="inline-flex items-center rounded-full bg-[#eef9f2] px-3 py-1 font-semibold text-[#0f7a43]">${safeText(label)}</span>`;
+      }
+      return `<span class="inline-flex items-center rounded-full bg-surface-low px-3 py-1 font-semibold text-text-main">${safeText(label)}</span>`;
+    }
+
+    function renderMetrics(metrics = {}) {
+      document.getElementById("kpiTotal").textContent = metrics.total || 0;
+      document.getElementById("kpiPending").textContent = metrics.pending || 0;
+      document.getElementById("kpiApproved").textContent = metrics.approved || 0;
+      document.getElementById("kpiRejected").textContent = metrics.rejected || 0;
+    }
+
+    function renderTable(items = []) {
+      const tbody = document.getElementById("ideasTableBody");
+      tbody.innerHTML = "";
+      document.getElementById("tableMeta").textContent = `${items.length} phiếu`;
+      if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-text-soft">Chưa có phiếu nào gắn với mã nhân viên đang đăng nhập.</td></tr>';
+        return;
+      }
+
+      items.forEach((item) => {
+        const tr = document.createElement("tr");
+        const muted = item.status === "REJECTED" ? "opacity-65" : "";
+        tr.className = `${muted} border-t border-slate-100 align-top`;
+        tr.innerHTML = `
+          <td class="px-6 py-5">
+            <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title || "Ý tưởng")}</div>
+            <div class="mt-2 text-xs text-text-soft">${formatDate(item.submitted_at)}</div>
+          </td>
+          <td class="px-4 py-5 text-text-main">${safeText(item.unit_name || "—")}</td>
+          <td class="px-4 py-5">
+            <div class="font-semibold text-text-main">${safeText(item.full_name || "Ẩn danh")}</div>
+            <div class="mt-1 text-xs text-text-soft">${safeText(item.employee_code || "—")}</div>
+          </td>
+          <td class="px-4 py-5 text-text-main">${safeText(CATEGORY_LABELS[item.category] || item.category || "Khác")}</td>
+          <td class="px-4 py-5">${statusChip(item)}</td>
+          <td class="px-4 py-5">${scoreChip(item.dept_score)}</td>
+          <td class="px-4 py-5">${scoreChip(item.ie_score)}</td>
+          <td class="px-6 py-5 text-text-main">${safeText(IE_RESULT_TYPE_LABELS[item.ie_result_type] || item.ie_result_type || "—")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function init() {
+      if (localStorage.getItem("is_logged_in") !== "true") {
+        window.location.href = "/pages/login";
+        return;
+      }
+      const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+      const fullName = localStorage.getItem("full_name") || "";
+      document.getElementById("whoami").textContent = employeeCode
+        ? `${employeeCode}${fullName ? ` • ${fullName}` : ""}`
+        : "Chưa có mã nhân viên";
+      const response = await api.getMyIdeas(employeeCode);
+      renderMetrics(response.metrics || {});
+      renderTable(response.items || []);
+    }
+
+    function logout() {
+      localStorage.removeItem("is_logged_in");
+      localStorage.removeItem("employee_code");
+      localStorage.removeItem("full_name");
+      window.location.href = "/pages/login";
+    }
+
+    init().catch((error) => {
+      renderTable([]);
+      showNotification(error.message || "Không tải được danh sách ý tưởng", "error");
+    });
+  </script>
+</body>
+</html>

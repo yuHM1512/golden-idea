@@ -182,6 +182,7 @@ def _find_browser_executable() -> Path:
 
 def _render_pdf_via_browser(html_content: str, output_path: Path) -> None:
     browser = _find_browser_executable()
+    output_path = output_path.resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as handle:

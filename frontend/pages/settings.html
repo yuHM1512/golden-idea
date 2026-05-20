@@ -342,10 +342,21 @@
         window.location.href = "/pages/login";
       }
 
+      const DISPLAY_TIME_ZONE = "Asia/Bangkok";
+
+      function getCurrentTimeZoneDateValue() {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date());
+      }
+
       function formatDateTime(value) {
         if (!value) return "Chưa cập nhật";
         try {
-          return new Date(value).toLocaleString("vi-VN");
+          return new Date(value).toLocaleString("vi-VN", { timeZone: DISPLAY_TIME_ZONE });
         } catch {
           return value;
         }
@@ -935,7 +946,7 @@
         } else {
           document.getElementById("criteriaModalTitle").textContent = "Tạo bộ tiêu chí";
           document.getElementById("criteriaSetName").value = "";
-          document.getElementById("criteriaEffectiveFrom").value = new Date().toISOString().slice(0, 10);
+          document.getElementById("criteriaEffectiveFrom").value = getCurrentTimeZoneDateValue();
           const latest = criteriaSets[0];
           if (latest && Array.isArray(latest.items) && latest.items.length) {
             latest.items.slice().sort((a, b) => criteriaSortValue(a) - criteriaSortValue(b)).forEach((item) => addCriteriaRow(item));

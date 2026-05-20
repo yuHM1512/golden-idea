@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from html import escape
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import extract
 from sqlalchemy.orm import Session, joinedload
@@ -13,6 +16,7 @@ from app.models.idea import Idea, IdeaStatus
 from app.models.reward_batch import RewardBatch
 from app.models.score import IdeaScore
 from app.models.user import User
+from app.routers.payments import _render_pdf_via_browser
 from app.services.email_notifications import send_reward_batch_summary_emails
 
 router = APIRouter(prefix="/reward-batches", tags=["reward-batches"])
@@ -176,6 +180,207 @@ def _serialize_batch(batch: RewardBatch) -> dict:
     }
 
 
+def _format_vnd(value: float | int) -> str:
+    return f"{int(round(value or 0)):,}".replace(",", ".")
+
+
+def _format_score_value(value: float | int) -> str:
+    number = float(value or 0)
+    if number.is_integer():
+        return str(int(number))
+    return f"{number:.2f}".rstrip("0").rstrip(".")
+
+
+def _build_signature_block(title: str) -> str:
+    return f"""
+      <div class="signature-block">
+        <div class="signature-title">{escape(title)}</div>
+        <div class="signature-space"></div>
+      </div>
+    """
+
+
+def _render_reward_minutes_html(*, batch: RewardBatch, items: list[dict], total_amount: float) -> str:
+    now = datetime.now()
+    rows_html = "".join(
+        f"""
+          <tr>
+            <td class="center">{index}</td>
+            <td>{escape(str(item.get("full_name") or "—"))}</td>
+            <td>{escape(str(item.get("unit_name") or "—"))}</td>
+            <td>{escape(str(item.get("employee_code") or "—"))}</td>
+            <td>{escape(str(item.get("title") or "—"))}</td>
+            <td class="right">{escape(_format_score_value(item.get("ie_score") or 0))}</td>
+            <td class="right">{escape(_format_score_value(item.get("reward_multiplier") or 1))}</td>
+            <td class="right">{escape(_format_vnd(item.get("amount") or 0))}</td>
+          </tr>
+        """
+        for index, item in enumerate(items, start=1)
+    )
+    signatures_html = "".join(
+        [
+            _build_signature_block("ĐẠI DIỆN BAN CẢI TIẾN"),
+            _build_signature_block("CHỦ TỊCH HỘI ĐỒNG"),
+            _build_signature_block("TỔNG GIÁM ĐỐC"),
+        ]
+    )
+    return f"""<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @page {{
+        size: A4 landscape;
+        margin: 14mm 14mm 18mm 14mm;
+      }}
+      body {{
+        font-family: "Times New Roman", serif;
+        color: #111827;
+        font-size: 12pt;
+        line-height: 1.35;
+      }}
+      .page {{
+        width: 100%;
+      }}
+      .center {{
+        text-align: center;
+      }}
+      .right {{
+        text-align: right;
+      }}
+      .header-top {{
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+        margin-bottom: 14px;
+      }}
+      .company {{
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }}
+      .nation {{
+        text-align: center;
+        font-weight: 700;
+        text-transform: uppercase;
+      }}
+      .nation-sub {{
+        text-align: center;
+        font-weight: 700;
+        margin-top: 4px;
+      }}
+      .title {{
+        text-align: center;
+        font-size: 17pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin: 22px 0 8px;
+      }}
+      .subtitle {{
+        text-align: center;
+        margin-bottom: 18px;
+      }}
+      .meta {{
+        margin-bottom: 14px;
+      }}
+      table {{
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }}
+      th, td {{
+        border: 1px solid #94a3b8;
+        padding: 8px 10px;
+        vertical-align: top;
+        word-wrap: break-word;
+      }}
+      th {{
+        background: #eef3f8;
+        text-align: center;
+        font-weight: 700;
+      }}
+      tfoot td {{
+        font-weight: 700;
+        background: #f8fafc;
+      }}
+      .signatures {{
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 26px;
+      }}
+      .signature-block {{
+        text-align: center;
+      }}
+      .signature-title {{
+        font-weight: 700;
+        min-height: 38px;
+      }}
+      .signature-space {{
+        height: 88px;
+      }}
+      .date {{
+        text-align: right;
+        margin-top: 18px;
+      }}
+      .company-sub {{
+        text-align: center;
+        margin-top: 4px;
+        font-size: 13px;
+        font-weight: 700;
+      }}
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header-top">
+        <div>
+          <div class="company">CÔNG TY CỔ PHẦN DỆT MAY 29/3</div>
+          <div class="company-sub">HỘI ĐỒNG XÉT DUYỆT SÁNG KIẾN Ý TƯỞNG VÀNG</div>
+        </div>
+        <div>
+          <div class="nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+          <div class="nation-sub">Độc lập - Tự do - Hạnh phúc</div>
+        </div>
+      </div>
+
+      <div class="title">Biên bản đề nghị khen thưởng ý tưởng vàng</div>
+      <div class="subtitle">Đợt khen thưởng Quý {batch.quarter}/{batch.year}</div>
+      <div class="meta">Đơn giá áp dụng: <strong>{escape(_format_vnd(batch.coefficient))} VND/điểm</strong></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:5%;">STT</th>
+            <th style="width:16%;">Họ tên</th>
+            <th style="width:12%;">Đơn vị</th>
+            <th style="width:10%;">Mã số</th>
+            <th style="width:27%;">Tên ý tưởng</th>
+            <th style="width:8%;">Điểm xét</th>
+            <th style="width:10%;">Hệ số khen thưởng</th>
+            <th style="width:12%;">Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows_html}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7" class="right">Tổng cộng</td>
+            <td class="right">{escape(_format_vnd(total_amount))}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="date">Ngày {now.strftime("%d")} tháng {now.strftime("%m")} năm {now.strftime("%Y")}</div>
+      <div class="signatures">{signatures_html}</div>
+    </div>
+  </body>
+</html>"""
+
+
 @router.post("/")
 def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
@@ -281,3 +486,39 @@ def get_batch_report(batch_id: int, db: Session = Depends(get_db)):
         "items": items,
         "total_amount": sum(item["amount"] for item in items),
     }
+
+
+@router.get("/{batch_id}/minutes-pdf")
+def get_batch_minutes_pdf(
+    batch_id: int,
+    employee_code: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    user = _require_user(db, employee_code)
+    if user.role not in {"admin", "treasurer"}:
+        raise HTTPException(status_code=403, detail="Không có quyền in biên bản")
+
+    report = get_batch_report(batch_id, db)
+    batch = db.query(RewardBatch).filter(RewardBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Đợt khen thưởng không tồn tại")
+
+    items = list(report.get("items") or [])
+    if not items:
+        raise HTTPException(status_code=400, detail="Đợt này chưa có dữ liệu để in biên bản")
+
+    html = _render_reward_minutes_html(
+        batch=batch,
+        items=items,
+        total_amount=float(report.get("total_amount") or 0),
+    )
+    output_dir = Path("generated") / "reward_batch_minutes"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"reward_batch_minutes_{batch.id}.pdf"
+    _render_pdf_via_browser(html, output_path)
+    filename = f"bien-ban-khen-thuong-quy-{batch.quarter}-{batch.year}.pdf"
+    return FileResponse(
+        output_path,
+        media_type="application/pdf",
+        filename=filename,
+    )
