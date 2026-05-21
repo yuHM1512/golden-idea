@@ -121,9 +121,11 @@ async def serve_frontend(full_path: str):
         headers = {}
         if media_type in {"text/html", "text/css", "application/javascript", "text/javascript"}:
             media_type = f"{media_type}; charset=utf-8"
-            # Force browser revalidation for deploy-sensitive assets so new JS/CSS/HTML
-            # is picked up automatically without manually bumping ?v= query strings.
-            headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+            # Disable browser/intermediary caching for deploy-sensitive assets so new
+            # HTML/JS/CSS is picked up immediately without manually bumping ?v= strings.
+            headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            headers["Pragma"] = "no-cache"
+            headers["Expires"] = "0"
         return FileResponse(str(path), media_type=media_type, headers=headers)
 
     if not full_path:
