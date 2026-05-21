@@ -6,6 +6,9 @@ backend/.env
 backend/credentials_m29.json
 
 backend/uploads/
+backend/data/*.xlsx
+backend/data/*.xls
+!backend/data/.gitkeep
 
 .DS_Store
 Thumbs.db

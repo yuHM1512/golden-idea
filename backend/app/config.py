@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "gif", "mp4", "avi", "mov"]
     GOOGLE_DRIVE_CREDENTIALS_FILE: str = str(_BACKEND_DIR / "credentials_m29.json")
     GOOGLE_DRIVE_ROOT_FOLDER_ID: str = ""
+    HISTORICAL_IDEAS_XLSX: str = str(_BACKEND_DIR / "data" / "historical_ideas.xlsx")
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
@@ -78,13 +79,13 @@ class Settings(BaseSettings):
 
         return [item.strip() for item in raw.split(",") if item.strip()]
 
-    @field_validator("UPLOAD_DIR", "GOOGLE_DRIVE_CREDENTIALS_FILE", mode="before")
+    @field_validator("UPLOAD_DIR", "GOOGLE_DRIVE_CREDENTIALS_FILE", "HISTORICAL_IDEAS_XLSX", mode="before")
     @classmethod
     def _resolve_upload_dir(cls, value, info: ValidationInfo):
         default_path = (
             _BACKEND_DIR / "uploads"
             if info.field_name == "UPLOAD_DIR"
-            else _BACKEND_DIR / "credentials_m29.json"
+            else (_BACKEND_DIR / "credentials_m29.json" if info.field_name == "GOOGLE_DRIVE_CREDENTIALS_FILE" else _BACKEND_DIR / "data" / "historical_ideas.xlsx")
         )
         if value is None:
             return str(default_path)

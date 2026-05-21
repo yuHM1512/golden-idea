@@ -13,6 +13,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from openpyxl import load_workbook
+from sqlalchemy import text
 
 EXTRA_SITE_PACKAGES = os.environ.get("PROJECT_SITE_PACKAGES", "")
 for raw_path in EXTRA_SITE_PACKAGES.split(os.pathsep):
@@ -21,6 +22,7 @@ for raw_path in EXTRA_SITE_PACKAGES.split(os.pathsep):
         sys.path.append(extra_path)
 
 from app.database import Base, SessionLocal, engine
+from app.config import settings
 from app.models.actual_benefit import ActualBenefitEvaluation
 from app.models.attachment import FileAttachment
 from app.models.idea import Idea, IdeaCategory, IdeaStatus
@@ -53,7 +55,7 @@ from app.seed import (
 
 APPROVED_STANDARDIZATION = "APPROVED_STANDARDIZATION"
 APPROVED_NO_STANDARDIZATION = "APPROVED_NO_STANDARDIZATION"
-DEFAULT_XLSX = Path(r"C:\Users\OS\Downloads\Tổng hợp ý tưởng vàng - example.xlsx")
+DEFAULT_XLSX = Path(settings.HISTORICAL_IDEAS_XLSX)
 
 DATA_COL = {
     "submitted_at": 1,
