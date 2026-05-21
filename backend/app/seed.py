@@ -940,6 +940,22 @@ def migrate_k3_cost_saved_criteria_codes() -> None:
         conn.execute(text("DELETE FROM public.score_criteria WHERE criterion_key = 'K3_COST_SAVED'"))
 
 
+def migrate_app_settings_table() -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS public.app_settings (
+                    key varchar(100) PRIMARY KEY,
+                    value text,
+                    updated_by varchar(50),
+                    updated_at timestamptz DEFAULT now()
+                )
+                """
+            )
+        )
+
+
 def seed_score_criteria() -> int:
     db = SessionLocal()
     try:

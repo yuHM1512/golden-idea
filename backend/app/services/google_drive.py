@@ -304,3 +304,17 @@ def iter_drive_file_content(file_id: str, chunk_size: int = 1024 * 1024) -> Iter
                 yield chunk
     finally:
         response.close()
+
+
+def delete_drive_file(file_id: str) -> None:
+    service = _drive_service()
+    try:
+        service.files().delete(fileId=file_id, supportsAllDrives=True).execute()
+    except HttpError as exc:
+        status_code = getattr(getattr(exc, "resp", None), "status", None)
+        if status_code == 404:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Khong xoa duoc file tren Google Drive: {exc}",
+        ) from exc

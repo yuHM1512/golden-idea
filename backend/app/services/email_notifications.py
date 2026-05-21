@@ -18,6 +18,7 @@ from app.models.review import ReviewLevel
 from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
 from app.models.user import User, UserRole
+from app.services.app_settings import get_bool_setting
 from app.time_utils import format_display_datetime
 
 
@@ -121,6 +122,8 @@ class ApprovalEmailContext:
 
 
 def _email_enabled() -> bool:
+    if not get_bool_setting("email_automation_enabled", default=False):
+        return False
     host, username, password, from_email = _smtp_runtime_config()
     return bool(host and username and password and from_email)
 

@@ -1,0 +1,244 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session, joinedload
+
+from app.database import get_db
+from app.models.attachment import FileAttachment
+from app.models.idea import Idea
+from app.models.unit import Unit
+from app.models.payment import PaymentSlip
+from app.models.reward_batch import RewardBatch
+from app.models.score import IdeaScore
+from app.models.score_revision import IdeaScoreRevision
+from app.models.standardized_idea_replication import StandardizedIdeaReplication
+from app.models.user import User
+from app.schemas import AdminSettingsResponse, EmailAutomationUpdateRequest, IdeaBulkDeleteRequest, IdeaHardDeleteResponse
+from app.services.app_settings import get_bool_setting, set_bool_setting
+from app.services.google_drive import delete_drive_file
+
+router = APIRouter(prefix="/settings", tags=["settings"])
+
+EMAIL_AUTOMATION_KEY = "email_automation_enabled"
+
+
+def _require_admin(db: Session, employee_code: str) -> User:
+    code = (employee_code or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiếu employee_code")
+    user = db.query(User).filter(User.employee_code.ilike(code)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User không tồn tại")
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chỉ admin được sử dụng chức năng này")
+    return user
+
+
+def _cleanup_reward_batch_refs(db: Session, idea_id: int) -> int:
+    updated = 0
+    batches = db.query(RewardBatch).filter(RewardBatch.special_coefficients.is_not(None)).all()
+    for batch in batches:
+        raw_items = []
+        try:
+            raw_items = json.loads(batch.special_coefficients or "[]")
+        except (TypeError, json.JSONDecodeError):
+            raw_items = []
+        if not isinstance(raw_items, list):
+            raw_items = []
+        filtered = [item for item in raw_items if int(item.get("idea_id") or 0) != int(idea_id)]
+        if len(filtered) == len(raw_items):
+            continue
+        batch.special_coefficients = json.dumps(filtered, ensure_ascii=False) if filtered else None
+        db.add(batch)
+        updated += 1
+    return updated
+
+
+def _delete_attachment_files(attachments: list[FileAttachment]) -> tuple[int, int, list[str]]:
+    removed_google_drive_files = 0
+    removed_local_files = 0
+    warnings: list[str] = []
+
+    for attachment in attachments:
+        provider = (attachment.storage_provider or "").strip().lower()
+        if provider == "google_drive" and attachment.external_file_id:
+            try:
+                delete_drive_file(attachment.external_file_id)
+                removed_google_drive_files += 1
+            except HTTPException as exc:
+                warnings.append(f"Google Drive file {attachment.external_file_id}: {exc.detail}")
+            except Exception as exc:
+                warnings.append(f"Google Drive file {attachment.external_file_id}: {exc}")
+            continue
+
+        file_path = Path(attachment.file_path or "")
+        if not file_path.is_absolute():
+            file_path = Path(__file__).resolve().parents[2] / file_path
+        try:
+            if file_path.is_file():
+                file_path.unlink()
+                removed_local_files += 1
+        except Exception as exc:
+            warnings.append(f"Local file {file_path}: {exc}")
+
+    return removed_google_drive_files, removed_local_files, warnings
+
+
+def _delete_single_idea(db: Session, idea: Idea) -> IdeaHardDeleteResponse:
+    idea_id = int(idea.id)
+    attachments = list(idea.attachments or [])
+    removed_reward_batch_refs = 0
+    try:
+        removed_reward_batch_refs = _cleanup_reward_batch_refs(db, idea_id)
+        db.query(IdeaScoreRevision).filter(IdeaScoreRevision.idea_id == idea_id).delete(synchronize_session=False)
+        db.query(StandardizedIdeaReplication).filter(StandardizedIdeaReplication.idea_id == idea_id).delete(synchronize_session=False)
+        db.query(PaymentSlip).filter(PaymentSlip.idea_id == idea_id).delete(synchronize_session=False)
+        db.query(IdeaScore).filter(IdeaScore.idea_id == idea_id).delete(synchronize_session=False)
+        db.delete(idea)
+        db.commit()
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Không xóa được ý tưởng: {exc}")
+
+    removed_google_drive_files, removed_local_files, cleanup_warnings = _delete_attachment_files(attachments)
+    return IdeaHardDeleteResponse(
+        idea_id=idea_id,
+        deleted=True,
+        removed_reward_batch_refs=removed_reward_batch_refs,
+        removed_google_drive_files=removed_google_drive_files,
+        removed_local_files=removed_local_files,
+        cleanup_warnings=cleanup_warnings,
+    )
+
+
+@router.get("/admin", response_model=AdminSettingsResponse)
+async def get_admin_settings(employee_code: str = Query(...), db: Session = Depends(get_db)):
+    _require_admin(db, employee_code)
+    return AdminSettingsResponse(
+        email_automation_enabled=get_bool_setting(EMAIL_AUTOMATION_KEY, default=False, db=db),
+    )
+
+
+@router.put("/admin/email-automation", response_model=AdminSettingsResponse)
+async def update_email_automation(payload: EmailAutomationUpdateRequest, db: Session = Depends(get_db)):
+    user = _require_admin(db, payload.employee_code)
+    enabled = set_bool_setting(EMAIL_AUTOMATION_KEY, payload.enabled, updated_by=user.employee_code, db=db)
+    db.commit()
+    return AdminSettingsResponse(email_automation_enabled=enabled)
+
+
+@router.get("/admin/ideas")
+async def list_admin_ideas(employee_code: str = Query(...), db: Session = Depends(get_db)):
+    _require_admin(db, employee_code)
+    ideas = (
+        db.query(Idea)
+        .outerjoin(Unit, Unit.id == Idea.unit_id)
+        .options(joinedload(Idea.unit))
+        .order_by(Idea.submitted_at.desc(), Idea.id.desc())
+        .all()
+    )
+    items = [
+        {
+            "id": idea.id,
+            "title": idea.title,
+            "full_name": idea.full_name,
+            "employee_code": idea.employee_code,
+            "unit_name": idea.unit.name if idea.unit else "",
+            "status": str(idea.status).split(".")[-1] if idea.status is not None else "",
+            "category": idea.category,
+            "submitted_at": idea.submitted_at.isoformat() if idea.submitted_at else None,
+            "description": idea.description or "",
+        }
+        for idea in ideas
+    ]
+    return {"items": items, "total": len(items)}
+
+
+@router.delete("/admin/ideas/{idea_id}", response_model=IdeaHardDeleteResponse)
+async def hard_delete_idea(idea_id: int, employee_code: str = Query(...), db: Session = Depends(get_db)):
+    _require_admin(db, employee_code)
+
+    idea = (
+        db.query(Idea)
+        .options(joinedload(Idea.attachments))
+        .filter(Idea.id == idea_id)
+        .first()
+    )
+    if idea is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ý tưởng không tồn tại")
+
+    return _delete_single_idea(db, idea)
+
+
+@router.delete("/admin/ideas")
+async def hard_delete_all_ideas(employee_code: str = Query(...), db: Session = Depends(get_db)):
+    _require_admin(db, employee_code)
+    ideas = (
+        db.query(Idea)
+        .options(joinedload(Idea.attachments))
+        .order_by(Idea.id.asc())
+        .all()
+    )
+    results: list[IdeaHardDeleteResponse] = []
+    for idea in ideas:
+        results.append(_delete_single_idea(db, idea))
+
+    total_google = sum(item.removed_google_drive_files for item in results)
+    total_local = sum(item.removed_local_files for item in results)
+    total_reward_refs = sum(item.removed_reward_batch_refs for item in results)
+    warnings: list[str] = []
+    for item in results:
+        warnings.extend(item.cleanup_warnings)
+
+    return {
+        "deleted_count": len(results),
+        "removed_google_drive_files": total_google,
+        "removed_local_files": total_local,
+        "removed_reward_batch_refs": total_reward_refs,
+        "cleanup_warnings": warnings,
+    }
+
+
+@router.post("/admin/ideas/bulk-delete")
+async def hard_delete_selected_ideas(payload: IdeaBulkDeleteRequest, db: Session = Depends(get_db)):
+    _require_admin(db, payload.employee_code)
+    normalized_ids = sorted({int(item) for item in (payload.idea_ids or []) if int(item) > 0})
+    if not normalized_ids:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Danh sách idea_ids đang trống")
+
+    ideas = (
+        db.query(Idea)
+        .options(joinedload(Idea.attachments))
+        .filter(Idea.id.in_(normalized_ids))
+        .order_by(Idea.id.asc())
+        .all()
+    )
+    found_ids = {int(item.id) for item in ideas}
+    missing_ids = [item for item in normalized_ids if item not in found_ids]
+
+    results: list[IdeaHardDeleteResponse] = []
+    for idea in ideas:
+        results.append(_delete_single_idea(db, idea))
+
+    total_google = sum(item.removed_google_drive_files for item in results)
+    total_local = sum(item.removed_local_files for item in results)
+    total_reward_refs = sum(item.removed_reward_batch_refs for item in results)
+    warnings: list[str] = []
+    for item in results:
+        warnings.extend(item.cleanup_warnings)
+
+    return {
+        "deleted_count": len(results),
+        "deleted_ids": [item.idea_id for item in results],
+        "missing_ids": missing_ids,
+        "removed_google_drive_files": total_google,
+        "removed_local_files": total_local,
+        "removed_reward_batch_refs": total_reward_refs,
+        "cleanup_warnings": warnings,
+    }

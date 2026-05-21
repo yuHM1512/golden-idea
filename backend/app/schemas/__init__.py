@@ -52,6 +52,12 @@ from .library import (
     StandardizedIdeaReplicationCreate,
     StandardizedIdeaReplicationResponse,
 )
+from .settings import (
+    AdminSettingsResponse,
+    EmailAutomationUpdateRequest,
+    IdeaBulkDeleteRequest,
+    IdeaHardDeleteResponse,
+)
 
 __all__ = [
     # User
@@ -81,4 +87,6 @@ __all__ = [
     # Library
     "IdeaLibraryRow", "IdeaLibraryDetail", "IdeaLibraryAttachment",
     "StandardizedIdeaReplicationCreate", "StandardizedIdeaReplicationResponse",
+    # Settings
+    "AdminSettingsResponse", "EmailAutomationUpdateRequest", "IdeaBulkDeleteRequest", "IdeaHardDeleteResponse",
 ]

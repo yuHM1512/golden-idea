@@ -28,6 +28,7 @@ from app.seed import (
     migrate_file_attachments_drive_columns,
     migrate_standardized_idea_replications_table,
     migrate_k3_cost_saved_criteria_codes,
+    migrate_app_settings_table,
     normalize_sample_idea_categories,
 )
 
@@ -56,6 +57,7 @@ async def lifespan(app: FastAPI):
     migrate_file_attachments_drive_columns()
     migrate_standardized_idea_replications_table()
     migrate_k3_cost_saved_criteria_codes()
+    migrate_app_settings_table()
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:
@@ -89,7 +91,7 @@ app.add_middleware(
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 # Include routers FIRST (before static files)
-from app.routers import ideas, units, users, dashboard, library, reviews, scores, payments, reward_batches
+from app.routers import ideas, units, users, dashboard, library, reviews, scores, payments, reward_batches, settings as admin_settings
 app.include_router(ideas.router, prefix="/api", tags=["ideas"])
 app.include_router(units.router, prefix="/api", tags=["units"])
 app.include_router(users.router, prefix="/api", tags=["users"])
@@ -99,6 +101,7 @@ app.include_router(reviews.router, prefix="/api", tags=["reviews"])
 app.include_router(scores.router, prefix="/api", tags=["scores"])
 app.include_router(reward_batches.router, prefix="/api", tags=["reward-batches"])
 app.include_router(payments.router, prefix="/api", tags=["payments"])
+app.include_router(admin_settings.router, prefix="/api", tags=["settings"])
 
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
