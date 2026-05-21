@@ -118,9 +118,13 @@ async def serve_frontend(full_path: str):
         # Ensure UTF-8 for text assets so Vietnamese renders correctly even if the client
         # ignores/doesn't find the <meta charset> early enough.
         media_type, _ = mimetypes.guess_type(str(path))
+        headers = {}
         if media_type in {"text/html", "text/css", "application/javascript", "text/javascript"}:
             media_type = f"{media_type}; charset=utf-8"
-        return FileResponse(str(path), media_type=media_type)
+            # Force browser revalidation for deploy-sensitive assets so new JS/CSS/HTML
+            # is picked up automatically without manually bumping ?v= query strings.
+            headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+        return FileResponse(str(path), media_type=media_type, headers=headers)
 
     if not full_path:
         return _file_response(FRONTEND / "index.html")
