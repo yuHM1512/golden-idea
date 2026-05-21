@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#002b73",
+            "surface-low": "#f4f7fb",
+            "text-main": "#15233b",
+            "text-soft": "#6b7a93",
+          },
+          fontFamily: {
+            headline: ["Manrope"],
+            body: ["Inter"],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="min-h-screen bg-[#f5f7fb] font-body text-text-main">
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur shadow-sm">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+      <div class="flex items-center gap-4">
+        <a href="/pages/settings" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span>Settings</span>
+        </a>
+      </div>
+      <button type="button" onclick="logout()" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Đăng xuất</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-[1440px] px-4 pb-16 pt-8 md:px-8">
+    <section class="overflow-hidden rounded-[2rem] bg-white shadow-[0px_20px_45px_rgba(15,23,42,0.06)]">
+      <div class="flex flex-col gap-5 px-7 py-7 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 class="font-headline text-[2.15rem] font-extrabold tracking-tight text-primary">Danh sách ý tưởng</h1>
+          <p id="tableMeta" class="mt-2 text-[1.05rem] text-text-soft">0/0 ý tưởng</p>
+        </div>
+        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <button
+            id="deleteSelectedBtn"
+            type="button"
+            onclick="handleDeleteSelectedIdeas()"
+            class="h-12 rounded-2xl bg-red-100 px-6 text-lg font-bold text-red-400 transition disabled:cursor-not-allowed disabled:bg-red-100 disabled:text-red-300 sm:order-2"
+            disabled
+          >
+            Xóa đã chọn
+          </button>
+          <div class="relative min-w-[360px] max-w-full">
+            <input
+              id="ideaSearch"
+              type="search"
+              oninput="applyFilters()"
+              class="h-14 w-full rounded-[1.1rem] border-2 border-primary bg-white pl-5 pr-12 text-lg font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:ring-0"
+              placeholder="#20"
+            />
+            <button
+              id="clearSearchBtn"
+              type="button"
+              onclick="clearSearch()"
+              class="absolute right-4 top-1/2 hidden -translate-y-1/2 text-slate-500 transition hover:text-primary"
+              aria-label="Xóa tìm kiếm"
+            >
+              <span class="material-symbols-outlined text-[22px]">close</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            onclick="handleDeleteAllIdeas()"
+            class="h-12 rounded-2xl bg-red-600 px-6 text-lg font-bold text-white shadow-[0px_14px_28px_rgba(220,38,38,0.18)] transition hover:bg-red-700 sm:order-3"
+          >
+            Xóa All
+          </button>
+        </div>
+      </div>
+      <div class="border-t border-slate-100"></div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-[#f7f9fc] text-left text-[0.72rem] font-bold uppercase tracking-[0.32em] text-[#7b8ba8]">
+            <tr>
+              <th class="px-4 py-4 text-center">
+                <input
+                  id="selectAllCheckbox"
+                  type="checkbox"
+                  onchange="toggleSelectAllVisible(this.checked)"
+                  class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  aria-label="Chọn tất cả"
+                />
+              </th>
+              <th class="px-6 py-4">ID</th>
+              <th class="px-4 py-4">Ý tưởng</th>
+              <th class="px-4 py-4">Người gửi</th>
+              <th class="px-4 py-4">Đơn vị</th>
+              <th class="px-4 py-4">Loại</th>
+              <th class="px-4 py-4">Trạng thái</th>
+              <th class="px-4 py-4">Ngày gửi</th>
+              <th class="px-6 py-4 text-center">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="ideasTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/api.js?v=20260521-admin-idea-cleanup"></script>
+  <script>
+    const CATEGORY_LABELS = {
+      TOOLS: "Công cụ",
+      PROCESS: "Quy trình",
+      DIGITIZATION: "Số hóa",
+      OTHER: "Khác",
+    };
+
+    const STATUS_LABELS = {
+      DRAFT: "Nháp",
+      SUBMITTED: "Chờ duyệt",
+      UNDER_REVIEW: "Đang xem xét",
+      DEPT_APPROVED: "Đơn vị duyệt",
+      COUNCIL_REVIEW: "BCT duyệt",
+      LEADERSHIP_REVIEW: "Lãnh đạo duyệt",
+      APPROVED: "Đã duyệt",
+      REWARDED: "Đã thưởng",
+      REJECTED: "Từ chối",
+      CANCELLED: "Đã hủy",
+    };
+
+    let currentUser = null;
+    let allIdeas = [];
+    let filteredIdeas = [];
+    let selectedIdeaIds = new Set();
+
+    function logout() {
+      localStorage.removeItem("is_logged_in");
+      localStorage.removeItem("employee_code");
+      window.location.href = "/pages/login";
+    }
+
+    function safeText(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "—";
+      try {
+        return new Date(value).toLocaleString("vi-VN", { timeZone: "Asia/Bangkok" });
+      } catch {
+        return value;
+      }
+    }
+
+    function statusChip(status) {
+      const label = STATUS_LABELS[status] || status || "—";
+      if (status === "REJECTED") {
+        return `<span class="inline-flex items-center rounded-full bg-red-50 px-3 py-1 font-semibold text-red-700">${safeText(label)}</span>`;
+      }
+      if (["APPROVED", "REWARDED"].includes(status)) {
+        return `<span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700">${safeText(label)}</span>`;
+      }
+      return `<span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">${safeText(label)}</span>`;
+    }
+
+    function updateMeta() {
+      document.getElementById("tableMeta").textContent = `${filteredIdeas.length}/${allIdeas.length} ý tưởng`;
+      const clearBtn = document.getElementById("clearSearchBtn");
+      const hasSearch = Boolean((document.getElementById("ideaSearch")?.value || "").trim());
+      clearBtn.classList.toggle("hidden", !hasSearch);
+      const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
+      const selectedCount = selectedIdeaIds.size;
+      deleteSelectedBtn.disabled = selectedCount === 0;
+      deleteSelectedBtn.textContent = selectedCount > 0 ? `Xóa đã chọn (${selectedCount})` : "Xóa đã chọn";
+      const selectAll = document.getElementById("selectAllCheckbox");
+      const visibleIds = filteredIdeas.map((item) => item.id);
+      const visibleSelectedCount = visibleIds.filter((id) => selectedIdeaIds.has(id)).length;
+      selectAll.checked = visibleIds.length > 0 && visibleSelectedCount === visibleIds.length;
+      selectAll.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleIds.length;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("ideasTableBody");
+      tbody.innerHTML = "";
+      if (!filteredIdeas.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">Không có ý tưởng nào khớp bộ lọc hiện tại.</td></tr>';
+        updateMeta();
+        return;
+      }
+
+      filteredIdeas.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.className = "align-top transition hover:bg-slate-50/80";
+        tr.innerHTML = `
+          <td class="px-4 py-5 text-center">
+            <input
+              type="checkbox"
+              class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+              ${selectedIdeaIds.has(item.id) ? "checked" : ""}
+              onchange="toggleIdeaSelection(${item.id}, this.checked)"
+              aria-label="Chọn ý tưởng #${item.id}"
+            />
+          </td>
+          <td class="px-6 py-5 text-[1.05rem] font-bold text-slate-700">#${item.id}</td>
+          <td class="px-4 py-5">
+            <div class="max-w-[540px] font-headline text-[1.05rem] font-extrabold leading-7 text-slate-800">${safeText(item.title || "Ý tưởng")}</div>
+            <div class="mt-2 max-w-[560px] line-clamp-2 text-[0.95rem] leading-6 text-[#7b8ba8]">${safeText(item.description || "")}</div>
+          </td>
+          <td class="px-4 py-5">
+            <div class="font-headline text-[1.05rem] font-bold leading-7 text-slate-800">${safeText(item.full_name || "—")}</div>
+            <div class="mt-1 text-[0.95rem] text-[#6f82a3]">${safeText(item.employee_code || "—")}</div>
+          </td>
+          <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(item.unit_name || "—")}</td>
+          <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(CATEGORY_LABELS[item.category] || item.category || "—")}</td>
+          <td class="px-4 py-5">${statusChip(item.status)}</td>
+          <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(formatDateTime(item.submitted_at))}</td>
+          <td class="px-6 py-5 text-center">
+            <button
+              type="button"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-700"
+              onclick="handleDeleteIdea(${item.id})"
+              aria-label="Xóa ý tưởng #${item.id}"
+              title="Xóa ý tưởng #${item.id}"
+            >
+              <span class="material-symbols-outlined text-[22px]">delete</span>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updateMeta();
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById("ideaSearch").value || "").trim().toLowerCase();
+      filteredIdeas = !q
+        ? allIdeas.slice()
+        : allIdeas.filter((item) => {
+            const haystack = [
+              item.id,
+              item.title,
+              item.full_name,
+              item.employee_code,
+              item.unit_name,
+              item.description,
+              item.status,
+            ].join(" ").toLowerCase();
+            return haystack.includes(q);
+          });
+      renderTable();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById("ideaSearch");
+      input.value = "";
+      applyFilters();
+      input.focus();
+    }
+
+    function toggleIdeaSelection(ideaId, checked) {
+      if (checked) {
+        selectedIdeaIds.add(ideaId);
+      } else {
+        selectedIdeaIds.delete(ideaId);
+      }
+      updateMeta();
+    }
+
+    function toggleSelectAllVisible(checked) {
+      filteredIdeas.forEach((item) => {
+        if (checked) {
+          selectedIdeaIds.add(item.id);
+        } else {
+          selectedIdeaIds.delete(item.id);
+        }
+      });
+      renderTable();
+    }
+
+    async function loadIdeas() {
+      const response = await api.listAdminIdeas(currentUser.employee_code);
+      allIdeas = Array.isArray(response?.items) ? response.items : [];
+      filteredIdeas = allIdeas.slice();
+      renderTable();
+    }
+
+    async function handleDeleteIdea(ideaId) {
+      const confirmed = window.confirm(`Xóa vĩnh viễn ý tưởng #${ideaId} và dữ liệu liên quan?`);
+      if (!confirmed) return;
+      showLoading(true, `Đang xóa ý tưởng #${ideaId}...`);
+      try {
+        const result = await api.hardDeleteIdea(ideaId, currentUser.employee_code);
+        selectedIdeaIds.delete(ideaId);
+        const warningText = Array.isArray(result.cleanup_warnings) && result.cleanup_warnings.length
+          ? ` Có ${result.cleanup_warnings.length} cảnh báo khi dọn file.`
+          : "";
+        await loadIdeas();
+        showNotification(`Đã xóa ý tưởng #${ideaId}.${warningText}`, "success");
+      } catch (error) {
+        showNotification(error.message || "Không xóa được ý tưởng", "error");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function handleDeleteSelectedIdeas() {
+      const ideaIds = Array.from(selectedIdeaIds).sort((a, b) => a - b);
+      if (!ideaIds.length) {
+        showNotification("Bạn chưa chọn ý tưởng nào", "error");
+        return;
+      }
+      const confirmed = window.confirm(`Xóa ${ideaIds.length} ý tưởng đã chọn?`);
+      if (!confirmed) return;
+      showLoading(true, `Đang xóa ${ideaIds.length} ý tưởng đã chọn...`);
+      try {
+        const result = await api.hardDeleteSelectedIdeas(currentUser.employee_code, ideaIds);
+        const deletedIds = Array.isArray(result.deleted_ids) ? result.deleted_ids : [];
+        deletedIds.forEach((id) => selectedIdeaIds.delete(id));
+        const warningText = Array.isArray(result.cleanup_warnings) && result.cleanup_warnings.length
+          ? ` Có ${result.cleanup_warnings.length} cảnh báo khi dọn file.`
+          : "";
+        await loadIdeas();
+        showNotification(`Đã xóa ${result.deleted_count || 0} ý tưởng đã chọn.${warningText}`, "success");
+      } catch (error) {
+        showNotification(error.message || "Không xóa được các ý tưởng đã chọn", "error");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function handleDeleteAllIdeas() {
+      if (!allIdeas.length) {
+        showNotification("Không còn ý tưởng nào để xóa", "error");
+        return;
+      }
+      const confirmed = window.confirm(`Xóa ALL ${allIdeas.length} ý tưởng trong hệ thống?`);
+      if (!confirmed) return;
+      showLoading(true, `Đang xóa toàn bộ ${allIdeas.length} ý tưởng...`);
+      try {
+        const result = await api.hardDeleteAllIdeas(currentUser.employee_code);
+        selectedIdeaIds.clear();
+        await loadIdeas();
+        const warningText = Array.isArray(result.cleanup_warnings) && result.cleanup_warnings.length
+          ? ` Có ${result.cleanup_warnings.length} cảnh báo khi dọn file.`
+          : "";
+        showNotification(`Đã xóa ${result.deleted_count || 0} ý tưởng.${warningText}`, "success");
+      } catch (error) {
+        showNotification(error.message || "Không xóa được toàn bộ ý tưởng", "error");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    async function init() {
+      if (localStorage.getItem("is_logged_in") !== "true") {
+        window.location.href = "/pages/login";
+        return;
+      }
+      const code = (localStorage.getItem("employee_code") || "").trim();
+      currentUser = await api.getUserByCode(code).catch(() => null);
+      if (!currentUser || currentUser.role !== "admin") {
+        window.location.href = "/pages/menu";
+        return;
+      }
+      await loadIdeas();
+    }
+
+    init().catch((error) => {
+      showNotification(error.message || "Không tải được màn hình dọn ý tưởng", "error");
+    });
+  </script>
+</body>
+</html>

@@ -734,6 +734,112 @@ const api = {
     }
   },
 
+  async getAdminSettings(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/settings/admin?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được cấu hình admin');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Get admin settings error:', error);
+      throw error;
+    }
+  },
+
+  async updateEmailAutomation(employeeCode, enabled) {
+    try {
+      const response = await fetch(`${API_BASE}/settings/admin/email-automation`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+          enabled: Boolean(enabled),
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không cập nhật được trạng thái gửi email');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update email automation error:', error);
+      throw error;
+    }
+  },
+
+  async hardDeleteIdea(ideaId, employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/settings/admin/ideas/${encodeURIComponent(ideaId)}?${qs.toString()}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không xóa được ý tưởng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Hard delete idea error:', error);
+      throw error;
+    }
+  },
+
+  async listAdminIdeas(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/settings/admin/ideas?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được danh sách ý tưởng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('List admin ideas error:', error);
+      throw error;
+    }
+  },
+
+  async hardDeleteAllIdeas(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/settings/admin/ideas?${qs.toString()}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không xóa được toàn bộ ý tưởng');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Hard delete all ideas error:', error);
+      throw error;
+    }
+  },
+
+  async hardDeleteSelectedIdeas(employeeCode, ideaIds) {
+    try {
+      const response = await fetch(`${API_BASE}/settings/admin/ideas/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+          idea_ids: Array.isArray(ideaIds) ? ideaIds : [],
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không xóa được các ý tưởng đã chọn');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Hard delete selected ideas error:', error);
+      throw error;
+    }
+  },
+
   // Get categories
   getCategories() {
     return [
