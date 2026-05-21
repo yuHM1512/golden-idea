@@ -5,12 +5,14 @@ import json
 import os
 import re
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from openpyxl import load_workbook
 from sqlalchemy import text
@@ -261,8 +263,28 @@ def initialize_database() -> None:
     seed_admin_user()
 
 
+def _remove_autofilter_from_workbook(source_path: Path) -> Path:
+    target_path = Path(tempfile.gettempdir()) / "golden_idea_import_no_autofilter.xlsx"
+    with ZipFile(source_path, "r") as zin, ZipFile(target_path, "w", ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.startswith("xl/worksheets/sheet") and item.filename.endswith(".xml"):
+                data = re.sub(rb"<autoFilter\b.*?</autoFilter>", b"", data, flags=re.DOTALL)
+            zout.writestr(item, data)
+    return target_path
+
+
 def load_workbook_sheets(file_path: Path):
-    workbook = load_workbook(file_path, data_only=False)
+    try:
+        workbook = load_workbook(file_path, data_only=False)
+    except ValueError as exc:
+        error_text = f"{exc!r} {exc.__cause__!r}"
+        if "customFilter" not in error_text and "Value must be either numerical" not in error_text:
+            raise
+        cleaned_path = _remove_autofilter_from_workbook(file_path)
+        workbook = load_workbook(cleaned_path, data_only=False)
+        print(f"Workbook autoFilter XML was stripped for openpyxl compatibility: {cleaned_path}")
+
     score_sheet_name = next(name for name in workbook.sheetnames if name.strip().lower() == "điểm")
     return workbook, workbook["data"], workbook[score_sheet_name]
 
@@ -1051,6 +1073,91 @@ def clear_all_idea_data(dry_run: bool) -> int:
         db.close()
 
 
+def import_historical_benefits(file_path: Path, dry_run: bool) -> int:
+    workbook, data_ws, score_ws = load_workbook_sheets(file_path)
+    data_rows = read_data_rows(data_ws)
+    score_rows = read_score_rows(score_ws)
+
+    db = SessionLocal()
+    try:
+        admin = ensure_admin_user(db)
+        summary = Counter()
+
+        for data_row in data_rows:
+            score_row = score_rows.get(data_row["stt"])
+            if not score_row:
+                continue
+
+            before_seconds = score_row.get("before_seconds")
+            after_seconds = score_row.get("after_seconds")
+            quantity = score_row.get("quantity")
+            labor_second_price = score_row.get("labor_second_price") or 6.14
+            benefit_value = score_row.get("benefit_value")
+
+            has_measurable_inputs = before_seconds is not None and after_seconds is not None and quantity not in (None, 0)
+            if benefit_value is None and not has_measurable_inputs:
+                summary["skipped_missing_inputs"] += 1
+                continue
+
+            idea = (
+                db.query(Idea)
+                .filter(
+                    Idea.submitted_at == data_row["submitted_at"],
+                    Idea.full_name == (data_row["full_name"] or ""),
+                    Idea.description == (data_row["description"] or ""),
+                )
+                .one_or_none()
+            )
+            if idea is None:
+                summary["idea_not_found"] += 1
+                continue
+
+            normalized_before = before_seconds if before_seconds is not None else 0.0
+            normalized_after = after_seconds if after_seconds is not None else 0.0
+            normalized_quantity = quantity if quantity not in (None, 0) else 1
+
+            improvement_percent = 0.0
+            if before_seconds is not None and after_seconds is not None and before_seconds > 0:
+                improvement_percent = (before_seconds - after_seconds) / before_seconds
+
+            computed_benefit_value = benefit_value
+            if computed_benefit_value is None:
+                computed_benefit_value = max(normalized_before - normalized_after, 0) * normalized_quantity * labor_second_price
+
+            existing = db.query(ActualBenefitEvaluation).filter(ActualBenefitEvaluation.idea_id == idea.id).one_or_none()
+            if existing is None:
+                existing = ActualBenefitEvaluation(
+                    idea_id=idea.id,
+                    evaluator_id=admin.id,
+                )
+                db.add(existing)
+                summary["created"] += 1
+            else:
+                summary["updated"] += 1
+
+            existing.evaluator_id = admin.id
+            existing.before_seconds = normalized_before
+            existing.after_seconds = normalized_after
+            existing.improvement_percent = improvement_percent
+            existing.quantity = normalized_quantity
+            existing.labor_second_price = labor_second_price
+            existing.benefit_value = computed_benefit_value
+            existing.note = score_row.get("note")
+
+        if dry_run:
+            db.rollback()
+        else:
+            db.commit()
+
+        print(f"Workbook: {file_path}")
+        for key in sorted(summary):
+            print(f"{key}: {summary[key]}")
+        return 0
+    finally:
+        db.close()
+        workbook.close()
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Import historical Golden Idea rows from Excel")
     parser.add_argument("--file", default=str(DEFAULT_XLSX), help="Path to historical workbook")
@@ -1081,6 +1188,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Delete all idea-related data while keeping users, units, and score criteria",
     )
+    parser.add_argument(
+        "--import-historical-benefits",
+        action="store_true",
+        help="Import actual benefit data from historical Điểm sheet when measurable inputs are available",
+    )
     return parser
 
 
@@ -1104,6 +1216,8 @@ def main() -> int:
             return bypass_no_score_to_library(file_path=file_path, dry_run=args.dry_run)
         if args.clear_all_idea_data:
             return clear_all_idea_data(dry_run=args.dry_run)
+        if args.import_historical_benefits:
+            return import_historical_benefits(file_path=file_path, dry_run=args.dry_run)
         return import_rows(file_path=file_path, dry_run=args.dry_run, limit=args.limit)
     except Exception as exc:
         print(f"Import failed: {exc}", file=sys.stderr)
