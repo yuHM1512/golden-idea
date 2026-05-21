@@ -27,6 +27,7 @@ from app.seed import (
     migrate_ie_review_logic_columns,
     migrate_file_attachments_drive_columns,
     migrate_standardized_idea_replications_table,
+    migrate_k3_cost_saved_criteria_codes,
     normalize_sample_idea_categories,
 )
 
@@ -54,6 +55,7 @@ async def lifespan(app: FastAPI):
     migrate_ie_review_logic_columns()
     migrate_file_attachments_drive_columns()
     migrate_standardized_idea_replications_table()
+    migrate_k3_cost_saved_criteria_codes()
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:

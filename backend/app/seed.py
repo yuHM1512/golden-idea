@@ -22,6 +22,7 @@ UNITS_SEED: list[dict[str, str]] = [
     {"name": "XNDT", "department": "Xí nghiệp"},
     {"name": "XN2", "department": "Xí nghiệp"},
     {"name": "XN3", "department": "Xí nghiệp"},
+    {"name": "XN4", "department": "Xí nghiệp"},
     {"name": "XNV2", "department": "Xí nghiệp"},
     {"name": "XN1-V1", "department": "Xí nghiệp"},
     {"name": "P. QTĐS", "department": "Phòng ban"},
@@ -173,17 +174,17 @@ SCORE_CRITERIA_SEED: list[dict[str, object]] = [
     },
     {
         "criterion_key": "K3_COST_SAVED",
-        "code": "C1",
+        "code": "C6",
         "label": "Trên 10.000.000 VND",
         "tooltip": "Tiết kiệm chi phí trực tiếp.",
-        "note": "Tạm seed theo bộ tiêu chí không phải số hoá trước đây để hệ thống chạy thống nhất.",
+        "note": "Khớp với bộ tiêu chí Ý Tưởng Vàng lịch sử: C6-C10 là nhóm tiết kiệm chi phí trực tiếp.",
         "score": 100,
         "input_type": "select",
         "sort_order": 1,
     },
     {
         "criterion_key": "K3_COST_SAVED",
-        "code": "C2",
+        "code": "C7",
         "label": "5.000.000 - 10.000.000 VND",
         "tooltip": "Tiết kiệm chi phí trực tiếp.",
         "note": None,
@@ -193,7 +194,7 @@ SCORE_CRITERIA_SEED: list[dict[str, object]] = [
     },
     {
         "criterion_key": "K3_COST_SAVED",
-        "code": "C3",
+        "code": "C8",
         "label": "3.000.000 - 5.000.000 VND",
         "tooltip": "Tiết kiệm chi phí trực tiếp.",
         "note": None,
@@ -203,7 +204,7 @@ SCORE_CRITERIA_SEED: list[dict[str, object]] = [
     },
     {
         "criterion_key": "K3_COST_SAVED",
-        "code": "C4",
+        "code": "C9",
         "label": "1.500.000 - 3.000.000 VND",
         "tooltip": "Tiết kiệm chi phí trực tiếp.",
         "note": None,
@@ -213,7 +214,7 @@ SCORE_CRITERIA_SEED: list[dict[str, object]] = [
     },
     {
         "criterion_key": "K3_COST_SAVED",
-        "code": "C5",
+        "code": "C10",
         "label": "Dưới 1.500.000 VND",
         "tooltip": "Tiết kiệm chi phí trực tiếp.",
         "note": None,
@@ -926,6 +927,17 @@ def migrate_standardized_idea_replications_table() -> None:
                 """
             )
         )
+
+
+def migrate_k3_cost_saved_criteria_codes() -> None:
+    """
+    Historical YTV criteria use C6-C10 for direct cost-saving.
+    Earlier app versions incorrectly seeded K3_COST_SAVED as C1-C5, which
+    overlaps with K3_TIME_SAVED. Remove outdated rows so the corrected seed
+    can recreate them with the proper codes.
+    """
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM public.score_criteria WHERE criterion_key = 'K3_COST_SAVED'"))
 
 
 def seed_score_criteria() -> int:
