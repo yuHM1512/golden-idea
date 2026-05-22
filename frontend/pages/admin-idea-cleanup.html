@@ -86,11 +86,21 @@
       </div>
       <div class="border-t border-slate-100"></div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
+      <div class="overflow-x-auto pr-6">
+        <table class="min-w-[1460px] w-full text-sm">
           <thead class="bg-[#f7f9fc] text-left text-[0.72rem] font-bold uppercase tracking-[0.32em] text-[#7b8ba8]">
             <tr>
-              <th class="px-4 py-4 text-center">
+              <th class="w-[120px] px-4 py-4 text-center">Chọn / xóa</th>
+              <th class="px-6 py-4">ID</th>
+              <th class="px-4 py-4">Ý tưởng</th>
+              <th class="px-4 py-4">Người gửi</th>
+              <th class="px-4 py-4">Đơn vị</th>
+              <th class="px-4 py-4">Loại</th>
+              <th class="px-4 py-4">Trạng thái</th>
+              <th class="px-4 py-4">Ngày gửi</th>
+            </tr>
+            <tr class="sr-only">
+              <th class="px-4 py-0 text-center">
                 <input
                   id="selectAllCheckbox"
                   type="checkbox"
@@ -99,23 +109,58 @@
                   aria-label="Chọn tất cả"
                 />
               </th>
-              <th class="px-6 py-4">ID</th>
-              <th class="px-4 py-4">Ý tưởng</th>
-              <th class="px-4 py-4">Người gửi</th>
-              <th class="px-4 py-4">Đơn vị</th>
-              <th class="px-4 py-4">Loại</th>
-              <th class="px-4 py-4">Trạng thái</th>
-              <th class="px-4 py-4">Ngày gửi</th>
-              <th class="px-6 py-4 text-center">Hành động</th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="ideasTableBody" class="divide-y divide-slate-200"></tbody>
         </table>
       </div>
+
+      <div class="flex flex-col gap-4 border-t border-slate-100 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <div id="paginationMeta" class="text-sm text-text-soft">Hiển thị 0-0 / 0 ý tưởng</div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label class="inline-flex items-center gap-2 text-sm text-text-soft">
+            <span>Mỗi trang</span>
+            <select
+              id="pageSizeSelect"
+              onchange="changePageSize(this.value)"
+              class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-primary focus:ring-primary"
+            >
+              <option value="20" selected>20</option>
+              <option value="30">30</option>
+            </select>
+          </label>
+          <div class="flex items-center gap-2">
+            <button
+              id="prevPageBtn"
+              type="button"
+              onclick="goToPreviousPage()"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Trước
+            </button>
+            <div id="paginationNumbers" class="flex items-center gap-2"></div>
+            <button
+              id="nextPageBtn"
+              type="button"
+              onclick="goToNextPage()"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Sau
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <script src="../js/api.js?v=20260521-admin-idea-cleanup"></script>
+  <script src="../js/api.js?v=20260521-admin-idea-cleanup-v2"></script>
   <script>
     const CATEGORY_LABELS = {
       TOOLS: "Công cụ",
@@ -141,6 +186,8 @@
     let allIdeas = [];
     let filteredIdeas = [];
     let selectedIdeaIds = new Set();
+    let currentPage = 1;
+    let pageSize = 20;
 
     function logout() {
       localStorage.removeItem("is_logged_in");
@@ -182,33 +229,102 @@
       deleteSelectedBtn.disabled = selectedCount === 0;
       deleteSelectedBtn.textContent = selectedCount > 0 ? `Xóa đã chọn (${selectedCount})` : "Xóa đã chọn";
       const selectAll = document.getElementById("selectAllCheckbox");
-      const visibleIds = filteredIdeas.map((item) => item.id);
+      const visibleIds = paginatedIdeas().map((item) => item.id);
       const visibleSelectedCount = visibleIds.filter((id) => selectedIdeaIds.has(id)).length;
       selectAll.checked = visibleIds.length > 0 && visibleSelectedCount === visibleIds.length;
       selectAll.indeterminate = visibleSelectedCount > 0 && visibleSelectedCount < visibleIds.length;
+    }
+
+    function totalPages() {
+      return Math.max(1, Math.ceil(filteredIdeas.length / pageSize));
+    }
+
+    function ensureValidPage() {
+      currentPage = Math.min(Math.max(1, currentPage), totalPages());
+    }
+
+    function paginatedIdeas() {
+      ensureValidPage();
+      const start = (currentPage - 1) * pageSize;
+      return filteredIdeas.slice(start, start + pageSize);
+    }
+
+    function renderPagination() {
+      ensureValidPage();
+      const total = filteredIdeas.length;
+      const start = total ? ((currentPage - 1) * pageSize) + 1 : 0;
+      const end = total ? Math.min(currentPage * pageSize, total) : 0;
+      document.getElementById("paginationMeta").textContent = `Hiển thị ${start}-${end} / ${total} ý tưởng`;
+
+      document.getElementById("prevPageBtn").disabled = currentPage <= 1;
+      document.getElementById("nextPageBtn").disabled = currentPage >= totalPages();
+
+      const numbersWrap = document.getElementById("paginationNumbers");
+      numbersWrap.innerHTML = "";
+      const pageCount = totalPages();
+      let pages = [];
+
+      if (pageCount <= 5) {
+        pages = Array.from({ length: pageCount }, (_, idx) => idx + 1);
+      } else if (currentPage <= 3) {
+        pages = [1, 2, 3, 4, pageCount];
+      } else if (currentPage >= pageCount - 2) {
+        pages = [1, pageCount - 3, pageCount - 2, pageCount - 1, pageCount];
+      } else {
+        pages = [1, currentPage - 1, currentPage, currentPage + 1, pageCount];
+      }
+
+      pages.forEach((page, index) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+          const dots = document.createElement("span");
+          dots.className = "px-1 text-sm text-slate-400";
+          dots.textContent = "…";
+          numbersWrap.appendChild(dots);
+        }
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = page === currentPage
+          ? "min-w-10 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-white"
+          : "min-w-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50";
+        btn.textContent = String(page);
+        btn.onclick = () => goToPage(page);
+        numbersWrap.appendChild(btn);
+      });
     }
 
     function renderTable() {
       const tbody = document.getElementById("ideasTableBody");
       tbody.innerHTML = "";
       if (!filteredIdeas.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-10 text-center text-text-soft">Không có ý tưởng nào khớp bộ lọc hiện tại.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-text-soft">Không có ý tưởng nào khớp bộ lọc hiện tại.</td></tr>';
         updateMeta();
+        renderPagination();
         return;
       }
 
-      filteredIdeas.forEach((item) => {
+      paginatedIdeas().forEach((item) => {
         const tr = document.createElement("tr");
         tr.className = "align-top transition hover:bg-slate-50/80";
         tr.innerHTML = `
-          <td class="px-4 py-5 text-center">
-            <input
-              type="checkbox"
-              class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
-              ${selectedIdeaIds.has(item.id) ? "checked" : ""}
-              onchange="toggleIdeaSelection(${item.id}, this.checked)"
-              aria-label="Chọn ý tưởng #${item.id}"
-            />
+          <td class="px-4 py-5">
+            <div class="flex items-center justify-center gap-2">
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                ${selectedIdeaIds.has(item.id) ? "checked" : ""}
+                onchange="toggleIdeaSelection(${item.id}, this.checked)"
+                aria-label="Chọn ý tưởng #${item.id}"
+              />
+              <button
+                type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-700"
+                onclick="handleDeleteIdea(${item.id})"
+                aria-label="Xóa ý tưởng #${item.id}"
+                title="Xóa ý tưởng #${item.id}"
+              >
+                <span class="material-symbols-outlined text-[20px]">delete</span>
+              </button>
+            </div>
           </td>
           <td class="px-6 py-5 text-[1.05rem] font-bold text-slate-700">#${item.id}</td>
           <td class="px-4 py-5">
@@ -220,24 +336,14 @@
             <div class="mt-1 text-[0.95rem] text-[#6f82a3]">${safeText(item.employee_code || "—")}</div>
           </td>
           <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(item.unit_name || "—")}</td>
-          <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(CATEGORY_LABELS[item.category] || item.category || "—")}</td>
-          <td class="px-4 py-5">${statusChip(item.status)}</td>
-          <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(formatDateTime(item.submitted_at))}</td>
-          <td class="px-6 py-5 text-center">
-            <button
-              type="button"
-              class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100 hover:text-red-700"
-              onclick="handleDeleteIdea(${item.id})"
-              aria-label="Xóa ý tưởng #${item.id}"
-              title="Xóa ý tưởng #${item.id}"
-            >
-              <span class="material-symbols-outlined text-[22px]">delete</span>
-            </button>
-          </td>
+            <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(CATEGORY_LABELS[item.category] || item.category || "—")}</td>
+            <td class="px-4 py-5">${statusChip(item.status)}</td>
+            <td class="px-4 py-5 text-[1.05rem] leading-7 text-slate-700">${safeText(formatDateTime(item.submitted_at))}</td>
         `;
         tbody.appendChild(tr);
       });
       updateMeta();
+      renderPagination();
     }
 
     function applyFilters() {
@@ -256,6 +362,7 @@
             ].join(" ").toLowerCase();
             return haystack.includes(q);
           });
+      currentPage = 1;
       renderTable();
     }
 
@@ -276,7 +383,7 @@
     }
 
     function toggleSelectAllVisible(checked) {
-      filteredIdeas.forEach((item) => {
+      paginatedIdeas().forEach((item) => {
         if (checked) {
           selectedIdeaIds.add(item.id);
         } else {
@@ -286,10 +393,34 @@
       renderTable();
     }
 
+    function goToPage(page) {
+      currentPage = Number(page) || 1;
+      renderTable();
+    }
+
+    function goToPreviousPage() {
+      if (currentPage <= 1) return;
+      currentPage -= 1;
+      renderTable();
+    }
+
+    function goToNextPage() {
+      if (currentPage >= totalPages()) return;
+      currentPage += 1;
+      renderTable();
+    }
+
+    function changePageSize(value) {
+      pageSize = Number(value) || 20;
+      currentPage = 1;
+      renderTable();
+    }
+
     async function loadIdeas() {
       const response = await api.listAdminIdeas(currentUser.employee_code);
       allIdeas = Array.isArray(response?.items) ? response.items : [];
       filteredIdeas = allIdeas.slice();
+      currentPage = 1;
       renderTable();
     }
 
