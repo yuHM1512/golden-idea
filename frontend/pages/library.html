@@ -215,12 +215,12 @@
                 <input
                   id="q"
                   class="bg-transparent border-none focus:ring-0 text-sm w-full"
-                  placeholder="Mô tả / người gửi / đơn vị..."
+                  placeholder="Mô tả / người gửi / đơn vị / mã hàng..."
                   type="text"
                 />
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
               <div>
                 <label class="text-xs uppercase tracking-widest text-on-surface-variant">Đơn vị</label>
                 <select id="filterUnitId" class="mt-2 w-full rounded-xl bg-surface-container-low border-none">
@@ -232,6 +232,15 @@
                 <select id="filterCategory" class="mt-2 w-full rounded-xl bg-surface-container-low border-none">
                   <option value="">Tất cả</option>
                 </select>
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-widest text-on-surface-variant">Mã hàng</label>
+                <input
+                  id="filterProductCode"
+                  type="text"
+                  class="mt-2 w-full rounded-xl bg-surface-container-low border-none"
+                  placeholder="Nhập mã hàng"
+                />
               </div>
             </div>
             <div class="flex gap-3 xl:pb-0.5">
@@ -505,6 +514,7 @@
         document.getElementById("q").value = "";
         document.getElementById("filterUnitId").value = "";
         document.getElementById("filterCategory").value = "";
+        document.getElementById("filterProductCode").value = "";
         skip = 0;
         loadIdeas(true);
       }
@@ -1189,6 +1199,7 @@
           q: document.getElementById("q").value.trim(),
           unit_id: document.getElementById("filterUnitId").value,
           category: document.getElementById("filterCategory").value,
+          product_code: document.getElementById("filterProductCode").value.trim(),
           skip,
           limit,
         };
@@ -1245,6 +1256,15 @@
           catSel.appendChild(opt);
         });
         unitSel.disabled = currentLibraryTab === "unit";
+        ["q", "filterProductCode"].forEach((id) => {
+          const input = document.getElementById(id);
+          if (!input) return;
+          input.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            loadIdeas(true);
+          });
+        });
 
         const [metrics, unitChart, categoryChart, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
           api.getIdeaMetrics(),

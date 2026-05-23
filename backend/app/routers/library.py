@@ -140,6 +140,7 @@ async def list_library_ideas(
     employee_code: Optional[str] = Query(default=None),
     library_type: str = Query(default=LIBRARY_TYPE_STANDARDIZATION),
     q: Optional[str] = None,
+    product_code: Optional[str] = None,
     category: Optional[IdeaCategory] = None,
     status: Optional[IdeaStatus] = None,
     unit_id: Optional[int] = None,
@@ -163,6 +164,7 @@ async def list_library_ideas(
             Idea.description,
             Idea.full_name,
             Idea.employee_code,
+            Idea.product_code,
             Idea.is_anonymous,
             Idea.unit_id,
             Unit.name.label("unit_name"),
@@ -184,6 +186,7 @@ async def list_library_ideas(
             Idea.description,
             Idea.full_name,
             Idea.employee_code,
+            Idea.product_code,
             Idea.is_anonymous,
             Idea.unit_id,
             Unit.name,
@@ -207,6 +210,8 @@ async def list_library_ideas(
         query = query.filter(Idea.status == status)
     if unit_id is not None and current_library_type != LIBRARY_TYPE_UNIT:
         query = query.filter(Idea.unit_id == unit_id)
+    if product_code:
+        query = query.filter(Idea.product_code.ilike(f"%{product_code.strip()}%"))
     if q:
         term = f"%{q.strip()}%"
         query = query.filter(
@@ -215,6 +220,7 @@ async def list_library_ideas(
                 Idea.description.ilike(term),
                 Idea.full_name.ilike(term),
                 Idea.employee_code.ilike(term),
+                Idea.product_code.ilike(term),
                 Unit.name.ilike(term),
             )
         )
@@ -233,6 +239,7 @@ async def list_library_ideas(
                 unit_name=row.unit_name,
                 full_name=(row.full_name or ""),
                 employee_code=(row.employee_code or None),
+                product_code=(row.product_code or None),
                 description=row.description or "",
                 attachment_count=int(row.attachment_count or 0),
                 library_type=current_library_type,

@@ -15,6 +15,7 @@ class IdeaLibraryRow(BaseModel):
     unit_name: str
     full_name: str
     employee_code: Optional[str] = None
+    product_code: Optional[str] = None
     description: str
     attachment_count: int = 0
     library_type: str = "standardization"
