@@ -59,7 +59,7 @@
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-8">
+    <main class="mx-auto w-full max-w-[1600px] px-4 py-10 space-y-8 md:px-8 xl:px-10">
       <section class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
         <div class="xl:col-span-8 bg-gradient-to-br from-primary to-primary-strong rounded-[2rem] p-8 md:p-10 text-white shadow-[0px_30px_70px_rgba(0,43,115,0.2)] relative overflow-hidden">
           <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/10 blur-3xl"></div>
@@ -246,7 +246,19 @@
           </div>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+          <table class="w-full min-w-[1180px] table-fixed text-sm xl:min-w-0">
+            <colgroup id="queueColgroup">
+              <col class="w-[28%]" />
+              <col class="w-[8%]" />
+              <col class="w-[14%]" />
+              <col class="w-[7%]" />
+              <col class="w-[12%]" />
+              <col class="w-[6%]" />
+              <col class="w-[6%]" />
+              <col class="w-[10%]" />
+              <col class="w-[4%]" />
+              <col class="w-[5%]" />
+            </colgroup>
             <thead id="queueHead" class="bg-surface-low text-text-soft uppercase tracking-[0.18em] text-[11px] font-bold border-b border-slate-200">
               <tr>
                 <th class="text-left px-6 py-4 font-bold text-text-main">Ý tưởng</th>
@@ -1077,6 +1089,60 @@
         `;
       }
 
+      function renderQueueColgroup() {
+        const colgroup = document.getElementById("queueColgroup");
+        if (!colgroup) return;
+        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+          colgroup.innerHTML = `
+            <col class="w-[16%]" />
+            <col class="w-[12%]" />
+            <col class="w-[24%]" />
+            <col class="w-[16%]" />
+            <col class="w-[24%]" />
+            <col class="w-[8%]" />
+          `;
+          return;
+        }
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          colgroup.innerHTML = `
+            <col class="w-[30%]" />
+            <col class="w-[12%]" />
+            <col class="w-[18%]" />
+            <col class="w-[10%]" />
+            <col class="w-[18%]" />
+            <col class="w-[12%]" />
+          `;
+          return;
+        }
+        if (isCouncilReviewMode()) {
+          colgroup.innerHTML = `
+            <col class="w-[20%]" />
+            <col class="w-[10%]" />
+            <col class="w-[13%]" />
+            <col class="w-[7%]" />
+            <col class="w-[11%]" />
+            <col class="w-[8%]" />
+            <col class="w-[6%]" />
+            <col class="w-[6%]" />
+            <col class="w-[6%]" />
+            <col class="w-[13%]" />
+          `;
+          return;
+        }
+        colgroup.innerHTML = `
+          <col class="w-[26%]" />
+          <col class="w-[8%]" />
+          <col class="w-[14%]" />
+          <col class="w-[7%]" />
+          <col class="w-[12%]" />
+          <col class="w-[6%]" />
+          <col class="w-[6%]" />
+          <col class="w-[10%]" />
+          <col class="w-[4%]" />
+          <col class="w-[7%]" />
+        `;
+      }
+
       async function approveBodRegisterSlip(ideaId) {
         const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
         showLoading(true);
@@ -1250,6 +1316,7 @@
 
       function renderQueue(items) {
         const tbody = document.getElementById("queueBody");
+        renderQueueColgroup();
         renderQueueHead();
         tbody.innerHTML = "";
         document.getElementById("tableMeta").textContent = `${items.length} phiếu`;
@@ -1365,18 +1432,18 @@
               </td>
               <td class="px-4 py-5 align-top text-right">
                 ${item.benefit_value !== null && item.benefit_value !== undefined
-                  ? `<span class="inline-flex items-center px-3 py-1 rounded-full bg-[#eef9f2] text-[#0f7a43] font-semibold">${Number(item.benefit_value || 0).toLocaleString("vi-VN")}</span>`
+                  ? `<span class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-full bg-[#eef9f2] text-[#0f7a43] font-semibold">${Number(item.benefit_value || 0).toLocaleString("vi-VN")}</span>`
                   : '<span class="text-text-soft">—</span>'}
               </td>
               <td class="px-4 py-5 align-top text-right">${scoreChip(item.dept_score)}</td>
               <td class="px-4 py-5 align-top text-right">${scoreChip(item.ie_score)}</td>
               <td class="px-4 py-5 align-top text-right">
                 ${item.council_final_score !== null && item.council_final_score !== undefined
-                  ? `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fff3df] text-[#a55b00] font-semibold">${item.council_is_featured ? '<span class="material-symbols-outlined text-[16px]">stars</span>' : ''}${safeText(item.council_final_score)}</span>`
+                  ? `<span class="inline-flex items-center whitespace-nowrap gap-2 px-3 py-1 rounded-full bg-[#fff3df] text-[#a55b00] font-semibold">${item.council_is_featured ? '<span class="material-symbols-outlined text-[16px]">stars</span>' : ''}${safeText(item.council_final_score)}</span>`
                   : '<span class="text-text-soft">—</span>'}
               </td>
               <td class="px-6 py-5 align-top text-right">
-                <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openCouncilScoreModalById(${item.id})">Đánh giá</button>
+                <button class="whitespace-nowrap px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openCouncilScoreModalById(${item.id})">Đánh giá</button>
               </td>
             `;
             if (tr.children[8]) {
