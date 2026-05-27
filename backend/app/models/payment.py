@@ -15,6 +15,7 @@ class PaymentSlip(Base):
 
     # Payment details
     amount = Column(DECIMAL(10, 2), default=100000.00, nullable=False)  # 100k default
+    register_reward_code = Column(String(20), nullable=True)
 
     # Printing info
     printed_by_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)

@@ -6,7 +6,7 @@ from .unit import (
 )
 from .idea import (
     IdeaCreate, IdeaUpdate, IdeaDetailResponse, IdeaListResponse,
-    IdeaSubmitResponse, IdeaCategory, IdeaStatus, FileAttachmentResponse, IdeaParticipant,
+    IdeaSubmitResponse, IdeaStatus, FileAttachmentResponse, IdeaParticipant,
     DirectUploadSessionRequest, DirectUploadSessionResponse, DirectUploadCompleteRequest
 )
 from .score import (
@@ -55,6 +55,11 @@ from .library import (
 from .settings import (
     AdminSettingsResponse,
     EmailAutomationUpdateRequest,
+    IdeaTaxonomyResponse,
+    IdeaTaxonomyUpdateRequest,
+    LaborSecondPriceSettingItem,
+    LaborSecondPriceSettingsResponse,
+    LaborSecondPriceSettingsUpdateRequest,
     IdeaBulkDeleteRequest,
     IdeaHardDeleteResponse,
 )
@@ -66,7 +71,7 @@ __all__ = [
     "UnitCreate", "UnitUpdate", "UnitResponse", "UnitWithUsers",
     # Idea
     "IdeaCreate", "IdeaUpdate", "IdeaDetailResponse", "IdeaListResponse",
-    "IdeaSubmitResponse", "IdeaCategory", "IdeaStatus", "FileAttachmentResponse", "IdeaParticipant",
+    "IdeaSubmitResponse", "IdeaStatus", "FileAttachmentResponse", "IdeaParticipant",
     "DirectUploadSessionRequest", "DirectUploadSessionResponse", "DirectUploadCompleteRequest",
     # Score
     "IdeaScoreCreate", "IdeaScoreResponse", "K1Type", "K2Type", "K3MeasureType",
@@ -88,5 +93,7 @@ __all__ = [
     "IdeaLibraryRow", "IdeaLibraryDetail", "IdeaLibraryAttachment",
     "StandardizedIdeaReplicationCreate", "StandardizedIdeaReplicationResponse",
     # Settings
-    "AdminSettingsResponse", "EmailAutomationUpdateRequest", "IdeaBulkDeleteRequest", "IdeaHardDeleteResponse",
+    "AdminSettingsResponse", "EmailAutomationUpdateRequest", "IdeaTaxonomyResponse", "IdeaTaxonomyUpdateRequest",
+    "LaborSecondPriceSettingItem", "LaborSecondPriceSettingsResponse", "LaborSecondPriceSettingsUpdateRequest",
+    "IdeaBulkDeleteRequest", "IdeaHardDeleteResponse",
 ]

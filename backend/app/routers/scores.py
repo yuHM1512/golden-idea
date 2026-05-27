@@ -9,6 +9,7 @@ from app.models.score import IdeaScore
 from app.models.score_criteria import ScoreCriteria
 from app.models.score_criteria_set import ScoreCriteriaSet
 from app.models.user import User
+from app.services.roles import has_role
 from app.schemas import (
     IdeaScoreResponse,
     K1ScoreBreakdown,
@@ -65,7 +66,7 @@ def _require_criteria_manager(db: Session, employee_code: str) -> User:
     user = db.query(User).filter(User.employee_code.ilike(code)).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User không tồn tại")
-    if user.role not in {"admin", "ie_manager"}:
+    if not (has_role(user, "admin") or has_role(user, "ie_manager")):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Bạn không có quyền quản lý tiêu chí")
     return user
 
@@ -194,7 +195,7 @@ def _replace_set_items(db: Session, criteria_set_id: int, items: list):
 async def get_latest_score(idea_id: int, role: str | None = Query(default=None), db: Session = Depends(get_db)):
     query = db.query(IdeaScore).filter(IdeaScore.idea_id == idea_id)
     if role:
-        query = query.join(IdeaScore.scorer).filter(User.role == role)
+        query = query.join(IdeaScore.scorer).filter(User.role.contains(f'"{role}"'))
     score = query.order_by(IdeaScore.scored_at.desc(), IdeaScore.id.desc()).first()
     if score is None:
         raise HTTPException(status_code=404, detail="Chua co diem")

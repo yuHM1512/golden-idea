@@ -9,7 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
-    <script>
+        <script>
       tailwind.config = {
         theme: {
           extend: {
@@ -49,6 +49,10 @@
           </div>
         </a>
         <div class="flex items-center gap-3">
+          <div id="roleSelectorWrap" class="hidden items-center">
+            <select id="roleSelector" class="rounded-xl border-none bg-slate-100 px-3 py-2 text-sm font-bold text-primary focus:ring-2 focus:ring-primary transition-all cursor-pointer" onchange="switchRole(this.value)">
+            </select>
+          </div>
           <div class="hidden md:flex items-center rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
             <span id="sessionInfo">&#272;ang t&#7843;i...</span>
           </div>
@@ -191,7 +195,7 @@
               class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
               onclick="setBodApprovalTab('register_slip')"
             >
-              Duyệt phiếu nhận tiền
+              Duyệt phiếu nhận thưởng nóng
             </button>
             <button
               id="bodCouncilTabBtn"
@@ -200,6 +204,26 @@
               onclick="setBodApprovalTab('council_review')"
             >
               Duyệt Hội đồng sáng kiến
+            </button>
+          </div>
+        </div>
+        <div id="dualRoleApprovalTabs" class="hidden px-6 md:px-8 pb-6">
+          <div class="inline-flex rounded-[1.5rem] bg-[#eef3fb] p-1.5 gap-1.5">
+            <button
+              id="dualRoleDeptTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setDualRoleTab('dept')"
+            >
+              Duyệt đơn vị
+            </button>
+            <button
+              id="dualRoleDigitalTabBtn"
+              type="button"
+              class="rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all"
+              onclick="setDualRoleTab('digital')"
+            >
+              Duyệt YTV số hoá
             </button>
           </div>
         </div>
@@ -412,13 +436,21 @@
       </div>
     </div>
 
-    <script src="../js/api.js?v=20260428-print-dept"></script>
+    <script src="../js/api.js?v=20260526-labor-second-price-table"></script>
     <script>
       const CATEGORY_LABELS = {
-        TOOLS: "Công cụ",
-        PROCESS: "Phương pháp quy trình",
-        DIGITIZATION: "Số hoá",
-        OTHER: "Khác",
+        TOOLS: "C\u00f4ng c\u1ee5",
+        PROCESS: "Ph\u01b0\u01a1ng ph\u00e1p quy tr\u00ecnh",
+        DIGITIZATION: "S\u1ed1 ho\u00e1",
+        OTHER: "Kh\u00e1c",
+        "S\u1ed1 ho\u00e1": "S\u1ed1 ho\u00e1",
+        "Quy tr\u00ecnh": "Quy tr\u00ecnh",
+        "Thi\u1ebft b\u1ecb": "Thi\u1ebft b\u1ecb",
+        "Ph\u1ee5 tr\u1ee3": "Ph\u1ee5 tr\u1ee3",
+        "Chu\u1ea9n b\u1ecb": "Chu\u1ea9n b\u1ecb",
+        "C\u1eed g\u00e1": "C\u1eed g\u00e1",
+        "Form": "Form",
+        "Thao t\u00e1c": "Thao t\u00e1c",
       };
       const STATUS_LABELS = {
         SUBMITTED: "Chờ duyệt cấp đơn vị",
@@ -427,7 +459,7 @@
         COUNCIL_REVIEW: "Đang duyệt BCT",
         LEADERSHIP_REVIEW: "BCT đã duyệt, chờ lãnh đạo",
         APPROVED: "Đã duyệt đủ 3 cấp",
-        REWARDED: "Đã in phiếu nhận tiền",
+        REWARDED: "Đã in phiếu nhận thưởng nóng",
         REJECTED: "Không duyệt",
         CANCELLED: "Đã huỷ",
       };
@@ -435,6 +467,7 @@
         dept_manager: "Cấp đơn vị",
         sub_dept_manager: "Cấp đơn vị",
         ie_manager: "BCT",
+        digital_manager: "Duyệt YTV Số hoá",
         bod_manager: "Lãnh đạo",
         admin: "Admin",
       };
@@ -454,17 +487,17 @@
         {
           value: "BCT_REJECTED",
           label: "BCT Không duyệt",
-          note: "Không đủ điều kiện nhận tiền đăng ký",
+          note: "Không đủ điều kiện nhận thưởng nóng",
         },
         {
           value: "UNIT_REVIEW",
           label: "Đơn vị tự xét duyệt",
-          note: "Đủ điều kiện nhận tiền đăng ký, đơn vị tự xét thưởng thêm - Ý tưởng không đưa ra Hội đồng",
+          note: "Đủ điều kiện nhận thưởng nóng, đơn vị tự xét thưởng thêm - Ý tưởng không đưa ra Hội đồng",
         },
         {
           value: "BCT_APPROVED",
           label: "BCT Duyệt",
-          note: "Đủ điều kiện nhận tiền đăng ký - Ý tưởng được đưa ra Hội đồng.",
+          note: "Đủ điều kiện nhận thưởng nóng - Ý tưởng được đưa ra Hội đồng.",
         },
       ];
       const IE_STANDARDIZATION_OPTIONS = [
@@ -485,6 +518,11 @@
         APPROVED_NO_STANDARDIZATION: "Đạt - Không đưa vào chuẩn hoá",
         APPROVED_STANDARDIZATION: "Đạt - Đưa vào chuẩn hoá",
       };
+      // Statuses visible to IE/digital level — ideas must have passed dept review first
+      const IE_LEVEL_STATUSES = new Set([
+        "DEPT_APPROVED", "COUNCIL_REVIEW", "LEADERSHIP_REVIEW", "APPROVED", "REWARDED", "REJECTED",
+      ]);
+
       const BOD_COUNCIL_RESULT_TYPES = [
         "APPROVED_NO_STANDARDIZATION",
         "APPROVED_STANDARDIZATION",
@@ -559,6 +597,7 @@
       };
 
       let currentUser = null;
+      let currentRoles = [];
       let currentRole = "anonymous";
       let queueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
       let scoreCriteria = null;
@@ -573,6 +612,113 @@
       let currentCouncilQuarterFilter = "";
       let currentCouncilYearFilter = "";
       let currentIeModalMode = "view";
+      let laborSecondPriceByYear = {};
+      let currentDualRoleTab = "dept"; // "dept" | "digital" – chỉ dùng khi user có cả dept + digital role
+
+      function hasCurrentRole(role) {
+        return currentRole === role || currentRoles.includes(role);
+      }
+
+      function isDigitizationCategory(category) {
+        if (!category) return false;
+        const folded = normalizeSearchText(category);
+        return folded === "so hoa" || folded === "sohoa" || folded === "digitization" || (folded.startsWith("s") && folded.includes("ho"));
+      }
+
+      function calculateFrontendMetrics(role, items) {
+        const statuses = items.map((item) => String(item.status || "").trim().toUpperCase());
+        const total = statuses.length;
+        let approved = 0;
+        let pending = 0;
+        let rejected = 0;
+
+        if (role === "dept_manager" || role === "sub_dept_manager" || role === "unit_represent") {
+          approved = statuses.filter((s) => ["DEPT_APPROVED", "COUNCIL_REVIEW", "LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(s)).length;
+          pending = statuses.filter((s) => ["SUBMITTED", "UNDER_REVIEW"].includes(s)).length;
+        } else if (role === "ie_manager" || role === "digital_manager") {
+          approved = statuses.filter((s) => ["LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(s)).length;
+          pending = statuses.filter((s) => ["DEPT_APPROVED", "COUNCIL_REVIEW"].includes(s)).length;
+        } else if (role === "bod_manager") {
+          approved = statuses.filter((s) => ["APPROVED", "REWARDED"].includes(s)).length;
+          pending = statuses.filter((s) => s === "LEADERSHIP_REVIEW").length;
+        } else {
+          approved = statuses.filter((s) => ["APPROVED", "REWARDED"].includes(s)).length;
+          pending = statuses.filter((s) => ["SUBMITTED", "UNDER_REVIEW", "DEPT_APPROVED", "COUNCIL_REVIEW", "LEADERSHIP_REVIEW"].includes(s)).length;
+        }
+        rejected = statuses.filter((s) => s === "REJECTED").length;
+        return { total, approved, pending, rejected };
+      }
+
+      const ROLE_LABELS = {
+        admin: "Quyền Admin",
+        dept_manager: "Trưởng đơn vị",
+        sub_dept_manager: "Phó đơn vị",
+        digital_manager: "Duyệt Số hoá",
+        ie_manager: "Ban cải tiến",
+        bod_manager: "Lãnh đạo",
+        unit_represent: "Đại diện đơn vị",
+        treasurer: "Thủ quỹ",
+        employee: "Nhân viên",
+        anonymous: "Ẩn danh"
+      };
+
+      function renderRoleSwitcher() {
+        const wrap = document.getElementById("roleSelectorWrap");
+        const select = document.getElementById("roleSelector");
+        if (!wrap || !select) return;
+
+        // Tab strip handles switching when dual dept+digital — hide dropdown
+        if (isDualDeptDigital()) {
+          wrap.classList.add("hidden");
+          wrap.classList.remove("flex");
+          return;
+        }
+
+        if (!currentRoles || currentRoles.length <= 1) {
+          wrap.classList.add("hidden");
+          wrap.classList.remove("flex");
+          return;
+        }
+
+        wrap.classList.remove("hidden");
+        wrap.classList.add("flex");
+
+        select.innerHTML = currentRoles.map((role) => {
+          const label = ROLE_LABELS[role] || role;
+          const selectedAttr = role === currentRole ? "selected" : "";
+          return `<option value="${role}" ${selectedAttr}>${safeText(label)}</option>`;
+        }).join("");
+      }
+
+      async function switchRole(newRole) {
+        currentRole = newRole;
+        if (currentRole === "admin") currentBodApprovalTab = "council_review";
+
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        if (["admin", "ie_manager", "digital_manager", "dept_manager", "sub_dept_manager", "bod_manager"].includes(currentRole) && typeof api.getLaborSecondPrices === "function") {
+          const laborSettings = await api.getLaborSecondPrices(employeeCode).catch(() => ({ items: [] }));
+          laborSecondPriceByYear = Object.fromEntries(
+            (Array.isArray(laborSettings?.items) ? laborSettings.items : []).map((item) => [Number(item.year), Number(item.labor_second_price)])
+          );
+        } else {
+          laborSecondPriceByYear = {};
+        }
+
+        renderSessionInfo();
+        renderRoleSwitcher();
+        renderDualRoleTabs();
+        syncStatusFilterOptions();
+        renderIeApprovalTabs();
+        renderBodApprovalTabs();
+        renderCouncilFilterOptions();
+        renderPendingFilterButton();
+        document.getElementById("roleHint").textContent = currentRoleHint({});
+        await loadQueue();
+      }
+
+      function isSecondLevelRole(role = currentRole) {
+        return role === "ie_manager" || role === "digital_manager";
+      }
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -582,14 +728,14 @@
 
       function roleHint(role, queue) {
         if (role === "dept_manager" || role === "sub_dept_manager") {
-          return `Bạn đang duyệt các phiếu thuộc đơn vị ${queue.unit_name || ""}. Cấp này bắt buộc chấm điểm trước khi duyệt. Bạn cũng có thể in phiếu nhận tiền cho các ý tưởng đã duyệt đủ 3 cấp.`;
+          return `Bạn đang duyệt các phiếu thuộc đơn vị ${queue.unit_name || ""}. Cấp này bắt buộc chấm điểm trước khi duyệt. Bạn cũng có thể in phiếu nhận thưởng nóng cho các ý tưởng đã duyệt đủ 3 cấp.`;
         }
-        if (role === "ie_manager") {
+        if (isSecondLevelRole(role)) {
           return "Bạn đang xác nhận đưa vào chuẩn hoá cho các ý tưởng đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
         }
         if (role === "bod_manager") {
           return currentBodApprovalTab === "register_slip"
-            ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
+            ? "Bạn đang duyệt phiếu nhận thưởng nóng. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng thưởng nóng."
             : "Tab Hội đồng sáng kiến sẽ dùng cho bước đánh giá chuyên sâu của lãnh đạo.";
         }
         if (role === "admin") {
@@ -602,7 +748,13 @@
       }
 
       function currentRoleHint(queue) {
-        if (currentRole === "ie_manager") {
+        if (isDualDeptDigital()) {
+          if (currentDualRoleTab === "digital") {
+            return "Bạn đang duyệt các ý tưởng số hoá đã qua cấp đơn vị. Nếu đạt, phiếu sẽ chuyển tiếp cho lãnh đạo.";
+          }
+          return `Bạn đang duyệt các phiếu thuộc đơn vị ${queue.unit_name || ""}. Cấp này bắt buộc chấm điểm trước khi duyệt. Bạn cũng có thể in phiếu nhận thưởng nóng cho các ý tưởng đã duyệt đủ 3 cấp.`;
+        }
+        if (isSecondLevelRole(currentRole)) {
           if (currentIeApprovalTab === "replication_review") {
             return "Bạn đang duyệt các đề xuất nhân rộng ý tưởng. Mỗi đề xuất được duyệt sẽ được tính 1 điểm cho đơn vị áp dụng.";
           }
@@ -613,19 +765,32 @@
         }
         if (["bod_manager", "admin"].includes(currentRole)) {
           return currentBodApprovalTab === "register_slip"
-            ? "Bạn đang duyệt phiếu nhận tiền đăng ký. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng tiền đăng ký."
+            ? "Bạn đang duyệt phiếu nhận thưởng nóng. Tick duyệt là xác nhận ý tưởng đủ điều kiện đi tiếp cho dòng thưởng nóng."
             : "Tab Hội đồng sáng kiến dùng cho bước đánh giá chuyên sâu, chốt điểm cuối cùng và tạo đợt khen thưởng theo Quý / Năm.";
         }
         return roleHint(currentRole, queue || {});
       }
 
 
+      function isDualDeptDigital() {
+        const hasDept = currentRoles.includes("sub_dept_manager") || currentRoles.includes("dept_manager");
+        const hasDigital = currentRoles.includes("digital_manager");
+        const hasHigher = currentRoles.some((r) => ["admin", "ie_manager", "bod_manager"].includes(r));
+        return hasDept && hasDigital && !hasHigher;
+      }
+
+      function dualRoleDeptRole() {
+        if (currentRoles.includes("sub_dept_manager")) return "sub_dept_manager";
+        if (currentRoles.includes("dept_manager")) return "dept_manager";
+        return "sub_dept_manager";
+      }
+
       function isCouncilReviewRole() {
-        return ["ie_manager", "bod_manager", "admin"].includes(currentRole);
+        return ["ie_manager", "digital_manager", "bod_manager", "admin"].includes(currentRole);
       }
 
       function isCouncilReviewMode() {
-        if (currentRole === "ie_manager") return currentIeApprovalTab === "council_review";
+        if (isSecondLevelRole(currentRole)) return currentIeApprovalTab === "council_review";
         if (["bod_manager", "admin"].includes(currentRole)) return currentBodApprovalTab === "council_review";
         return false;
       }
@@ -674,6 +839,14 @@
         return parts.year;
       }
 
+      function resolveIdeaLaborSecondPrice(detail) {
+        const year = itemYearFromDate(detail?.submitted_at);
+        if (year && Object.prototype.hasOwnProperty.call(laborSecondPriceByYear, year)) {
+          return Number(laborSecondPriceByYear[year]);
+        }
+        return 6.14;
+      }
+
       function onCouncilFilterChange() {
         currentCouncilQuarterFilter = document.getElementById("councilQuarterFilter")?.value || "";
         currentCouncilYearFilter = document.getElementById("councilYearFilter")?.value || "";
@@ -682,14 +855,14 @@
       }
 
       function canCreateCouncilRewardBatch() {
-        return ["ie_manager", "bod_manager"].includes(currentRole)
+        return ["ie_manager", "digital_manager", "bod_manager"].includes(currentRole)
           && isCouncilReviewMode()
           && Boolean(currentCouncilQuarterFilter)
           && Boolean(currentCouncilYearFilter);
       }
 
       function canOpenRewardHistory() {
-        return ["ie_manager", "bod_manager"].includes(currentRole) && isCouncilReviewMode();
+        return ["ie_manager", "digital_manager", "bod_manager"].includes(currentRole) && isCouncilReviewMode();
       }
 
       function renderCouncilRewardBatchAction() {
@@ -817,9 +990,18 @@
         const replicationBtn = document.getElementById("ieReplicationTabBtn");
         const councilBtn = document.getElementById("ieCouncilTabBtn");
         if (!wrap || !ideaBtn || !replicationBtn || !councilBtn) return;
-        const isIe = currentRole === "ie_manager";
+        // Khi dual role digital tab: ẩn IE sub-tabs vì chỉ có 1 chế độ (idea_review)
+        const isIe = isSecondLevelRole(currentRole) && !isDualDeptDigital();
         wrap.classList.toggle("hidden", !isIe);
         if (!isIe) return;
+        if (currentRole === "digital_manager") {
+          if (currentIeApprovalTab === "replication_review") currentIeApprovalTab = "idea_review";
+          ideaBtn.textContent = "Duyệt YTV Số hoá";
+          replicationBtn.classList.add("hidden");
+        } else {
+          ideaBtn.textContent = "Phê duyệt ý tưởng mới";
+          replicationBtn.classList.remove("hidden");
+        }
 
         ideaBtn.className = currentIeApprovalTab === "idea_review"
           ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
@@ -851,6 +1033,41 @@
         councilBtn.className = currentBodApprovalTab === "council_review"
           ? "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]"
           : "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+      }
+
+      function renderDualRoleTabs() {
+        const wrap = document.getElementById("dualRoleApprovalTabs");
+        const deptBtn = document.getElementById("dualRoleDeptTabBtn");
+        const digitalBtn = document.getElementById("dualRoleDigitalTabBtn");
+        if (!wrap || !deptBtn || !digitalBtn) return;
+        const show = isDualDeptDigital();
+        wrap.classList.toggle("hidden", !show);
+        if (!show) return;
+        const activeClass = "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all bg-primary text-white shadow-[0px_14px_28px_rgba(0,43,115,0.16)]";
+        const inactiveClass = "rounded-[1.1rem] px-5 py-3 text-sm font-semibold transition-all text-text-main hover:bg-white";
+        deptBtn.className = currentDualRoleTab === "dept" ? activeClass : inactiveClass;
+        digitalBtn.className = currentDualRoleTab === "digital" ? activeClass : inactiveClass;
+      }
+
+      async function setDualRoleTab(tab) {
+        currentDualRoleTab = tab === "digital" ? "digital" : "dept";
+        if (currentDualRoleTab === "digital") {
+          currentRole = "digital_manager";
+          currentIeApprovalTab = "idea_review";
+        } else {
+          currentRole = dualRoleDeptRole();
+        }
+        const statusFilter = document.getElementById("statusFilter");
+        if (statusFilter) statusFilter.value = "";
+        renderDualRoleTabs();
+        renderRoleSwitcher();
+        syncStatusFilterOptions();
+        renderIeApprovalTabs();
+        renderBodApprovalTabs();
+        renderCouncilFilterOptions();
+        renderPendingFilterButton();
+        document.getElementById("roleHint").textContent = currentRoleHint({});
+        await loadQueue();
       }
 
       function setBodApprovalTab(tab) {
@@ -890,10 +1107,23 @@
       }
 
       function getDisplayedQueueItems() {
-        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+        if (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review") {
           return getDisplayedReplicationItems();
         }
-        const items = Array.isArray(queueData?.items) ? queueData.items : [];
+        let items = Array.isArray(queueData?.items) ? queueData.items : [];
+        if (currentRole === "dept_manager" || currentRole === "sub_dept_manager" || currentRole === "unit_represent") {
+          items = items.filter((item) => Number(item.unit_id) === Number(queueData?.unit_id));
+        } else if (currentRole === "digital_manager") {
+          items = items.filter(
+            (item) => isDigitizationCategory(item.category)
+              && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
+          );
+        } else if (currentRole === "ie_manager") {
+          items = items.filter(
+            (item) => !isDigitizationCategory(item.category)
+              && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
+          );
+        }
         let base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
           const allowed = new Set(allowedBodMoneyResultTypes());
@@ -931,16 +1161,30 @@
       }
 
       function getActiveMetrics() {
-        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+        if (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review") {
           return replicationQueueData.metrics || {};
         }
-        return queueData.metrics || {};
+        let items = Array.isArray(queueData?.items) ? queueData.items : [];
+        if (currentRole === "dept_manager" || currentRole === "sub_dept_manager" || currentRole === "unit_represent") {
+          items = items.filter((item) => Number(item.unit_id) === Number(queueData?.unit_id));
+        } else if (currentRole === "digital_manager") {
+          items = items.filter(
+            (item) => isDigitizationCategory(item.category)
+              && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
+          );
+        } else if (currentRole === "ie_manager") {
+          items = items.filter(
+            (item) => !isDigitizationCategory(item.category)
+              && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
+          );
+        }
+        return calculateFrontendMetrics(currentRole, items);
       }
 
       function renderPendingFilterButton() {
         const button = document.getElementById("pendingReviewToggle");
         if (!button) return;
-        if (currentRole === "unit_represent" || (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review")) {
+        if (currentRole === "unit_represent" || (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review")) {
           button.classList.add("hidden");
           return;
         }
@@ -1029,7 +1273,7 @@
       function renderQueueHead() {
         const head = document.getElementById("queueHead");
         if (!head) return;
-        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+        if (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review") {
           head.innerHTML = `
             <tr>
               <th class="text-left px-6 py-4 font-bold text-text-main">Đơn vị áp dụng</th>
@@ -1092,7 +1336,7 @@
       function renderQueueColgroup() {
         const colgroup = document.getElementById("queueColgroup");
         if (!colgroup) return;
-        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+        if (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review") {
           colgroup.innerHTML = `
             <col class="w-[16%]" />
             <col class="w-[12%]" />
@@ -1149,7 +1393,7 @@
         try {
           await api.approveBodRegisterSlip(ideaId, employeeCode);
           await loadQueue();
-          showNotification("Đã duyệt phiếu nhận tiền", "success");
+          showNotification("Đã duyệt phiếu nhận thưởng nóng", "success");
         } catch (error) {
           showNotification(error.message, "error");
         } finally {
@@ -1320,7 +1564,7 @@
         renderQueueHead();
         tbody.innerHTML = "";
         document.getElementById("tableMeta").textContent = `${items.length} phiếu`;
-        const emptyColspan = currentRole === "ie_manager" && currentIeApprovalTab === "replication_review"
+        const emptyColspan = isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review"
           ? 6
           : currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
             ? 6
@@ -1332,7 +1576,7 @@
           return;
         }
 
-        if (currentRole === "ie_manager" && currentIeApprovalTab === "replication_review") {
+        if (isSecondLevelRole(currentRole) && currentIeApprovalTab === "replication_review") {
           items.forEach((item) => {
             const tr = document.createElement("tr");
             const approved = Boolean(item.approve);
@@ -1381,7 +1625,7 @@
               <td class="px-6 py-5 align-top text-center pointer-events-auto" data-register-approve-cell="${item.id}">
                 ${
                   canApproveSlip
-                    ? `<button type="button" class="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt phiếu nhận tiền" data-register-approve="${item.id}"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
+                    ? `<button type="button" class="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8aa9df] bg-white text-[#4f6e9f] shadow-[0px_8px_18px_rgba(79,110,159,0.08)]" title="Tick duyệt phiếu nhận thưởng nóng" data-register-approve="${item.id}"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></button>`
                     : approved
                       ? '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[#8bd3a8] bg-[#eef9f2] text-[#0f7a43]"><span class="material-symbols-outlined text-[22px]">check_box</span></span>'
                       : '<span class="inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-300"><span class="material-symbols-outlined text-[22px]">check_box_outline_blank</span></span>'
@@ -1457,7 +1701,7 @@
         items.forEach((item) => {
           const tr = document.createElement("tr");
           const isRejected = item.status === "REJECTED";
-          const isIeIdeaQueue = currentRole === "ie_manager" && currentIeApprovalTab === "idea_review";
+          const isIeIdeaQueue = isSecondLevelRole(currentRole) && currentIeApprovalTab === "idea_review";
           const hasIeScore = item.ie_score !== null && item.ie_score !== undefined;
           const hasIeDecision = Boolean(item.ie_result_type);
           const councilLocked = isCouncilScored(item);
@@ -1649,7 +1893,7 @@
 
       function isIeEditMode(detail = activeDetail) {
         const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
-        return currentRole === "ie_manager" && currentIeModalMode === "edit" && Boolean(latestCouncilReview(reviews)) && !isCouncilScored(detail);
+        return isSecondLevelRole(currentRole) && currentIeModalMode === "edit" && Boolean(latestCouncilReview(reviews)) && !isCouncilScored(detail);
       }
 
       function ieDecisionValue() {
@@ -1657,11 +1901,11 @@
       }
 
       function ieRequiresScore() {
-        return currentRole !== "ie_manager" || ieDecisionValue() === "BCT_APPROVED";
+        return !isSecondLevelRole(currentRole) || ieDecisionValue() === "BCT_APPROVED";
       }
 
       function ieMeasuredBenefitEnabled() {
-        if (currentRole !== "ie_manager" || ieDecisionValue() !== "BCT_APPROVED") return false;
+        if (!isSecondLevelRole(currentRole) || ieDecisionValue() !== "BCT_APPROVED") return false;
         const k3Type = document.getElementById("scoreK3Type")?.value || "";
         return ["TIME_SAVED", "COST_SAVED"].includes(k3Type);
       }
@@ -1670,7 +1914,7 @@
         if (detail?.actual_benefit) {
           return true;
         }
-        if (currentRole === "ie_manager" && detail?.can_review) {
+        if (isSecondLevelRole(currentRole) && detail?.can_review) {
           return ieMeasuredBenefitEnabled();
         }
         const statusOk = ["DEPT_APPROVED", "COUNCIL_REVIEW", "LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(detail.status);
@@ -1727,11 +1971,12 @@
 
       function renderActualBenefitSection(detail, scores = [], options = {}) {
         const editMode = isIeEditMode(detail);
-        const shouldRender = (currentRole === "ie_manager" && (detail?.can_review || editMode)) || canEvaluateActualBenefit(detail, scores);
+        const shouldRender = (isSecondLevelRole(currentRole) && (detail?.can_review || editMode)) || canEvaluateActualBenefit(detail, scores);
         if (!shouldRender) return "";
         const item = detail.actual_benefit || {};
+        const configuredLaborSecondPrice = resolveIdeaLaborSecondPrice(detail);
         const readOnly = Boolean(options.readOnly);
-        const hideUntilIeDecision = currentRole === "ie_manager" && detail?.can_review && !editMode && !readOnly;
+        const hideUntilIeDecision = isSecondLevelRole(currentRole) && detail?.can_review && !editMode && !readOnly;
         const sectionClassName = options.embedded
           ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
           : "rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5";
@@ -1759,7 +2004,8 @@
               </label>
               <label class="space-y-2">
                 <span class="text-xs uppercase tracking-[0.2em] text-text-soft">\u0110\u01a1n gi\u00e1 gi\u00e2y CN</span>
-                <input id="actualLaborSecondPrice" type="number" min="0" step="0.01" value="${safeText(item.labor_second_price ?? 6.14)}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" ${readOnly ? "readonly disabled" : ""} />
+                <input id="actualLaborSecondPrice" type="number" min="0" step="0.01" value="${safeText(configuredLaborSecondPrice)}" class="w-full rounded-2xl border-none bg-surface-low" oninput="updateActualBenefitPreview()" readonly disabled />
+                <div class="text-xs text-text-soft">Lấy tự động theo năm gửi ý tưởng trong settings.</div>
               </label>
               <div class="rounded-2xl bg-[#f6f8ff] px-4 py-3">
                 <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Hi\u1ec7u su\u1ea5t c\u1ea3i thi\u1ec7n</div>
@@ -1779,7 +2025,7 @@
                 ? '<div class="rounded-2xl bg-[#f6f8ff] px-4 py-3 text-sm text-text-soft">Th\u00f4ng tin n\u00e0y \u0111ang \u1edf ch\u1ebf \u0111\u1ed9 xem. Click v\u00e0o d\u00f2ng \u00fd t\u01b0\u1edfng ho\u1eb7c b\u1ea5m S\u1eeda \u0111i\u1ec3m \u0111\u1ec3 m\u1edf ch\u1ebf \u0111\u1ed9 ch\u1ec9nh s\u1eeda.</div>'
                 : editMode
                 ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i s\u1ebd \u0111\u01b0\u1ee3c l\u01b0u c\u00f9ng l\u00fac khi b\u1ea5m n\u00fat L\u01b0u ch\u1ec9nh s\u1eeda.</div>'
-                : currentRole === "ie_manager" && detail?.can_review
+                : isSecondLevelRole(currentRole) && detail?.can_review
                 ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i s\u1ebd \u0111\u01b0\u1ee3c l\u01b0u c\u00f9ng l\u00fac khi b\u1ea5m n\u00fat duy\u1ec7t \u1edf cu\u1ed1i popup.</div>'
                 : `<div class="flex justify-end">
                     <button type="button" class="rounded-2xl bg-primary text-white px-5 py-3 font-semibold" onclick="saveActualBenefit()">L\u01b0u gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i</button>
@@ -2059,12 +2305,12 @@
 
       function renderScoreForm(detail, scores = []) {
         const allowIeEdit = isIeEditMode(detail);
-        if (!(detail?.can_review || allowIeEdit) || !["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return "";
+        if (!(detail?.can_review || allowIeEdit) || !["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole)) return "";
         const k1Options = getCriteriaGroup("K1");
         const k2EasyOptions = getCriteriaGroup("K2_EASY");
         const k2HardOptions = getCriteriaGroup("K2_HARD");
         const k3UnmeasurableOptions = getCriteriaGroup("K3_UNMEASURABLE");
-        const isIeManager = currentRole === "ie_manager";
+        const isIeManager = isSecondLevelRole(currentRole);
         const showIeDecisionBlock = isIeManager && (detail?.can_review || allowIeEdit);
         const scoreIntro = allowIeEdit
           ? "Bạn có thể chỉnh sửa lại bảng điểm Ban cải tiến đã chấm và cập nhật giá trị làm lợi nếu cần."
@@ -2076,26 +2322,27 @@
               <div class="mt-2 text-sm text-text-soft">${scoreIntro}</div>
             </div>
             ${showIeDecisionBlock ? `
-              <div class="rounded-[1.75rem] border border-slate-100 bg-[#fbfcfd] p-6 space-y-4">
+              <div class="rounded-[1.75rem] border-2 border-[#f59e0b] bg-[linear-gradient(135deg,#fff7ed_0%,#eff6ff_100%)] p-6 space-y-5 shadow-[0px_18px_40px_rgba(245,158,11,0.18)] ring-4 ring-[#fef3c7]">
                 <div class="flex items-start justify-between gap-4">
                   <div>
-                    <div class="text-xs uppercase tracking-[0.25em] text-text-soft">Kết luận cấp 2</div>
-                    <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.18)]">BCT / Đơn vị tự xét duyệt</div>
+                    <div class="text-sm font-black uppercase tracking-[0.22em] text-[#9a3412]">Kết luận cấp 2</div>
+                    <div class="mt-2 inline-flex items-center rounded-full bg-primary px-5 py-3 text-lg font-black font-display text-white shadow-[0px_16px_32px_rgba(0,43,115,0.22)]">BCT / Đơn vị tự xét duyệt</div>
+                    <div class="mt-3 text-sm font-semibold text-[#7c2d12]">Chọn kết luận này quyết định luồng xử lý tiếp theo của ý tưởng.</div>
                   </div>
-                  <div class="px-4 py-2 rounded-full bg-[#eef4ff] text-primary text-xs uppercase tracking-[0.22em]">Bắt buộc chọn</div>
+                  <div class="px-4 py-2 rounded-full bg-[#f59e0b] text-white text-xs font-black uppercase tracking-[0.18em] shadow-[0px_10px_20px_rgba(245,158,11,0.24)]">Bắt buộc chọn</div>
                 </div>
                 <div class="space-y-3">
-                  <label class="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-text-soft">
+                  <label class="flex items-center gap-2 text-sm font-black uppercase tracking-[0.22em] text-[#9a3412]">
                     <span>Kết luận BCT</span>
                     <span
-                      class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#eef4ff] text-[10px] font-black text-primary cursor-help"
-                      title="BCT Không duyệt: Không đủ điều kiện nhận tiền đăng ký. Đơn vị tự xét duyệt: Đủ điều kiện nhận tiền đăng ký, đơn vị tự xét thưởng thêm và vẫn chuyển tiếp cho lãnh đạo. BCT Duyệt: Đủ điều kiện nhận tiền đăng ký, được đưa lên Hội đồng và cần chấm điểm."
+                      class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#9a3412] cursor-help"
+                      title="BCT Không duyệt: Không đủ điều kiện nhận thưởng nóng. Đơn vị tự xét duyệt: Đủ điều kiện nhận thưởng nóng, đơn vị tự xét thưởng thêm và vẫn chuyển tiếp cho lãnh đạo. BCT Duyệt: Đủ điều kiện nhận thưởng nóng, được đưa lên Hội đồng và cần chấm điểm."
                     >i</span>
                   </label>
-                  <select id="ieResultDecision" class="w-full rounded-2xl border-none bg-surface-low" onchange="onIeDecisionChange()">
+                  <select id="ieResultDecision" class="w-full rounded-2xl border-2 border-[#f59e0b] bg-white px-5 py-4 text-base font-black text-[#0f172a] shadow-inner focus:border-[#002b73] focus:ring-4 focus:ring-[#bfdbfe]" onchange="onIeDecisionChange()">
                     ${IE_RESULT_OPTIONS.map((item) => `<option value="${item.value}" title="${safeAttr(item.note)}">${safeText(item.label)}</option>`).join("")}
                   </select>
-                  <div id="ieResultDecisionMeta" class="rounded-2xl border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f7fbff_100%)] px-5 py-4 text-[15px] font-semibold leading-7 text-[#0b3d91] shadow-[0px_10px_24px_rgba(24,71,169,0.08)]">Chọn 1 kết luận để tiếp tục.</div>
+                  <div id="ieResultDecisionMeta" class="rounded-2xl border border-[#fdba74] bg-white/80 px-5 py-4 text-[15px] font-bold leading-7 text-[#7c2d12] shadow-[0px_10px_24px_rgba(245,158,11,0.08)]">Chọn 1 kết luận để tiếp tục.</div>
                 </div>
               </div>
             ` : ""}
@@ -2168,12 +2415,18 @@
             </div>
             ${isIeManager && (detail?.can_review || allowIeEdit) ? renderActualBenefitSection(detail, scores, { embedded: true }) : ""}
             ${showIeDecisionBlock ? `
-              <div id="ieStandardizationWrap" class="hidden space-y-3 rounded-[1.5rem] border border-slate-100 bg-[#fbfcfd] p-6">
-                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Loại ý tưởng đưa lên Hội đồng</label>
-                <select id="ieStandardizationDecision" class="w-full rounded-2xl border-none bg-surface-low">
+              <div id="ieStandardizationWrap" class="hidden space-y-4 rounded-[1.75rem] border-2 border-[#f59e0b] bg-[linear-gradient(135deg,#fff7ed_0%,#eff6ff_100%)] p-6 shadow-[0px_18px_40px_rgba(245,158,11,0.18)] ring-4 ring-[#fef3c7]">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <label class="text-sm font-black uppercase tracking-[0.22em] text-[#9a3412]">Loại ý tưởng đưa lên Hội đồng</label>
+                    <div class="mt-2 text-sm font-semibold text-[#7c2d12]">Bắt buộc chọn đúng trước khi BCT duyệt chuyển lên Hội đồng.</div>
+                  </div>
+                  <span class="inline-flex w-fit items-center rounded-full bg-[#f59e0b] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white shadow-[0px_10px_20px_rgba(245,158,11,0.24)]">Quan trọng</span>
+                </div>
+                <select id="ieStandardizationDecision" class="w-full rounded-2xl border-2 border-[#f59e0b] bg-white px-5 py-4 text-base font-black text-[#0f172a] shadow-inner focus:border-[#002b73] focus:ring-4 focus:ring-[#bfdbfe]">
                   ${IE_STANDARDIZATION_OPTIONS.map((item) => `<option value="${item.value}">${safeText(item.label)}</option>`).join("")}
                 </select>
-                <div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Cả 2 loại đều chuyển lên Hội đồng. "Đưa vào chuẩn hoá" là dấu hiệu để Hội đồng ưu tiên đánh giá cao hơn.</div>
+                <div class="rounded-2xl border border-[#fdba74] bg-white/80 px-5 py-4 text-sm font-semibold leading-7 text-[#7c2d12]">Cả 2 loại đều chuyển lên Hội đồng. "Đưa vào chuẩn hoá" là dấu hiệu để Hội đồng ưu tiên đánh giá cao hơn.</div>
               </div>
             ` : ""}
             </div>
@@ -2185,10 +2438,10 @@
         const body = document.getElementById("modalBody");
         const actions = document.getElementById("modalActions");
         const canEditIeScore = isIeEditMode(detail);
-        const isIeViewMode = currentRole === "ie_manager" && currentIeModalMode === "view";
+        const isIeViewMode = isSecondLevelRole(currentRole) && currentIeModalMode === "view";
         const canApprove = detail.can_review
-          && ["dept_manager", "sub_dept_manager", "ie_manager", "admin"].includes(currentRole);
-        const isIeManager = currentRole === "ie_manager";
+          && ["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager", "admin"].includes(currentRole);
+        const isIeManager = isSecondLevelRole(currentRole);
         const reviews = Array.isArray(detail.reviews) ? detail.reviews : [];
         const scores = Array.isArray(detail.scores) ? detail.scores : [];
         const hasIeScoreDetail = Boolean(latestIeScore(scores));
@@ -2336,7 +2589,7 @@
         const beforeSeconds = Number(document.getElementById("actualBeforeSeconds")?.value || 0);
         const afterSeconds = Number(document.getElementById("actualAfterSeconds")?.value || 0);
         const quantity = Number(document.getElementById("actualQuantity")?.value || 0);
-        const laborSecondPrice = Number(document.getElementById("actualLaborSecondPrice")?.value || 6.14);
+        const laborSecondPrice = Number(document.getElementById("actualLaborSecondPrice")?.value || resolveIdeaLaborSecondPrice(activeDetail));
         const savedSeconds = Math.max(0, beforeSeconds - afterSeconds);
         const improvementPercent = beforeSeconds > 0 ? (savedSeconds / beforeSeconds) * 100 : 0;
         const benefitValue = savedSeconds * quantity * laborSecondPrice;
@@ -2383,7 +2636,7 @@
         const meta = document.getElementById("ieResultDecisionMeta");
         const scoreWrap = document.getElementById("scoreWizardWrap");
         const actualBenefitSection = document.getElementById("actualBenefitSection");
-        if (currentRole !== "ie_manager") {
+        if (!isSecondLevelRole(currentRole)) {
           if (scoreWrap) {
             scoreWrap.classList.remove("hidden");
           }
@@ -2396,8 +2649,8 @@
         if (meta) {
           meta.textContent = selected ? selected.note : "Chọn 1 kết luận để tiếp tục.";
           meta.className = selected
-            ? "rounded-2xl border border-[#7fb0ff] bg-[linear-gradient(135deg,#e8f2ff_0%,#f5faff_100%)] px-5 py-4 text-[15px] font-bold leading-7 text-[#0a3b8f] shadow-[0px_14px_30px_rgba(24,71,169,0.12)]"
-            : "rounded-2xl border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f7fbff_100%)] px-5 py-4 text-[15px] font-semibold leading-7 text-[#0b3d91] shadow-[0px_10px_24px_rgba(24,71,169,0.08)]";
+            ? "rounded-2xl border border-[#fdba74] bg-white/80 px-5 py-4 text-[15px] font-bold leading-7 text-[#7c2d12] shadow-[0px_10px_24px_rgba(245,158,11,0.08)]"
+            : "rounded-2xl border border-[#fdba74] bg-white/80 px-5 py-4 text-[15px] font-bold leading-7 text-[#7c2d12] shadow-[0px_10px_24px_rgba(245,158,11,0.08)]";
         }
         const showScore = (decision?.value || "") === "BCT_APPROVED";
         if (standardWrap) {
@@ -2475,7 +2728,7 @@
           unmeasurable.classList.remove("hidden");
           meta.textContent = "Mỗi tiêu chí tick được cộng 10 điểm.";
           const actualBenefitSection = document.getElementById("actualBenefitSection");
-          if (actualBenefitSection && currentRole === "ie_manager" && activeDetail?.can_review) {
+          if (actualBenefitSection && isSecondLevelRole(currentRole) && activeDetail?.can_review) {
             actualBenefitSection.classList.add("hidden");
           }
           return;
@@ -2486,13 +2739,13 @@
         option.innerHTML = items.map((item) => `<option value="${item.code}">${safeText(item.code)} • ${safeText(item.label)} • ${safeText(item.score)}đ</option>`).join("");
         meta.textContent = items.map((item) => `${item.code}: ${item.label} = ${item.score}đ`).join(" | ");
         const actualBenefitSection = document.getElementById("actualBenefitSection");
-        if (actualBenefitSection && currentRole === "ie_manager" && activeDetail?.can_review) {
+        if (actualBenefitSection && isSecondLevelRole(currentRole) && activeDetail?.can_review) {
           actualBenefitSection.classList.toggle("hidden", !ieMeasuredBenefitEnabled());
         }
       }
 
       function applyIeScoreFormValues(detail) {
-        if (currentRole !== "ie_manager") return;
+        if (!isSecondLevelRole(currentRole)) return;
         const scores = Array.isArray(detail?.scores) ? detail.scores : [];
         const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
         const score = latestIeScore(scores);
@@ -2547,7 +2800,7 @@
           if (option) option.value = score.k3_option_code || option.value;
         }
         onK1Change();
-        if (currentRole === "ie_manager") {
+        if (isSecondLevelRole(currentRole)) {
           onIeDecisionChange();
         }
       }
@@ -2579,7 +2832,7 @@
       }
 
       function buildScorePayload() {
-        if (!["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole)) return null;
+        if (!["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole)) return null;
         const k1Type = document.getElementById("scoreK1")?.value || "";
         const k3Type = document.getElementById("scoreK3Type")?.value || "";
         const k2Type = document.getElementById("scoreK2Type")?.value || "";
@@ -2611,7 +2864,7 @@
         const beforeSeconds = Number(beforeRaw);
         const afterSeconds = Number(afterRaw);
         const quantity = Number(quantityRaw);
-        const laborSecondPrice = String(laborRaw).trim() === "" ? 6.14 : Number(laborRaw);
+        const laborSecondPrice = String(laborRaw).trim() === "" ? resolveIdeaLaborSecondPrice(activeDetail) : Number(laborRaw);
         const invalidFields = [];
         if (!Number.isFinite(beforeSeconds) || beforeSeconds <= 0) invalidFields.push("Trước cải tiến");
         if (!Number.isFinite(afterSeconds) || afterSeconds < 0) invalidFields.push("Sau cải tiến");
@@ -2691,7 +2944,7 @@
           comment: comment || null,
           recommend_unit_reward: false,
         };
-        if (currentRole === "ie_manager") {
+        if (isSecondLevelRole(currentRole)) {
           if (!ieDecision) {
             showNotification("IE phải chọn kết luận xét duyệt cấp 2", "error");
             return;
@@ -2706,10 +2959,10 @@
             payload.ie_result_type = standardDecision;
           }
         }
-        if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager"].includes(currentRole) && ieRequiresScore()) {
+        if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole) && ieRequiresScore()) {
           payload.score = buildScorePayload();
         }
-        if (action === "APPROVE" && currentRole === "ie_manager" && ieMeasuredBenefitEnabled()) {
+        if (action === "APPROVE" && isSecondLevelRole(currentRole) && ieMeasuredBenefitEnabled()) {
           const actualBenefitPayload = buildActualBenefitPayload();
           if (actualBenefitPayload) {
             payload.actual_benefit = actualBenefitPayload;
@@ -2721,7 +2974,7 @@
           await api.submitApprovalReview(payload);
           closeModal();
           await loadQueue();
-          if (currentRole === "ie_manager") {
+          if (isSecondLevelRole(currentRole)) {
             showNotification("Đã cập nhật kết quả xét duyệt cấp 2", "success");
           } else {
             showNotification(action === "APPROVE" ? "Đã duyệt phiếu" : "Đã cập nhật không duyệt", "success");
@@ -2738,7 +2991,8 @@
         const statusValue = document.getElementById("statusFilter").value;
         showLoading(true);
         try {
-          if (currentRole === "ie_manager") {
+          // Dual role digital tab: chỉ là digital_manager thuần – không load replication
+          if (isSecondLevelRole(currentRole) && !isDualDeptDigital()) {
             const [ideas, replications] = await Promise.all([
               api.getApprovalQueue(code, statusValue),
               api.getReplicationApprovalQueue(code),
@@ -2750,6 +3004,7 @@
             replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
           }
           renderKpis(getActiveMetrics());
+          renderDualRoleTabs();
           renderIeApprovalTabs();
           renderBodApprovalTabs();
           renderCouncilFilterOptions();
@@ -2773,9 +3028,27 @@
 
         const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
         currentUser = await api.getUserByCode(employeeCode).catch(() => null);
-        currentRole = currentUser?.role || "anonymous";
+        currentRoles = Array.isArray(currentUser?.roles) && currentUser.roles.length ? currentUser.roles : [currentUser?.role || "anonymous"];
+        currentRole = currentUser?.role || currentRoles[0] || "anonymous";
+        if (isDualDeptDigital()) {
+          // Dual dept+digital: bắt đầu ở tab "Duyệt đơn vị"
+          currentDualRoleTab = "dept";
+          currentRole = dualRoleDeptRole();
+        } else if (currentRoles.includes("digital_manager") && !["admin", "ie_manager", "bod_manager"].includes(currentRole)) {
+          currentRole = "digital_manager";
+        }
         scoreCriteria = typeof api.getScoreCriteria === "function" ? await api.getScoreCriteria().catch(() => null) : null;
+        if (["admin", "ie_manager", "digital_manager", "dept_manager", "sub_dept_manager", "bod_manager"].includes(currentRole) && typeof api.getLaborSecondPrices === "function") {
+          const laborSettings = await api.getLaborSecondPrices(employeeCode).catch(() => ({ items: [] }));
+          laborSecondPriceByYear = Object.fromEntries(
+            (Array.isArray(laborSettings?.items) ? laborSettings.items : []).map((item) => [Number(item.year), Number(item.labor_second_price)])
+          );
+        } else {
+          laborSecondPriceByYear = {};
+        }
         renderSessionInfo();
+        renderRoleSwitcher();
+        renderDualRoleTabs();
         syncStatusFilterOptions();
         if (currentRole === "admin") currentBodApprovalTab = "council_review";
         renderIeApprovalTabs();
@@ -2784,7 +3057,7 @@
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint({});
 
-        if (!["dept_manager", "sub_dept_manager", "ie_manager", "bod_manager", "admin", "unit_represent"].includes(currentRole)) {
+        if (!["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager", "bod_manager", "admin", "unit_represent"].includes(currentRole)) {
           document.getElementById("queueBody").innerHTML = '<tr><td colspan="10" class="px-6 py-10 text-center text-text-soft">Bạn không có quyền sử dụng module phê duyệt.</td></tr>';
           return;
         }

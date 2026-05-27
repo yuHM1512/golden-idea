@@ -3,13 +3,17 @@ from __future__ import annotations
 from datetime import date
 
 from sqlalchemy import inspect, text
+from sqlalchemy.orm import joinedload
 
 from app.database import SessionLocal
+from app.models.idea import Idea
+from app.models.payment import PaymentSlip
 from app.models.score_criteria import ScoreCriteria
 from app.models.score_criteria_set import ScoreCriteriaSet
 from app.models.unit import Unit
 from app.models.user import User, UserRole
 from app.database import engine
+from app.time_utils import to_display_tz
 
 
 UNITS_SEED: list[dict[str, str]] = [
@@ -343,6 +347,21 @@ def migrate_user_role_column() -> None:
         conn.execute(text("ALTER TABLE public.users ALTER COLUMN role SET DEFAULT 'employee'"))
 
 
+def migrate_user_roles_json_column() -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                UPDATE public.users
+                SET role = jsonb_build_array(coalesce(nullif(role, ''), 'employee'))::text
+                WHERE role IS NULL
+                   OR btrim(role) = ''
+                   OR left(btrim(role), 1) <> '['
+                """
+            )
+        )
+
+
 def normalize_employee_codes() -> None:
     """
     Normalize employee_code to uppercase for consistent lookups.
@@ -423,6 +442,49 @@ def migrate_idea_title_column() -> None:
         )
 
         conn.execute(text("ALTER TABLE public.ideas ALTER COLUMN title SET NOT NULL"))
+
+
+def migrate_idea_description_columns() -> None:
+    with engine.begin() as conn:
+        before_row = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'ideas'
+                  AND column_name = 'description_before'
+                """
+            )
+        ).fetchone()
+        if not before_row:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN description_before text"))
+
+        after_row = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'ideas'
+                  AND column_name = 'description_after'
+                """
+            )
+        ).fetchone()
+        if not after_row:
+            conn.execute(text("ALTER TABLE public.ideas ADD COLUMN description_after text"))
+
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas
+                SET description_after = description
+                WHERE (description_after IS NULL OR BTRIM(description_after) = '')
+                  AND description IS NOT NULL
+                  AND BTRIM(description) <> ''
+                """
+            )
+        )
 
 
 def migrate_idea_category_column() -> None:
@@ -738,6 +800,110 @@ def migrate_payment_slip_amount_default() -> None:
         conn.execute(text("UPDATE public.payment_slips SET amount = 100000.00 WHERE amount IS NULL OR amount = 50000.00"))
 
 
+def migrate_payment_slip_code_column() -> None:
+    with engine.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'payment_slips'
+                  AND column_name = 'register_reward_code'
+                """
+            )
+        ).fetchone()
+        if row:
+            return
+
+        conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN register_reward_code varchar(20)"))
+
+
+def backfill_payment_slip_codes() -> None:
+    db = SessionLocal()
+    try:
+        sequence_by_year: dict[str, int] = {}
+        for (raw_code,) in db.query(PaymentSlip.register_reward_code).filter(PaymentSlip.register_reward_code.is_not(None)).all():
+            code = str(raw_code or "").strip()
+            if "/" not in code:
+                continue
+            year, suffix = code.split("/", 1)
+            if len(year) == 4 and suffix.isdigit():
+                sequence_by_year[year] = max(sequence_by_year.get(year, 0), int(suffix))
+
+        ideas = (
+            db.query(Idea)
+            .options(joinedload(Idea.payment_slip))
+            .filter(Idea.bod_register_approved.is_(True))
+            .order_by(Idea.bod_register_approved_at.asc().nullslast(), Idea.id.asc())
+            .all()
+        )
+
+        changed = False
+        for idea in ideas:
+            slip = idea.payment_slip
+            if slip is None:
+                slip = PaymentSlip(
+                    idea_id=idea.id,
+                    employee_code=(idea.employee_code or "").strip().upper() or "-",
+                    employee_name=(idea.full_name or "").strip() or f"Idea {idea.id}",
+                    amount=100000.00,
+                )
+                db.add(slip)
+                db.flush()
+                changed = True
+
+            if (slip.register_reward_code or "").strip():
+                continue
+
+            approved_at = idea.bod_register_approved_at or idea.reviewed_at or idea.submitted_at
+            if approved_at is None:
+                continue
+            display_time = to_display_tz(approved_at) or approved_at
+            year = display_time.strftime("%Y")
+            next_sequence = sequence_by_year.get(year, 0) + 1
+            slip.register_reward_code = f"{year}/{next_sequence:02d}"
+            sequence_by_year[year] = next_sequence
+            changed = True
+
+        if changed:
+            db.commit()
+        else:
+            db.rollback()
+    finally:
+        db.close()
+
+
+def migrate_payment_slip_code_unique_index() -> None:
+    with engine.begin() as conn:
+        duplicates = conn.execute(
+            text(
+                """
+                SELECT register_reward_code
+                FROM public.payment_slips
+                WHERE register_reward_code IS NOT NULL
+                  AND btrim(register_reward_code) <> ''
+                GROUP BY register_reward_code
+                HAVING count(*) > 1
+                """
+            )
+        ).fetchall()
+        if duplicates:
+            duplicate_codes = ", ".join(str(row[0]) for row in duplicates[:10])
+            raise RuntimeError(f"Duplicate register_reward_code detected: {duplicate_codes}")
+
+        conn.execute(
+            text(
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_slips_register_reward_code
+                ON public.payment_slips (register_reward_code)
+                WHERE register_reward_code IS NOT NULL
+                  AND btrim(register_reward_code) <> ''
+                """
+            )
+        )
+
+
 def migrate_reward_batch_special_coefficients_column() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("reward_batches"):
@@ -956,6 +1122,22 @@ def migrate_app_settings_table() -> None:
         )
 
 
+def migrate_labor_second_prices_table() -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS public.labor_second_prices (
+                    year integer PRIMARY KEY,
+                    labor_second_price double precision NOT NULL,
+                    updated_by varchar(50),
+                    updated_at timestamptz DEFAULT now()
+                )
+                """
+            )
+        )
+
+
 def seed_score_criteria() -> int:
     db = SessionLocal()
     try:
@@ -1035,7 +1217,7 @@ def seed_admin_user() -> bool:
                 User(
                     employee_code="ADMIN",
                     full_name="admin",
-                    role=UserRole.ADMIN.value,
+                    role='["admin"]',
                     unit_id=unit.id,
                     is_active=True,
                 )
@@ -1047,8 +1229,8 @@ def seed_admin_user() -> bool:
         if user.full_name != "admin":
             user.full_name = "admin"
             changed = True
-        if user.role != UserRole.ADMIN.value:
-            user.role = UserRole.ADMIN.value
+        if user.role != '["admin"]':
+            user.role = '["admin"]'
             changed = True
         if user.unit_id != unit.id:
             user.unit_id = unit.id

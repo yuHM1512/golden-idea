@@ -60,6 +60,30 @@ def _idea_title_fallback(description: str | None, idea_id: int | None = None) ->
     return f"Ý tưởng #{idea_id}" if idea_id else "Ý tưởng chưa đặt tên"
 
 
+def _compose_legacy_description(description_before: str | None, description_after: str | None) -> str:
+    before_text = (description_before or "").strip()
+    after_text = (description_after or "").strip()
+    if not before_text:
+        return after_text
+    return f"Trước cải tiến:\n{before_text}\n\nSau cải tiến:\n{after_text}"
+
+
+def _normalize_idea_descriptions(idea: IdeaCreate) -> tuple[str | None, str]:
+    before_text = (idea.description_before or "").strip() or None
+    after_text = (idea.description_after or "").strip()
+    legacy_text = (idea.description or "").strip()
+
+    if not after_text:
+        after_text = legacy_text
+    if not after_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vui lÃ²ng nháº­p mÃ´ táº£ sau cáº£i tiáº¿n",
+        )
+
+    return before_text, after_text
+
+
 def _normalize_participants(idea: IdeaCreate) -> list[dict[str, str]]:
     participants: list[dict[str, str]] = []
     for participant in idea.participants or []:
@@ -205,6 +229,8 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
             (participant["employee_code"] for participant in participants if participant["employee_code"]),
             None,
         )
+        description_before, description_after = _normalize_idea_descriptions(idea)
+        legacy_description = _compose_legacy_description(description_before, description_after)
 
         new_idea = Idea(
             full_name=_truncate(display_full_name, 255),
@@ -213,10 +239,12 @@ async def submit_idea(idea: IdeaCreate, db: Session = Depends(get_db)):
             phone_number=idea.phone_number,
             bo_phan=_truncate(idea.bo_phan, 255),
             position=idea.position,
-            title=_truncate(idea.title, 255) or _idea_title_fallback(idea.description),
+            title=_truncate(idea.title, 255) or _idea_title_fallback(description_after),
             product_code=idea.product_code,
             category=idea.category,
-            description=idea.description,
+            description=legacy_description,
+            description_before=description_before,
+            description_after=description_after,
             is_anonymous=idea.is_anonymous,
             unit_id=idea.unit_id,
             status=IdeaStatus.SUBMITTED,

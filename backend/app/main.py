@@ -13,22 +13,28 @@ from app.seed import (
     seed_admin_user,
     seed_score_criteria,
     migrate_user_role_column,
+    migrate_user_roles_json_column,
     migrate_users_unit_nullable,
     migrate_idea_participants_column,
     migrate_idea_bo_phan_column,
     migrate_idea_title_column,
+    migrate_idea_description_columns,
     normalize_employee_codes,
     migrate_idea_category_column,
     migrate_score_k2_type_column,
     migrate_score_criteria_tables,
     migrate_payment_slip_reward_columns,
     migrate_payment_slip_amount_default,
+    migrate_payment_slip_code_column,
+    backfill_payment_slip_codes,
+    migrate_payment_slip_code_unique_index,
     migrate_reward_batch_special_coefficients_column,
     migrate_ie_review_logic_columns,
     migrate_file_attachments_drive_columns,
     migrate_standardized_idea_replications_table,
     migrate_k3_cost_saved_criteria_codes,
     migrate_app_settings_table,
+    migrate_labor_second_prices_table,
     normalize_sample_idea_categories,
 )
 
@@ -42,22 +48,28 @@ async def lifespan(app: FastAPI):
     # Startup
     init_db()
     migrate_user_role_column()
+    migrate_user_roles_json_column()
     migrate_users_unit_nullable()
     migrate_idea_participants_column()
     migrate_idea_bo_phan_column()
     migrate_idea_title_column()
+    migrate_idea_description_columns()
     normalize_employee_codes()
     migrate_idea_category_column()
     migrate_score_k2_type_column()
     migrate_score_criteria_tables()
     migrate_payment_slip_reward_columns()
     migrate_payment_slip_amount_default()
+    migrate_payment_slip_code_column()
+    backfill_payment_slip_codes()
+    migrate_payment_slip_code_unique_index()
     migrate_reward_batch_special_coefficients_column()
     migrate_ie_review_logic_columns()
     migrate_file_attachments_drive_columns()
     migrate_standardized_idea_replications_table()
     migrate_k3_cost_saved_criteria_codes()
     migrate_app_settings_table()
+    migrate_labor_second_prices_table()
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:

@@ -28,6 +28,8 @@ function formatApiError(error, fallback) {
   return detail || fallback;
 }
 
+let ideaTaxonomyCache = null;
+
 const api = {
   // Submit new idea
   async submitIdea(formData) {
@@ -749,6 +751,42 @@ const api = {
     }
   },
 
+  async getLaborSecondPrices(employeeCode) {
+    try {
+      const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
+      const response = await fetch(`${API_BASE}/settings/labor-second-prices?${qs.toString()}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được cấu hình đơn giá giây');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Get labor second prices error:', error);
+      throw error;
+    }
+  },
+
+  async updateLaborSecondPrices(employeeCode, items) {
+    try {
+      const response = await fetch(`${API_BASE}/settings/labor-second-prices`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+          items: Array.isArray(items) ? items : [],
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không cập nhật được cấu hình đơn giá giây');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update labor second prices error:', error);
+      throw error;
+    }
+  },
+
   async updateEmailAutomation(employeeCode, enabled) {
     try {
       const response = await fetch(`${API_BASE}/settings/admin/email-automation`, {
@@ -766,6 +804,47 @@ const api = {
       return await response.json();
     } catch (error) {
       console.error('Update email automation error:', error);
+      throw error;
+    }
+  },
+
+  async getIdeaTaxonomy(forceRefresh = false) {
+    try {
+      if (!forceRefresh && ideaTaxonomyCache) {
+        return ideaTaxonomyCache;
+      }
+      const response = await fetch(`${API_BASE}/settings/idea-taxonomy`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không tải được cấu hình chủ đề ý tưởng');
+      }
+      ideaTaxonomyCache = await response.json();
+      return ideaTaxonomyCache;
+    } catch (error) {
+      console.error('Get idea taxonomy error:', error);
+      throw error;
+    }
+  },
+
+  async updateIdeaTaxonomy(employeeCode, payload) {
+    try {
+      const response = await fetch(`${API_BASE}/settings/admin/idea-taxonomy`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_code: (employeeCode || '').trim().toUpperCase(),
+          categories: Array.isArray(payload?.categories) ? payload.categories : [],
+          stages: Array.isArray(payload?.stages) ? payload.stages : [],
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Không cập nhật được cấu hình chủ đề ý tưởng');
+      }
+      ideaTaxonomyCache = await response.json();
+      return ideaTaxonomyCache;
+    } catch (error) {
+      console.error('Update idea taxonomy error:', error);
       throw error;
     }
   },
@@ -842,12 +921,34 @@ const api = {
 
   // Get categories
   getCategories() {
-    return [
-      { value: 'TOOLS', label: 'C\u00f4ng c\u1ee5 (C\u1eef g\u00e1, r\u00e1p form, ph\u1ee5 tr\u1ee3)' },
-      { value: 'PROCESS', label: 'Ph\u01b0\u01a1ng ph\u00e1p quy tr\u00ecnh' },
-      { value: 'DIGITIZATION', label: 'S\u1ed1 h\u00f3a' },
-      { value: 'OTHER', label: 'Kh\u00e1c' },
-    ];
+    const categories = Array.isArray(ideaTaxonomyCache?.categories)
+      ? ideaTaxonomyCache.categories
+      : [
+          { name: 'Số hoá', requires_stage: false },
+          { name: 'Quy trình', requires_stage: true },
+          { name: 'Thiết bị', requires_stage: true },
+          { name: 'Phụ trợ', requires_stage: true },
+          { name: 'Chuẩn bị', requires_stage: true },
+          { name: 'Cử gá', requires_stage: true },
+          { name: 'Form', requires_stage: true },
+          { name: 'Thao tác', requires_stage: true },
+        ];
+    return categories.map((item) => ({
+      value: item?.name || '',
+      label: item?.name || '',
+      requires_stage: item?.requires_stage !== false,
+    })).filter((item) => item.value);
+  },
+
+  getIdeaStages() {
+    return Array.isArray(ideaTaxonomyCache?.stages) ? ideaTaxonomyCache.stages : [];
+  },
+
+  categoryRequiresStage(categoryName) {
+    const normalized = String(categoryName || '').trim();
+    const categories = this.getCategories();
+    const matched = categories.find((item) => item.value === normalized);
+    return matched ? matched.requires_stage !== false : true;
   },
 };
 

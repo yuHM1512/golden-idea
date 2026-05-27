@@ -168,6 +168,8 @@ class ApprovalIdeaItem(BaseModel):
     category: str
     status: str
     description: str
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
     submitted_at: datetime
     attachments_count: int
     rejection_reason: Optional[str]

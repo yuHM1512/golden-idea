@@ -377,19 +377,35 @@
       </div>
     </div>
 
-    <script src="../js/api.js?v=20260428-unit-chart-filter"></script>
+    <script src="../js/api.js?v=20260525-library-replication-window"></script>
     <script>
       const CATEGORY_LABELS = {
         TOOLS: "Công cụ",
         PROCESS: "Phương pháp quy trình",
         DIGITIZATION: "Số hoá",
         OTHER: "Khác",
+        "Số hoá": "Số hoá",
+        "Quy trình": "Quy trình",
+        "Thiết bị": "Thiết bị",
+        "Phụ trợ": "Phụ trợ",
+        "Chuẩn bị": "Chuẩn bị",
+        "Cử gá": "Cử gá",
+        "Form": "Form",
+        "Thao tác": "Thao tác",
       };
       const CATEGORY_BADGE_CLASSES = {
         TOOLS: "bg-[#E8F1FF] text-[#1D4ED8]",
         PROCESS: "bg-[#ECFDF3] text-[#027A48]",
         DIGITIZATION: "bg-[#F5ECFF] text-[#7A28CB]",
         OTHER: "bg-[#F3F4F6] text-[#4B5563]",
+        "Số hoá": "bg-[#F5ECFF] text-[#7A28CB]",
+        "Quy trình": "bg-[#ECFDF3] text-[#027A48]",
+        "Thiết bị": "bg-[#E8F1FF] text-[#1D4ED8]",
+        "Phụ trợ": "bg-[#FEF3C7] text-[#B45309]",
+        "Chuẩn bị": "bg-[#DCFCE7] text-[#166534]",
+        "Cử gá": "bg-[#E0F2FE] text-[#0369A1]",
+        "Form": "bg-[#FCE7F3] text-[#BE185D]",
+        "Thao tác": "bg-[#F3F4F6] text-[#374151]",
       };
       const STATUS_LABELS = {
         DRAFT: "Nháp",
@@ -436,6 +452,23 @@
 
       function canReplicateIdea() {
         return Boolean(currentUser?.id) && currentLibraryTab !== "unit";
+      }
+
+      function subtractTwelveMonthsParts(parts) {
+        if (!parts) return null;
+        const year = Number(parts.year) - 1;
+        const month = Number(parts.month);
+        let day = Number(parts.day);
+        const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        if (day > lastDay) day = lastDay;
+        return { year, month, day };
+      }
+
+      function compareDateParts(a, b) {
+        if (!a || !b) return 0;
+        if (a.year !== b.year) return a.year - b.year;
+        if (a.month !== b.month) return a.month - b.month;
+        return a.day - b.day;
       }
 
       function resolveCurrentUserUnitName() {
@@ -546,6 +579,50 @@
         }).format(date);
       }
 
+      function getTimeZoneDateParts(value) {
+        if (!value) return null;
+        const date = parseUtcDate(value);
+        if (!date) return null;
+        const parts = new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(date);
+        const mapped = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return {
+          year: Number(mapped.year),
+          month: Number(mapped.month),
+          day: Number(mapped.day),
+        };
+      }
+
+      function getTodayTimeZoneParts() {
+        const parts = new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(new Date());
+        const mapped = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return {
+          year: Number(mapped.year),
+          month: Number(mapped.month),
+          day: Number(mapped.day),
+        };
+      }
+
+      function isReplicationEligibleByDate(submittedAt) {
+        const submittedParts = getTimeZoneDateParts(submittedAt);
+        if (!submittedParts) return false;
+        const cutoffParts = subtractTwelveMonthsParts(getTodayTimeZoneParts());
+        return compareDateParts(submittedParts, cutoffParts) >= 0;
+      }
+
+      function canReplicateRow(row) {
+        return canReplicateIdea() && isReplicationEligibleByDate(row?.submitted_at);
+      }
+
       function getTimeZoneYear(date = new Date()) {
         return Number(new Intl.DateTimeFormat("en-CA", {
           timeZone: DISPLAY_TIME_ZONE,
@@ -584,7 +661,10 @@
       function openReplicationModalById(ideaId) {
         if (!canReplicateIdea()) return;
         const row = currentLibraryRows.find((item) => Number(item.id) === Number(ideaId));
-        if (!row) return;
+        if (!row || !canReplicateRow(row)) {
+          alert("Chỉ nhân rộng được các ý tưởng trong 12 tháng gần nhất.");
+          return;
+        }
         activeReplicationIdea = row;
         document.getElementById("replicationUnit").value = currentUserUnitName || "";
         document.getElementById("replicationIdeaTitle").value = row?.title || "";
@@ -603,7 +683,7 @@
       }
 
       async function submitReplication() {
-        if (!activeReplicationIdea || !canReplicateIdea()) return;
+        if (!activeReplicationIdea || !canReplicateIdea() || !canReplicateRow(activeReplicationIdea)) return;
         const applyDate = document.getElementById("replicationApplyDate").value;
         const description = document.getElementById("replicationDescription").value.trim();
         if (!applyDate) {
@@ -1149,7 +1229,8 @@
           const unit = r.unit_name ? `${r.unit_name}` : "";
           const statusLabel = STATUS_LABELS[r.status] || r.status || "\u2014";
           const replicateCell = canReplicateIdea()
-            ? `
+            ? canReplicateRow(r)
+              ? `
             <td class="px-4 py-5 align-top text-center">
               <button
                 type="button"
@@ -1159,6 +1240,11 @@
               >
                 <span class="material-symbols-outlined text-[20px]">content_copy</span>
               </button>
+            </td>
+          `
+              : `
+            <td class="px-4 py-5 align-top text-center text-xs text-on-surface-variant">
+              Quá 12 tháng
             </td>
           `
             : "";
@@ -1266,19 +1352,24 @@
           });
         });
 
-        const [metrics, unitChart, categoryChart, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
-          api.getIdeaMetrics(),
-          api.getIdeasByUnit(),
-          api.getIdeasByCategory(),
-          api.getReplicationsByUnit(),
-          api.getTopReplicatedIdeas(5),
-        ]);
-        renderKpis(metrics);
-        unitChartLastData = unitChart || [];
-        renderUnitChart(unitChartLastData);
-        renderCategoryDonut(categoryChart);
-        renderReplicationUnitChart(replicationUnitChart || []);
-        renderTopReplicatedIdeas(topReplicatedIdeas || []);
+        try {
+          const [metrics, unitChart, categoryChart, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
+            api.getIdeaMetrics(),
+            api.getIdeasByUnit(),
+            api.getIdeasByCategory(),
+            api.getReplicationsByUnit(),
+            api.getTopReplicatedIdeas(5),
+          ]);
+          renderKpis(metrics);
+          unitChartLastData = unitChart || [];
+          renderUnitChart(unitChartLastData);
+          renderCategoryDonut(categoryChart);
+          renderReplicationUnitChart(replicationUnitChart || []);
+          renderTopReplicatedIdeas(topReplicatedIdeas || []);
+        } catch (error) {
+          console.error("Library dashboard bootstrap error:", error);
+        }
+
         await loadIdeas(true);
 
         const monthSel = document.getElementById("unitChartMonth");
@@ -1300,7 +1391,7 @@
 
       init().catch((e) => {
         console.error(e);
-        alert("Kho \u00fd t\u01b0\u1edfng: kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u. H\u00e3y restart backend v\u00e0 reload.");
+        alert(`Kho ý tưởng: ${e?.message || "không tải được dữ liệu"}`);
       });
     </script>
   </body>

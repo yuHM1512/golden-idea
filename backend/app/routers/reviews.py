@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.actual_benefit import ActualBenefitEvaluation
 from app.models.payment import PaymentSlip
 from app.models.idea import Idea, IdeaStatus
+from app.models.labor_second_price import LaborSecondPrice
 from app.models.review import IdeaReview, ReviewAction, ReviewLevel
 from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_revision import IdeaScoreRevision
@@ -19,8 +20,11 @@ from app.models.score_criteria import ScoreCriteria
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
+from app.routers.payments import _assign_register_reward_code, _get_or_create_payment_slip
+from app.services.app_settings import get_json_setting
 from app.services.email_notifications import send_approval_stage_email
-from app.time_utils import now_utc
+from app.services.roles import has_role, is_digitization_category, primary_role, user_roles
+from app.time_utils import now_utc, to_display_tz
 from app.schemas import (
     ActualBenefitInput,
     ActualBenefitView,
@@ -45,6 +49,9 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
+
+LABOR_SECOND_PRICES_KEY = "labor_second_prices"
+DEFAULT_LABOR_SECOND_PRICE = 6.14
 
 IE_RESULT_BCT_REJECTED = "BCT_REJECTED"
 IE_RESULT_UNIT_REVIEW = "UNIT_REVIEW"
@@ -150,7 +157,11 @@ def _idea_contains_employee_code(idea: Idea, employee_code: str) -> bool:
 
 
 def _role_name(user: User | None) -> str:
-    return (user.role or "").strip() if user else "anonymous"
+    return primary_role(user_roles(user)) if user else "anonymous"
+
+
+def _idea_uses_digital_review(idea: Idea | None) -> bool:
+    return is_digitization_category(getattr(idea, "category", None))
 
 
 def _find_user_by_employee_code(db: Session, employee_code: str) -> User | None:
@@ -170,23 +181,36 @@ def _require_user(db: Session, employee_code: str) -> User:
     return user
 
 
-def _scope_kind(user: User) -> str:
-    role = _role_name(user)
-    if role in {"dept_manager", "sub_dept_manager"}:
-        return "dept"
-    if role == "ie_manager":
-        return "ie"
-    if role == "bod_manager":
-        return "bod"
-    if role == "admin":
+def _scope_kind(user: User, idea: Idea | None = None) -> str:
+    if has_role(user, "admin"):
         return "admin"
-    if role == "unit_represent":
+    if idea is not None:
+        status_value = _normalize_status(idea.status)
+        if has_role(user, "bod_manager") and status_value == IdeaStatus.LEADERSHIP_REVIEW.value:
+            return "bod"
+        if status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}:
+            if _idea_uses_digital_review(idea) and has_role(user, "digital_manager"):
+                return "ie"
+            if not _idea_uses_digital_review(idea) and has_role(user, "ie_manager"):
+                return "ie"
+        if (
+            has_role(user, "dept_manager") or has_role(user, "sub_dept_manager")
+        ) and status_value in {IdeaStatus.SUBMITTED.value, IdeaStatus.UNDER_REVIEW.value}:
+            return "dept"
+    role = _role_name(user)
+    if role in {"ie_manager", "digital_manager"} or has_role(user, "ie_manager") or has_role(user, "digital_manager"):
+        return "ie"
+    if role in {"dept_manager", "sub_dept_manager"} or has_role(user, "dept_manager") or has_role(user, "sub_dept_manager"):
+        return "dept"
+    if role == "bod_manager" or has_role(user, "bod_manager"):
+        return "bod"
+    if role == "unit_represent" or has_role(user, "unit_represent"):
         return "unit_represent"
     return "anonymous"
 
 
 def _review_level(user: User, idea: Idea) -> Optional[ReviewLevel]:
-    scope = _scope_kind(user)
+    scope = _scope_kind(user, idea)
     if scope == "dept":
         return ReviewLevel.DEPT_HEAD
     if scope == "ie":
@@ -215,13 +239,33 @@ def _visible_statuses(user: User) -> Optional[set[str]]:
     return None
 
 
+def _is_visible_to_user(user: User, idea: Idea) -> bool:
+    status_value = _normalize_status(idea.status)
+    if has_role(user, "admin"):
+        return True
+    if (has_role(user, "dept_manager") or has_role(user, "sub_dept_manager") or has_role(user, "unit_represent")) and idea.unit_id == user.unit_id:
+        if status_value in DEPT_VISIBLE_STATUSES:
+            return True
+    if has_role(user, "ie_manager") and not _idea_uses_digital_review(idea):
+        if status_value in IE_VISIBLE_STATUSES:
+            return status_value != IdeaStatus.REJECTED.value or _latest_council_review_row(idea) is not None
+    if has_role(user, "digital_manager") and _idea_uses_digital_review(idea):
+        if status_value in IE_VISIBLE_STATUSES:
+            return status_value != IdeaStatus.REJECTED.value or _latest_council_review_row(idea) is not None
+    if has_role(user, "bod_manager") and status_value in BOD_VISIBLE_STATUSES:
+        return True
+    return False
+
+
 def _can_review(user: User, idea: Idea) -> bool:
-    scope = _scope_kind(user)
+    scope = _scope_kind(user, idea)
     status_value = _normalize_status(idea.status)
     if scope == "dept":
         return idea.unit_id == user.unit_id and status_value in {IdeaStatus.SUBMITTED.value, IdeaStatus.UNDER_REVIEW.value}
     if scope == "ie":
-        return status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
+        if _idea_uses_digital_review(idea):
+            return has_role(user, "digital_manager") and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
+        return has_role(user, "ie_manager") and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
     if scope == "bod":
         return status_value == IdeaStatus.LEADERSHIP_REVIEW.value and not bool(idea.bod_register_approved)
     if scope == "admin":
@@ -251,7 +295,7 @@ def _next_status(user: User, action: ReviewAction) -> IdeaStatus:
 def _score_role_bucket(role: str) -> Optional[str]:
     if role in {"dept_manager", "sub_dept_manager"}:
         return "dept"
-    if role == "ie_manager":
+    if role in {"ie_manager", "digital_manager"}:
         return "ie"
     return None
 
@@ -424,6 +468,37 @@ def _has_measurable_ie_score(idea: Idea) -> bool:
     return False
 
 
+def _idea_submitted_year(idea: Idea) -> int | None:
+    submitted = to_display_tz(idea.submitted_at)
+    if submitted is None:
+        return None
+    return submitted.year
+
+
+def _resolve_labor_second_price(db: Session, idea: Idea, fallback: float = DEFAULT_LABOR_SECOND_PRICE) -> float:
+    submitted_year = _idea_submitted_year(idea)
+    if submitted_year is None:
+        return fallback
+    row = db.query(LaborSecondPrice).filter(LaborSecondPrice.year == submitted_year).first()
+    if row is not None and row.labor_second_price >= 0:
+        return float(row.labor_second_price)
+    raw_items = get_json_setting(LABOR_SECOND_PRICES_KEY, default=None, db=db)
+    if not isinstance(raw_items, list):
+        return fallback
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            if int(item.get("year")) != submitted_year:
+                continue
+            price = float(item.get("labor_second_price"))
+        except (TypeError, ValueError):
+            continue
+        if price >= 0:
+            return price
+    return fallback
+
+
 def _upsert_actual_benefit_record(
     db: Session,
     *,
@@ -431,6 +506,8 @@ def _upsert_actual_benefit_record(
     user: User,
     payload: ApprovalActualBenefitInput | ActualBenefitInput,
 ) -> ActualBenefitEvaluation:
+    if _scope_kind(user, idea) not in {"ie", "admin"}:
+        raise HTTPException(status_code=403, detail="Chỉ IE hoặc admin được đánh giá giá trị làm lợi thực tế")
     status_value = _normalize_status(idea.status)
     if status_value not in {
         IdeaStatus.DEPT_APPROVED.value,
@@ -453,8 +530,9 @@ def _upsert_actual_benefit_record(
     if payload.labor_second_price < 0:
         raise HTTPException(status_code=400, detail="Đơn giá giây CN không được âm")
 
+    effective_labor_second_price = _resolve_labor_second_price(db, idea, fallback=payload.labor_second_price)
     improvement_percent = ((payload.before_seconds - payload.after_seconds) / payload.before_seconds) * 100
-    benefit_value = (payload.before_seconds - payload.after_seconds) * payload.quantity * payload.labor_second_price
+    benefit_value = (payload.before_seconds - payload.after_seconds) * payload.quantity * effective_labor_second_price
 
     evaluation = idea.actual_benefit
     if evaluation is None:
@@ -466,7 +544,7 @@ def _upsert_actual_benefit_record(
     evaluation.after_seconds = payload.after_seconds
     evaluation.improvement_percent = improvement_percent
     evaluation.quantity = payload.quantity
-    evaluation.labor_second_price = payload.labor_second_price
+    evaluation.labor_second_price = effective_labor_second_price
     evaluation.benefit_value = benefit_value
     evaluation.note = (payload.note or "").strip() or None
     evaluation.updated_at = now_utc()
@@ -607,6 +685,8 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
         category=_normalize_status(idea.category),
         status=_normalize_status(idea.status),
         description=idea.description,
+        description_before=idea.description_before,
+        description_after=idea.description_after,
         submitted_at=idea.submitted_at,
         attachments_count=len(idea.attachments),
         rejection_reason=idea.rejection_reason,
@@ -686,29 +766,18 @@ def _load_scoped_ideas(db: Session, user: User, status_filter: Optional[str]) ->
         .order_by(Idea.submitted_at.desc(), Idea.id.desc())
     )
 
-    scope = _scope_kind(user)
-    if scope in {"dept", "unit_represent"}:
-        query = query.filter(Idea.unit_id == user.unit_id)
-        visible = _visible_statuses(user)
-        if visible:
-            query = query.filter(Idea.status.in_(visible))
-    elif scope in {"ie", "bod"}:
-        visible = _visible_statuses(user)
-        if visible:
-            query = query.filter(Idea.status.in_(visible))
-    elif scope != "admin":
+    if has_role(user, "admin"):
+        pass
+    elif not any(
+        has_role(user, role)
+        for role in ["dept_manager", "sub_dept_manager", "unit_represent", "ie_manager", "digital_manager", "bod_manager"]
+    ):
         return []
 
     if status_filter:
         query = query.filter(Idea.status == status_filter)
     items = query.all()
-    if scope == "ie":
-        return [
-            idea
-            for idea in items
-            if _normalize_status(idea.status) != IdeaStatus.REJECTED.value or _latest_council_review_row(idea) is not None
-        ]
-    return items
+    return [idea for idea in items if _is_visible_to_user(user, idea)]
 
 
 def _build_metrics(scope: str, items: list[Idea]) -> ApprovalMetrics:
@@ -835,7 +904,7 @@ async def get_pending_replications(
     db: Session = Depends(get_db),
 ):
     user = _require_user(db, employee_code)
-    if _scope_kind(user) not in {"ie", "admin"}:
+    if not (has_role(user, "ie_manager") or has_role(user, "digital_manager") or has_role(user, "admin")):
         raise HTTPException(status_code=403, detail="Chỉ Ban cải tiến hoặc admin được duyệt nhân rộng ý tưởng")
 
     replications = (
@@ -925,7 +994,7 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
 
     action = payload.action
     comment = (payload.comment or "").strip() or None
-    scope = _scope_kind(user)
+    scope = _scope_kind(user, idea)
     ie_result_type = _normalize_ie_result_type(payload.ie_result_type)
     if action == ReviewAction.REJECT and not comment:
         raise HTTPException(status_code=400, detail="Không duyệt phải nhập lý do")
@@ -1028,7 +1097,7 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
 @router.post("/{idea_id}/register-slip-approval", response_model=ApprovalIdeaDetail)
 async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalRequest, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
-    if _scope_kind(user) not in {"bod", "admin"}:
+    if _scope_kind(user) != "bod":
         raise HTTPException(status_code=403, detail="Chỉ lãnh đạo hoặc admin được duyệt phiếu nhận tiền")
 
     idea = (
@@ -1053,9 +1122,14 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
     if not _is_register_slip_eligible(idea):
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận tiền đăng ký")
 
+    if idea.bod_register_approved:
+        raise HTTPException(status_code=400, detail="Phiếu này đã được duyệt cấp 3")
+
     idea.bod_register_approved = True
     idea.bod_register_approved_at = now_utc()
     idea.bod_register_approved_by_id = user.id
+    slip = _get_or_create_payment_slip(db, idea)
+    _assign_register_reward_code(db, slip, idea.bod_register_approved_at)
     db.add(
         IdeaReview(
             idea_id=idea.id,
@@ -1088,7 +1162,7 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
 @router.put("/{idea_id}/ie-score", response_model=ApprovalIdeaDetail)
 async def update_ie_score(idea_id: int, payload: IeScoreEditRequest, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
-    if _scope_kind(user) not in {"ie", "admin"}:
+    if not (has_role(user, "ie_manager") or has_role(user, "digital_manager") or has_role(user, "admin")):
         raise HTTPException(status_code=403, detail="Chỉ Ban cải tiến hoặc admin được sửa nội dung chấm điểm")
 
     idea = (
@@ -1414,8 +1488,9 @@ async def upsert_actual_benefit(idea_id: int, payload: ActualBenefitInput, db: S
     if payload.labor_second_price < 0:
         raise HTTPException(status_code=400, detail="Đơn giá giây CN không được âm")
 
+    effective_labor_second_price = _resolve_labor_second_price(db, idea, fallback=payload.labor_second_price)
     improvement_percent = ((payload.before_seconds - payload.after_seconds) / payload.before_seconds) * 100
-    benefit_value = (payload.before_seconds - payload.after_seconds) * payload.quantity * payload.labor_second_price
+    benefit_value = (payload.before_seconds - payload.after_seconds) * payload.quantity * effective_labor_second_price
 
     evaluation = idea.actual_benefit
     if evaluation is None:
@@ -1427,7 +1502,7 @@ async def upsert_actual_benefit(idea_id: int, payload: ActualBenefitInput, db: S
     evaluation.after_seconds = payload.after_seconds
     evaluation.improvement_percent = improvement_percent
     evaluation.quantity = payload.quantity
-    evaluation.labor_second_price = payload.labor_second_price
+    evaluation.labor_second_price = effective_labor_second_price
     evaluation.benefit_value = benefit_value
     evaluation.note = (payload.note or "").strip() or None
     evaluation.updated_at = now_utc()

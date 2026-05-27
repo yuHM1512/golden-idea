@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 from app.database import get_db
 from app.models.unit import Unit
-from app.models.idea import Idea, IdeaStatus, IdeaCategory
+from app.models.idea import Idea, IdeaStatus
 from app.models.actual_benefit import ActualBenefitEvaluation
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
 

@@ -43,6 +43,8 @@ class Idea(Base):
     product_code = Column(String(100), nullable=True)
     category = Column(String(50), nullable=False)
     description = Column(Text, nullable=False)
+    description_before = Column(Text, nullable=True)
+    description_after = Column(Text, nullable=True)
 
     # System fields
     submitter_id = Column(Integer, ForeignKey("users.id"), nullable=True)

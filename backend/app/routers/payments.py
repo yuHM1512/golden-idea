@@ -10,6 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
@@ -18,6 +19,7 @@ from app.models.idea import Idea, IdeaStatus
 from app.models.payment import PaymentSlip
 from app.models.review import IdeaReview, ReviewAction, ReviewLevel
 from app.models.user import User
+from app.services.roles import has_role, primary_role, user_roles
 from app.time_utils import format_display_datetime, now_utc, to_display_tz
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -38,7 +40,7 @@ def _normalize_status(value: Any) -> str:
 
 
 def _role_name(user: User | None) -> str:
-    return (user.role or "").strip() if user else "anonymous"
+    return primary_role(user_roles(user)) if user else "anonymous"
 
 
 def _scope_kind(user: User) -> str:
@@ -53,7 +55,7 @@ def _scope_kind(user: User) -> str:
 
 
 def _can_manage_rewards(user: User) -> bool:
-    return _role_name(user) in {"admin", "treasurer"}
+    return has_role(user, "admin") or has_role(user, "treasurer")
 
 
 def _has_dept_approved_review(idea: Idea) -> bool:
@@ -161,6 +163,40 @@ def _get_or_create_payment_slip(db: Session, idea: Idea) -> PaymentSlip:
     return slip
 
 
+def _assign_register_reward_code(db: Session, slip: PaymentSlip, approved_at: datetime | None) -> str:
+    existing_code = (slip.register_reward_code or "").strip()
+    if existing_code:
+        return existing_code
+
+    base_time = approved_at or now_utc()
+    display_time = to_display_tz(base_time) or base_time
+    year = display_time.strftime("%Y")
+    prefix = f"{year}/"
+    lock_key = int(year)
+
+    db.execute(text("SELECT pg_advisory_xact_lock(:lock_key)"), {"lock_key": lock_key})
+
+    existing_codes = (
+        db.query(PaymentSlip.register_reward_code)
+        .filter(PaymentSlip.register_reward_code.like(f"{prefix}%"))
+        .all()
+    )
+
+    max_sequence = 0
+    for (raw_code,) in existing_codes:
+        code = str(raw_code or "").strip()
+        if not code.startswith(prefix):
+            continue
+        suffix = code[len(prefix):].strip()
+        if suffix.isdigit():
+            max_sequence = max(max_sequence, int(suffix))
+
+    next_sequence = max_sequence + 1
+    slip.register_reward_code = f"{year}/{next_sequence:02d}"
+    db.flush()
+    return slip.register_reward_code
+
+
 def _latest_approved_review_name(idea: Idea, level: ReviewLevel) -> str:
     matched = [
         review
@@ -230,6 +266,7 @@ def _render_pdf_via_browser(html_content: str, output_path: Path) -> None:
 
 def _render_payment_slip_html(
     *,
+    register_reward_code: str,
     full_name: str,
     employee_code: str,
     unit_name: str,
@@ -292,6 +329,11 @@ def _render_payment_slip_html(
         font-size: 22pt;
         font-weight: 700;
         text-transform: uppercase;
+      }}
+      .slip-code {{
+        margin-top: 18px;
+        text-align: right;
+        font-weight: 700;
       }}
       .content {{
         margin-top: 26px;
@@ -380,6 +422,7 @@ def _render_payment_slip_html(
       <div class="center nation-sub">ĐỘC LẬP - TỰ DO - HẠNH PHÚC</div>
 
       <div class="center title">GIẤY NHẬN TIỀN Ý TƯỞNG VÀNG</div>
+      <div class="slip-code">Mã số phiếu: {escape(register_reward_code or "—")}</div>
 
       <div class="content">
         <div class="row">
@@ -468,6 +511,7 @@ async def list_register_bonuses(
                 "unit_name": (idea.unit.name if idea.unit else "") or "",
                 "employee_name": (slip.employee_name if slip else "") or full_name or (idea.full_name or "").strip(),
                 "employee_code": (slip.employee_code if slip else "") or primary_codes or (idea.employee_code or "").strip().upper(),
+                "register_reward_code": (slip.register_reward_code if slip else "") or "",
                 "reward_amount": float((slip.amount if slip else None) or SLIP_AMOUNT),
                 "status": _normalize_status(idea.status),
                 "submitted_at": idea.submitted_at,
@@ -503,9 +547,9 @@ async def settle_register_bonus(
     if idea is None:
         raise HTTPException(status_code=404, detail="Ý tưởng không tồn tại")
         if not _is_register_slip_eligible(idea):
-            raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng đăng ký")
+            raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng nóng")
     if not idea.bod_register_approved:
-        raise HTTPException(status_code=400, detail="Phiếu chưa được lãnh đạo duyệt ở luồng phiếu nhận tiền")
+        raise HTTPException(status_code=400, detail="Phiếu chưa được lãnh đạo duyệt ở luồng phiếu nhận thưởng nóng")
     if _normalize_status(idea.status) not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng")
 
@@ -541,7 +585,7 @@ async def print_payment_slip_for_idea(
     user = _require_user(db, employee_code)
     scope = _scope_kind(user)
     if scope not in {"dept", "unit_represent", "admin"}:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền in phiếu nhận tiền")
+        raise HTTPException(status_code=403, detail="Bạn không có quyền in phiếu nhận thưởng nóng")
 
     idea = (
         db.query(Idea)
@@ -561,13 +605,14 @@ async def print_payment_slip_for_idea(
 
     status_value = _normalize_status(idea.status)
     if not _is_register_slip_eligible(idea):
-        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đủ điều kiện nhận tiền đăng ký")
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đủ điều kiện nhận thưởng nóng")
     if not idea.bod_register_approved:
-        raise HTTPException(status_code=400, detail="Chỉ in phiếu sau khi lãnh đạo duyệt ở tab Duyệt phiếu nhận tiền")
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu sau khi lãnh đạo duyệt ở tab Duyệt phiếu nhận thưởng nóng")
     if status_value not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
-        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã đủ điều kiện nhận tiền đăng ký")
+        raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã đủ điều kiện nhận thưởng nóng")
 
     slip = _get_or_create_payment_slip(db, idea)
+    register_reward_code = _assign_register_reward_code(db, slip, idea.bod_register_approved_at or now_utc())
     printed_at = now_utc()
     slip.printed_by_manager_id = user.id
     slip.print_date = printed_at
@@ -581,6 +626,7 @@ async def print_payment_slip_for_idea(
     dept_name = _latest_approved_review_name(idea, ReviewLevel.DEPT_HEAD)
 
     html = _render_payment_slip_html(
+        register_reward_code=register_reward_code,
         full_name=slip.employee_name,
         employee_code=slip.employee_code,
         unit_name=(idea.unit.name if idea.unit else "") or "",
@@ -597,7 +643,8 @@ async def print_payment_slip_for_idea(
 
     slips_dir = Path(settings.UPLOAD_DIR) / "slips"
     slips_dir.mkdir(parents=True, exist_ok=True)
-    output_path = slips_dir / f"payment_slip_idea_{idea.id}.pdf"
+    safe_code = register_reward_code.replace("/", "-")
+    output_path = slips_dir / f"payment_slip_{safe_code}_idea_{idea.id}.pdf"
     _render_pdf_via_browser(html, output_path)
 
     db.commit()

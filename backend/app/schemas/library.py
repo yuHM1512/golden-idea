@@ -2,13 +2,13 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
 
-from app.schemas.idea import IdeaCategory, IdeaStatus
+from app.schemas.idea import IdeaStatus
 
 
 class IdeaLibraryRow(BaseModel):
     id: int
     title: str
-    category: IdeaCategory
+    category: str
     status: IdeaStatus
     submitted_at: datetime
     unit_id: int
@@ -17,6 +17,8 @@ class IdeaLibraryRow(BaseModel):
     employee_code: Optional[str] = None
     product_code: Optional[str] = None
     description: str
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
     attachment_count: int = 0
     library_type: str = "standardization"
 
@@ -37,7 +39,7 @@ class IdeaLibraryAttachment(BaseModel):
 class IdeaLibraryDetail(BaseModel):
     id: int
     title: str
-    category: IdeaCategory
+    category: str
     status: IdeaStatus
     submitted_at: datetime
     unit_id: int
@@ -48,6 +50,8 @@ class IdeaLibraryDetail(BaseModel):
     position: Optional[str] = None
     product_code: Optional[str] = None
     description: str
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
     attachment_count: int = 0
     library_type: str = "standardization"
     attachments: List[IdeaLibraryAttachment] = []

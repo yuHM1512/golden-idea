@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.attachment import FileAttachment
 from app.models.idea import Idea
+from app.models.labor_second_price import LaborSecondPrice
 from app.models.unit import Unit
 from app.models.payment import PaymentSlip
 from app.models.reward_batch import RewardBatch
@@ -16,13 +17,57 @@ from app.models.score import IdeaScore
 from app.models.score_revision import IdeaScoreRevision
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.user import User
-from app.schemas import AdminSettingsResponse, EmailAutomationUpdateRequest, IdeaBulkDeleteRequest, IdeaHardDeleteResponse
-from app.services.app_settings import get_bool_setting, set_bool_setting
+from app.schemas import (
+    AdminSettingsResponse,
+    EmailAutomationUpdateRequest,
+    IdeaBulkDeleteRequest,
+    IdeaHardDeleteResponse,
+    IdeaTaxonomyResponse,
+    IdeaTaxonomyUpdateRequest,
+    LaborSecondPriceSettingsResponse,
+    LaborSecondPriceSettingsUpdateRequest,
+)
+from app.services.app_settings import get_bool_setting, get_json_setting, set_bool_setting, set_json_setting
 from app.services.google_drive import delete_drive_file
+from app.services.roles import has_role
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 EMAIL_AUTOMATION_KEY = "email_automation_enabled"
+IDEA_TAXONOMY_KEY = "idea_taxonomy"
+LABOR_SECOND_PRICES_KEY = "labor_second_prices"
+DEFAULT_LABOR_SECOND_PRICE = 6.14
+DEFAULT_IDEA_CATEGORIES = [
+    {"name": "Số hoá", "requires_stage": False},
+    {"name": "Quy trình", "requires_stage": True},
+    {"name": "Thiết bị", "requires_stage": True},
+    {"name": "Phụ trợ", "requires_stage": True},
+    {"name": "Chuẩn bị", "requires_stage": True},
+    {"name": "Cử gá", "requires_stage": True},
+    {"name": "Form", "requires_stage": True},
+    {"name": "Thao tác", "requires_stage": True},
+]
+DEFAULT_IDEA_STAGES = [
+    "Chần gòn",
+    "Chỉ ly",
+    "Túi mổ",
+    "Túi đáp",
+    "Túi hộp",
+    "Túi xéo",
+    "Baget",
+    "Lưng",
+    "Tam giác lai",
+    "Bách",
+    "Nẹp dơ/Nẹp che",
+    "Nắp túi",
+    "Măng-sét",
+    "Cổ",
+    "Đô/Decoup",
+    "Mũ",
+    "Dây kéo tà",
+    "Chắn gió/Thông gió",
+    "Yếm",
+]
 
 
 def _require_admin(db: Session, employee_code: str) -> User:
@@ -32,9 +77,119 @@ def _require_admin(db: Session, employee_code: str) -> User:
     user = db.query(User).filter(User.employee_code.ilike(code)).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User không tồn tại")
-    if user.role != "admin":
+    if not has_role(user, "admin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chỉ admin được sử dụng chức năng này")
     return user
+
+
+def _require_settings_manager(db: Session, employee_code: str) -> User:
+    code = (employee_code or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thiáº¿u employee_code")
+    user = db.query(User).filter(User.employee_code.ilike(code)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User khÃ´ng tá»“n táº¡i")
+    if not (has_role(user, "admin") or has_role(user, "ie_manager")):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chá»‰ admin hoáº·c ban cáº£i tiáº¿n Ä‘Æ°á»£c sá»­ dá»¥ng chá»©c nÄƒng nÃ y")
+    return user
+
+
+def _require_labor_second_price_reader(db: Session, employee_code: str) -> User:
+    code = (employee_code or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thieu employee_code")
+    user = db.query(User).filter(User.employee_code.ilike(code)).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User khong ton tai")
+    if not any(has_role(user, role) for role in {"admin", "ie_manager", "digital_manager", "dept_manager", "sub_dept_manager", "bod_manager"}):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Khong co quyen xem don gia giay CN")
+    return user
+
+
+def _normalize_idea_taxonomy(raw_value: object | None = None) -> IdeaTaxonomyResponse:
+    payload = raw_value if isinstance(raw_value, dict) else {}
+    raw_categories = payload.get("categories") if isinstance(payload, dict) else None
+    raw_stages = payload.get("stages") if isinstance(payload, dict) else None
+
+    def _normalize_category_items(items: object, fallback: list[dict[str, object]]) -> list[dict[str, object]]:
+        source = items if isinstance(items, list) else fallback
+        result: list[dict[str, object]] = []
+        seen: set[str] = set()
+        for item in source:
+            if isinstance(item, dict):
+                name = str(item.get("name") or "").strip()
+                requires_stage = bool(item.get("requires_stage", True))
+            else:
+                name = str(item or "").strip()
+                requires_stage = name.casefold() != "số hoá".casefold()
+            if not name:
+                continue
+            lowered = name.casefold()
+            if lowered in seen:
+                continue
+            seen.add(lowered)
+            result.append({"name": name, "requires_stage": requires_stage})
+        return result or fallback[:]
+
+    def _normalize_items(items: object, fallback: list[str]) -> list[str]:
+        source = items if isinstance(items, list) else fallback
+        result: list[str] = []
+        seen: set[str] = set()
+        for item in source:
+            text = str(item or "").strip()
+            if not text:
+                continue
+            lowered = text.casefold()
+            if lowered in seen:
+                continue
+            seen.add(lowered)
+            result.append(text)
+        return result or fallback[:]
+
+    return IdeaTaxonomyResponse(
+        categories=_normalize_category_items(raw_categories, DEFAULT_IDEA_CATEGORIES),
+        stages=_normalize_items(raw_stages, DEFAULT_IDEA_STAGES),
+    )
+
+
+def _get_idea_taxonomy(db: Session) -> IdeaTaxonomyResponse:
+    return _normalize_idea_taxonomy(get_json_setting(IDEA_TAXONOMY_KEY, default=None, db=db))
+
+
+def _normalize_labor_second_prices(raw_value: object | None = None) -> LaborSecondPriceSettingsResponse:
+    source = raw_value if isinstance(raw_value, list) else []
+    normalized: dict[int, float] = {}
+    for item in source:
+        if not isinstance(item, dict):
+            continue
+        try:
+            year = int(item.get("year"))
+            labor_second_price = float(item.get("labor_second_price"))
+        except (TypeError, ValueError):
+            continue
+        if year < 2000 or year > 2100:
+            continue
+        if labor_second_price < 0:
+            continue
+        normalized[year] = labor_second_price
+    return LaborSecondPriceSettingsResponse(
+        items=[
+            {"year": year, "labor_second_price": normalized[year]}
+            for year in sorted(normalized.keys(), reverse=True)
+        ]
+    )
+
+
+def _get_labor_second_prices(db: Session) -> LaborSecondPriceSettingsResponse:
+    rows = db.query(LaborSecondPrice).order_by(LaborSecondPrice.year.desc()).all()
+    if rows:
+        return LaborSecondPriceSettingsResponse(
+            items=[
+                {"year": row.year, "labor_second_price": row.labor_second_price}
+                for row in rows
+            ]
+        )
+    return _normalize_labor_second_prices(get_json_setting(LABOR_SECOND_PRICES_KEY, default=None, db=db))
 
 
 def _cleanup_reward_batch_refs(db: Session, idea_id: int) -> int:
@@ -122,6 +277,7 @@ async def get_admin_settings(employee_code: str = Query(...), db: Session = Depe
     _require_admin(db, employee_code)
     return AdminSettingsResponse(
         email_automation_enabled=get_bool_setting(EMAIL_AUTOMATION_KEY, default=False, db=db),
+        idea_taxonomy=_get_idea_taxonomy(db),
     )
 
 
@@ -130,7 +286,71 @@ async def update_email_automation(payload: EmailAutomationUpdateRequest, db: Ses
     user = _require_admin(db, payload.employee_code)
     enabled = set_bool_setting(EMAIL_AUTOMATION_KEY, payload.enabled, updated_by=user.employee_code, db=db)
     db.commit()
-    return AdminSettingsResponse(email_automation_enabled=enabled)
+    return AdminSettingsResponse(
+        email_automation_enabled=enabled,
+        idea_taxonomy=_get_idea_taxonomy(db),
+    )
+
+
+@router.get("/idea-taxonomy", response_model=IdeaTaxonomyResponse)
+async def get_idea_taxonomy(db: Session = Depends(get_db)):
+    return _get_idea_taxonomy(db)
+
+
+@router.get("/labor-second-prices", response_model=LaborSecondPriceSettingsResponse)
+async def get_labor_second_prices(employee_code: str = Query(...), db: Session = Depends(get_db)):
+    _require_labor_second_price_reader(db, employee_code)
+    return _get_labor_second_prices(db)
+
+
+@router.put("/labor-second-prices", response_model=LaborSecondPriceSettingsResponse)
+async def update_labor_second_prices(payload: LaborSecondPriceSettingsUpdateRequest, db: Session = Depends(get_db)):
+    user = _require_settings_manager(db, payload.employee_code)
+    normalized = _normalize_labor_second_prices(
+        [{"year": item.year, "labor_second_price": item.labor_second_price} for item in payload.items]
+    )
+    wanted_years = {item.year for item in normalized.items}
+    if wanted_years:
+        db.query(LaborSecondPrice).filter(~LaborSecondPrice.year.in_(wanted_years)).delete(synchronize_session=False)
+    else:
+        db.query(LaborSecondPrice).delete(synchronize_session=False)
+    for item in normalized.items:
+        row = db.query(LaborSecondPrice).filter(LaborSecondPrice.year == item.year).first()
+        if row is None:
+            row = LaborSecondPrice(year=item.year)
+            db.add(row)
+        row.labor_second_price = item.labor_second_price
+        row.updated_by = user.employee_code
+    db.commit()
+    return normalized
+
+
+@router.put("/admin/idea-taxonomy", response_model=IdeaTaxonomyResponse)
+async def update_idea_taxonomy(payload: IdeaTaxonomyUpdateRequest, db: Session = Depends(get_db)):
+    user = _require_admin(db, payload.employee_code)
+    normalized = _normalize_idea_taxonomy(
+        {
+            "categories": payload.categories,
+            "stages": payload.stages,
+        }
+    )
+    set_json_setting(
+        IDEA_TAXONOMY_KEY,
+        {
+            "categories": [
+                {
+                    "name": item.name,
+                    "requires_stage": bool(item.requires_stage),
+                }
+                for item in normalized.categories
+            ],
+            "stages": normalized.stages,
+        },
+        updated_by=user.employee_code,
+        db=db,
+    )
+    db.commit()
+    return normalized
 
 
 @router.get("/admin/ideas")

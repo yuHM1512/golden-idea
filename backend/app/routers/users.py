@@ -8,18 +8,20 @@ from app.database import get_db
 from app.models.unit import Unit
 from app.models.user import User, UserRole
 from app.schemas import UserCreate, UserResponse, UserUpdate
+from app.services.roles import has_role, normalize_roles, set_user_roles
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
 def _apply_user_fields(user: User, data: UserCreate) -> None:
+    roles = normalize_roles(data.roles, fallback=data.role.value)
     user.employee_code = data.employee_code.strip().upper()
     user.full_name = data.full_name.strip()
     user.email = data.email
     user.phone_number = data.phone_number
     user.position = data.position
     user.unit_id = data.unit_id
-    user.role = data.role.value
+    set_user_roles(user, roles)
     user.is_active = True
 
 
@@ -36,7 +38,8 @@ def _ensure_unit_exists(db: Session, unit_id: int | None) -> Unit | None:
 
 
 def _validate_role_unit_requirement(db: Session, data: UserCreate) -> None:
-    if data.role in {UserRole.BOD_MANAGER, UserRole.TREASURER, UserRole.ADMIN}:
+    roles = normalize_roles(data.roles, fallback=data.role.value)
+    if all(role in {UserRole.BOD_MANAGER.value, UserRole.TREASURER.value, UserRole.ADMIN.value} for role in roles):
         return
     if data.unit_id is None:
         raise HTTPException(
@@ -47,7 +50,7 @@ def _validate_role_unit_requirement(db: Session, data: UserCreate) -> None:
 
 
 def _assign_dept_manager_if_needed(db: Session, user: User) -> None:
-    if user.role != UserRole.DEPT_MANAGER.value:
+    if not has_role(user, UserRole.DEPT_MANAGER):
         return
     unit = db.query(Unit).filter(Unit.id == user.unit_id).first()
     if unit is None:
@@ -58,15 +61,15 @@ def _assign_dept_manager_if_needed(db: Session, user: User) -> None:
 def _clear_dept_manager_assignment_if_needed(db: Session, user: User, previous_role: str | None, previous_unit_id: int | None) -> None:
     if previous_role != UserRole.DEPT_MANAGER.value or previous_unit_id is None:
         return
-    if user.role == UserRole.DEPT_MANAGER.value and user.unit_id == previous_unit_id:
+    if has_role(user, UserRole.DEPT_MANAGER) and user.unit_id == previous_unit_id:
         return
     unit = db.query(Unit).filter(Unit.id == previous_unit_id).first()
     if unit and unit.manager_user_id == user.id:
         unit.manager_user_id = None
 
 
-def _validate_role_unit_requirement_for_values(db: Session, role: UserRole, unit_id: int | None) -> None:
-    if role in {UserRole.BOD_MANAGER, UserRole.TREASURER, UserRole.ADMIN}:
+def _validate_role_unit_requirement_for_values(db: Session, roles: list[str], unit_id: int | None) -> None:
+    if all(role in {UserRole.BOD_MANAGER.value, UserRole.TREASURER.value, UserRole.ADMIN.value} for role in roles):
         return
     if unit_id is None:
         raise HTTPException(
@@ -133,9 +136,9 @@ async def update_user(employee_code: str, user_in: UserUpdate, db: Session = Dep
     previous_role = user.role
     previous_unit_id = user.unit_id
 
-    next_role = user_in.role or UserRole(user.role)
+    next_roles = normalize_roles(user_in.roles, fallback=(user_in.role.value if user_in.role else user.role))
     next_unit_id = user.unit_id if user_in.unit_id is None else user_in.unit_id
-    _validate_role_unit_requirement_for_values(db, next_role, next_unit_id)
+    _validate_role_unit_requirement_for_values(db, next_roles, next_unit_id)
 
     if user_in.full_name is not None:
         user.full_name = user_in.full_name.strip()
@@ -145,10 +148,10 @@ async def update_user(employee_code: str, user_in: UserUpdate, db: Session = Dep
         user.phone_number = user_in.phone_number.strip() or None
     if user_in.position is not None:
         user.position = user_in.position.strip() or None
-    if user_in.unit_id is not None or next_role in {UserRole.BOD_MANAGER, UserRole.TREASURER, UserRole.ADMIN}:
+    if user_in.unit_id is not None or all(role in {UserRole.BOD_MANAGER.value, UserRole.TREASURER.value, UserRole.ADMIN.value} for role in next_roles):
         user.unit_id = next_unit_id
-    if user_in.role is not None:
-        user.role = user_in.role.value
+    if user_in.roles is not None or user_in.role is not None:
+        set_user_roles(user, next_roles)
     if user_in.is_active is not None:
         user.is_active = bool(user_in.is_active)
 

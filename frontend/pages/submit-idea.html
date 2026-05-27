@@ -203,13 +203,31 @@
                                     <input id="productCode" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập mã hàng/sản phẩm" type="text"/>
                                 </div>
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-3">
                                 <label class="font-label-md text-on-surface-variant px-1">Tên ý tưởng *</label>
-                                <input id="title" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all" placeholder="Nhập tên gọi ngắn gọn, dễ tìm kiếm cho ý tưởng" type="text" required/>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="font-label-md text-on-surface-variant px-1">Mô tả ý tưởng *</label>
-                                <textarea id="description" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Trình bày chi tiết về ý tưởng của bạn..." rows="6" required></textarea>
+                                <div class="rounded-xl bg-surface-container-low p-4 space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div class="space-y-2">
+                                            <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Chủ đề</div>
+                                            <input id="titleCategoryDisplay" class="w-full py-3 px-4 rounded-lg bg-white border-none text-on-surface" type="text" placeholder="Chọn chủ đề ở trên" readonly/>
+                                        </div>
+                                        <div id="titleStageField" class="space-y-2">
+                                            <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Chi tiết / Công đoạn</div>
+                                            <select id="titleStage" class="w-full py-3 px-4 rounded-lg bg-white border-none ghost-focus text-on-surface transition-all">
+                                                <option value="">Chọn công đoạn</option>
+                                            </select>
+                                        </div>
+                                        <div class="space-y-2 md:col-span-1">
+                                            <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Mô tả ngắn</div>
+                                            <input id="titleShortDescription" class="w-full py-3 px-4 rounded-lg bg-white border-none ghost-focus text-on-surface transition-all" placeholder="Nhập mô tả ngắn" type="text"/>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-xl border border-dashed border-outline-variant bg-white px-4 py-3">
+                                        <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Kết quả</div>
+                                        <div id="titlePreview" class="mt-2 text-sm font-semibold text-on-surface">Tên ý tưởng sẽ được tạo tự động theo 3 phần.</div>
+                                    </div>
+                                </div>
+                                <input id="title" type="hidden" required/>
                             </div>
                         </div>
                     </section>
@@ -218,9 +236,13 @@
                     <section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]">
                         <div class="flex items-center gap-3 mb-8 border-b border-surface-variant pb-4">
                             <span class="material-symbols-outlined text-primary">attachment</span>
-                            <h3 class="font-headline-md text-[20px] text-primary">Hình ảnh / Video minh họa</h3>
+                            <h3 class="font-headline-md text-[20px] text-primary">Mô tả và hình ảnh / video minh họa</h3>
                         </div>
-                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Mô tả trước cải tiến</label>
+                                <textarea id="descriptionBefore" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Mô tả hiện trạng trước khi cải tiến..." rows="5"></textarea>
+                            </div>
                             <div class="rounded-xl border border-surface-variant bg-surface-container-low/20 p-5">
                                 <div class="mb-4">
                                     <div class="text-sm font-extrabold uppercase tracking-widest text-primary">Trước cải tiến</div>
@@ -235,6 +257,10 @@
                                     <input id="fileInputBefore" class="hidden" type="file" accept="image/*,video/*" multiple/>
                                 </div>
                                 <div id="fileListBefore" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="font-label-md text-on-surface-variant px-1">Mô tả sau cải tiến *</label>
+                                <textarea id="descriptionAfter" class="w-full py-3 px-4 rounded-lg bg-surface-container-low border-none ghost-focus text-on-surface transition-all resize-none" placeholder="Trình bày kết quả sau cải tiến..." rows="5" required></textarea>
                             </div>
                             <div class="rounded-xl border border-surface-variant bg-surface-container-low/20 p-5">
                                 <div class="mb-4">
@@ -295,6 +321,7 @@
         let participantRowId = 0;
         let selectedFiles = { before: [], after: [] };
         let isDraftSyncPaused = false;
+        let ideaTaxonomy = { categories: [], stages: [] };
 
         function currentEmployeeCode() {
             return (localStorage.getItem('employee_code') || '').trim().toUpperCase();
@@ -412,6 +439,15 @@
             return participants;
         }
 
+        function composeIdeaDescription(descriptionBefore, descriptionAfter) {
+            const beforeText = String(descriptionBefore || '').trim();
+            const afterText = String(descriptionAfter || '').trim();
+            if (!beforeText) {
+                return afterText;
+            }
+            return `Trước cải tiến:\n${beforeText}\n\nSau cải tiến:\n${afterText}`;
+        }
+
         function resetParticipants() {
             participantRowId = 0;
             document.getElementById('participantsList').innerHTML = '';
@@ -488,6 +524,7 @@
             });
             try {
                 const units = await api.getUnits();
+                ideaTaxonomy = await api.getIdeaTaxonomy();
                 const unitSelect = document.getElementById('unitId');
                 units.forEach(unit => {
                     const option = document.createElement('option');
@@ -496,14 +533,18 @@
                     unitSelect.appendChild(option);
                 });
 
+                populateTitleStageOptions(api.getIdeaStages());
                 renderCategoryOptions(api.getCategories());
                 const restored = restoreIdeaDraft();
                 if (restored) {
                     showNotification('Đã khôi phục nội dung đang nhập dở dang', 'success');
                 } else {
                     syncLoggedInEmployeeToForm();
+                    syncIdeaTitleBuilder();
                 }
                 bindDraftPersistence();
+                document.getElementById('titleStage').addEventListener('change', syncIdeaTitleBuilder);
+                document.getElementById('titleShortDescription').addEventListener('input', syncIdeaTitleBuilder);
             } catch (error) {
                 showNotification('Lỗi: ' + error.message, 'error');
             }
@@ -530,10 +571,60 @@
                 input.checked = input.value === currentValue;
                 input.addEventListener('change', () => {
                     hiddenInput.value = input.value;
+                    syncIdeaTitleBuilder();
                     persistIdeaDraft();
                 });
                 wrap.appendChild(item);
             });
+        }
+
+        function populateTitleStageOptions(stages) {
+            const select = document.getElementById('titleStage');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Chọn công đoạn</option>';
+            (stages || []).forEach((stage) => {
+                const option = document.createElement('option');
+                option.value = stage;
+                option.textContent = stage;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+
+        function isDigitizationCategory(categoryValue) {
+            return api.categoryRequiresStage(categoryValue) === false;
+        }
+
+        function buildIdeaTitle() {
+            const category = document.getElementById('category').value.trim();
+            const stage = document.getElementById('titleStage').value.trim();
+            const shortDescription = document.getElementById('titleShortDescription').value.trim();
+            const parts = [];
+            if (category) parts.push(category);
+            if (category && !isDigitizationCategory(category) && stage) parts.push(stage);
+            if (shortDescription) parts.push(shortDescription);
+            return parts.join(' - ');
+        }
+
+        function syncIdeaTitleBuilder() {
+            const category = document.getElementById('category').value.trim();
+            const stageField = document.getElementById('titleStageField');
+            const stageSelect = document.getElementById('titleStage');
+            const categoryDisplay = document.getElementById('titleCategoryDisplay');
+            const titleInput = document.getElementById('title');
+            const preview = document.getElementById('titlePreview');
+            const isDigitization = isDigitizationCategory(category);
+
+            categoryDisplay.value = category;
+            stageField.classList.toggle('hidden', isDigitization);
+            stageSelect.required = !isDigitization;
+            if (isDigitization) {
+                stageSelect.value = '';
+            }
+
+            const builtTitle = buildIdeaTitle();
+            titleInput.value = builtTitle;
+            preview.textContent = builtTitle || 'Tên ý tưởng sẽ được tạo tự động theo 3 phần.';
         }
 
         function buildIdeaDraftPayload() {
@@ -546,10 +637,13 @@
                 phone_number: document.getElementById('phone').value.trim(),
                 bo_phan: document.getElementById('boPhan').value.trim(),
                 position: document.getElementById('position').value.trim(),
-                title: document.getElementById('title').value.trim(),
+                title: buildIdeaTitle(),
+                title_stage: document.getElementById('titleStage').value.trim(),
+                title_short_description: document.getElementById('titleShortDescription').value.trim(),
                 product_code: document.getElementById('productCode').value.trim(),
                 category: document.getElementById('category').value,
-                description: document.getElementById('description').value.trim(),
+                description_before: document.getElementById('descriptionBefore').value.trim(),
+                description_after: document.getElementById('descriptionAfter').value.trim(),
                 unit_id: parseInt(document.getElementById('unitId').value, 10) || null,
                 updated_at: new Date().toISOString(),
             };
@@ -566,6 +660,8 @@
                 draft.title ||
                 draft.product_code ||
                 draft.category ||
+                draft.description_before ||
+                draft.description_after ||
                 draft.description ||
                 participants.some((participant) => participant?.full_name || participant?.employee_code)
             );
@@ -601,11 +697,14 @@
                 document.getElementById('phone').value = draft.phone_number || '';
                 document.getElementById('boPhan').value = draft.bo_phan || '';
                 document.getElementById('position').value = draft.position || '';
-                document.getElementById('title').value = draft.title || '';
+                document.getElementById('titleStage').value = draft.title_stage || '';
+                document.getElementById('titleShortDescription').value = draft.title_short_description || '';
                 document.getElementById('productCode').value = draft.product_code || '';
-                document.getElementById('description').value = draft.description || '';
+                document.getElementById('descriptionBefore').value = draft.description_before || '';
+                document.getElementById('descriptionAfter').value = draft.description_after || draft.description || '';
                 document.getElementById('category').value = draft.category || '';
                 renderCategoryOptions(api.getCategories());
+                syncIdeaTitleBuilder();
                 syncPrimaryParticipant(readParticipants());
             });
             return true;
@@ -633,12 +732,19 @@
             document.getElementById('fileInputAfter').value = '';
             document.getElementById('ideaForm').reset();
             document.getElementById('category').value = '';
+            document.getElementById('titleStage').value = '';
+            document.getElementById('titleShortDescription').value = '';
+            document.getElementById('descriptionBefore').value = '';
+            document.getElementById('descriptionAfter').value = '';
+            document.getElementById('titleCategoryDisplay').value = '';
+            document.getElementById('titlePreview').textContent = 'Tên ý tưởng sẽ được tạo tự động theo 3 phần.';
             document.querySelectorAll('input[name="categoryOption"]').forEach((input) => {
                 input.checked = false;
             });
             removeCachedIdeaDraft();
             resetParticipants();
             syncLoggedInEmployeeToForm();
+            syncIdeaTitleBuilder();
         }
 
         function showSubmitSuccess(message) {
@@ -678,7 +784,25 @@
             if (!participants) {
                 return;
             }
+            syncIdeaTitleBuilder();
+            const category = document.getElementById('category').value.trim();
+            const stage = document.getElementById('titleStage').value.trim();
+            const shortDescription = document.getElementById('titleShortDescription').value.trim();
             const title = document.getElementById('title').value.trim();
+            const descriptionBefore = document.getElementById('descriptionBefore').value.trim();
+            const descriptionAfter = document.getElementById('descriptionAfter').value.trim();
+            if (!shortDescription) {
+                showNotification('Vui lòng nhập mô tả ngắn cho tên ý tưởng', 'error');
+                return;
+            }
+            if (!descriptionAfter) {
+                showNotification('Vui lòng nhập mô tả sau cải tiến', 'error');
+                return;
+            }
+            if (category && !isDigitizationCategory(category) && !stage) {
+                showNotification('Vui lòng chọn chi tiết/công đoạn', 'error');
+                return;
+            }
             if (!title) {
                 showNotification('Vui lòng nhập tên ý tưởng', 'error');
                 return;
@@ -696,7 +820,9 @@
                     title,
                     product_code: document.getElementById('productCode').value,
                     category: document.getElementById('category').value,
-                    description: document.getElementById('description').value,
+                    description: composeIdeaDescription(descriptionBefore, descriptionAfter),
+                    description_before: descriptionBefore,
+                    description_after: descriptionAfter,
                     is_anonymous: false,
                     unit_id: parseInt(document.getElementById('unitId').value) || null,
                 };

@@ -18,6 +18,7 @@ from app.models.score import IdeaScore
 from app.models.user import User
 from app.routers.payments import _render_pdf_via_browser
 from app.services.email_notifications import send_reward_batch_summary_emails
+from app.services.roles import has_role
 from app.time_utils import now_display_tz
 
 router = APIRouter(prefix="/reward-batches", tags=["reward-batches"])
@@ -49,7 +50,7 @@ def _require_user(db: Session, employee_code: str) -> User:
 
 
 def _ie_score_for_idea(scores: list[IdeaScore]) -> IdeaScore | None:
-    ie_scores = [score for score in (scores or []) if score.scorer and score.scorer.role == "ie_manager"]
+    ie_scores = [score for score in (scores or []) if score.scorer and (has_role(score.scorer, "ie_manager") or has_role(score.scorer, "digital_manager"))]
     if not ie_scores:
         return None
     ie_scores.sort(key=lambda score: score.scored_at or datetime.min, reverse=True)
@@ -400,7 +401,7 @@ def _render_reward_minutes_html(*, batch: RewardBatch, items: list[dict], total_
 @router.post("/")
 def create_reward_batch(payload: RewardBatchCreate, db: Session = Depends(get_db)):
     user = _require_user(db, payload.employee_code)
-    if user.role not in {"admin", "ie_manager", "bod_manager"}:
+    if not any(has_role(user, role) for role in {"admin", "ie_manager", "bod_manager"}):
         raise HTTPException(status_code=403, detail="Không có quyền tạo đợt khen thưởng")
 
     eligible_ideas = _load_eligible_ideas(db, payload.year, payload.quarter)
@@ -511,7 +512,7 @@ def get_batch_minutes_pdf(
     db: Session = Depends(get_db),
 ):
     user = _require_user(db, employee_code)
-    if user.role not in {"admin", "ie_manager", "bod_manager"}:
+    if not any(has_role(user, role) for role in {"admin", "ie_manager", "bod_manager"}):
         raise HTTPException(status_code=403, detail="Không có quyền in biên bản")
 
     report = get_batch_report(batch_id, db)

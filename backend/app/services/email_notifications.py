@@ -19,6 +19,7 @@ from app.models.score import IdeaScore, K2Type, K3MeasureType
 from app.models.score_criteria import ScoreCriteria
 from app.models.user import User, UserRole
 from app.services.app_settings import get_bool_setting
+from app.services.roles import has_role, is_digitization_category
 from app.time_utils import format_display_datetime
 
 
@@ -153,15 +154,14 @@ def _normalize_emails(values: Iterable[str | None]) -> list[str]:
 
 def _query_role_recipients(db: Session, role: str) -> list[str]:
     users = (
-        db.query(User.email)
+        db.query(User)
         .filter(
-            User.role == role,
             User.is_active.is_(True),
             User.email.is_not(None),
         )
         .all()
     )
-    return _normalize_emails(email for (email,) in users)
+    return _normalize_emails(user.email for user in users if has_role(user, role))
 
 
 def _query_dept_manager_recipients(db: Session, idea: Idea) -> list[str]:
@@ -172,16 +172,15 @@ def _query_dept_manager_recipients(db: Session, idea: Idea) -> list[str]:
 
     if not emails:
         rows = (
-            db.query(User.email)
+            db.query(User)
             .filter(
-                User.role == UserRole.DEPT_MANAGER.value,
                 User.unit_id == idea.unit_id,
                 User.is_active.is_(True),
                 User.email.is_not(None),
             )
             .all()
         )
-        emails.extend(email for (email,) in rows)
+        emails.extend(user.email for user in rows if has_role(user, UserRole.DEPT_MANAGER))
 
     return _normalize_emails(emails)
 
@@ -193,16 +192,15 @@ def _query_unit_leadership_recipients(db: Session, idea: Idea) -> list[str]:
         emails.append(unit.manager.email)
 
     rows = (
-        db.query(User.email)
+        db.query(User)
         .filter(
             User.unit_id == idea.unit_id,
-            User.role.in_([UserRole.DEPT_MANAGER.value, UserRole.SUB_DEPT_MANAGER.value]),
             User.is_active.is_(True),
             User.email.is_not(None),
         )
         .all()
     )
-    emails.extend(email for (email,) in rows)
+    emails.extend(user.email for user in rows if has_role(user, UserRole.DEPT_MANAGER) or has_role(user, UserRole.SUB_DEPT_MANAGER))
     return _normalize_emails(emails)
 
 
@@ -352,7 +350,7 @@ def _criteria_label_lookup(db: Session) -> dict[tuple[str, str], str]:
 
 
 def _latest_ie_score(idea: Idea) -> IdeaScore | None:
-    ie_scores = [score for score in idea.scores if score.scorer and score.scorer.role == UserRole.IE_MANAGER.value]
+    ie_scores = [score for score in idea.scores if score.scorer and (has_role(score.scorer, UserRole.IE_MANAGER) or has_role(score.scorer, UserRole.DIGITAL_MANAGER))]
     if not ie_scores:
         return None
     ie_scores.sort(key=lambda item: (item.scored_at or datetime.min, item.id or 0), reverse=True)
@@ -657,12 +655,15 @@ def _build_stage_context(db: Session, idea: Idea, stage: str) -> ApprovalEmailCo
             idea=idea,
         )
     if stage == "ie_review":
-        recipients = _query_role_recipients(db, UserRole.IE_MANAGER.value)
+        is_digital = is_digitization_category(idea.category)
+        review_role = UserRole.DIGITAL_MANAGER.value if is_digital else UserRole.IE_MANAGER.value
+        recipients = _query_role_recipients(db, review_role)
+        reviewer_name = "Ban số hoá" if is_digital else "Ban cải tiến"
         return ApprovalEmailContext(
             recipients=recipients,
-            greeting_name="Ban cải tiến",
+            greeting_name=reviewer_name,
             subject=f"[Ý tưởng vàng] Ý tưởng chờ duyệt cấp 2 - {idea.title}",
-            content_line="Có ý tưởng mới cần được xét duyệt bởi Ban cải tiến - cấp 2.",
+            content_line=f"Có ý tưởng mới cần được xét duyệt bởi {reviewer_name} - cấp 2.",
             action_url=settings.APPROVAL_PAGE_URL,
             action_text="xử lý",
             idea=idea,

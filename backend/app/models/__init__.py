@@ -10,6 +10,7 @@ from .attachment import FileAttachment
 from .score_criteria import ScoreCriteria
 from .score_criteria_set import ScoreCriteriaSet
 from .actual_benefit import ActualBenefitEvaluation
+from .labor_second_price import LaborSecondPrice
 from .reward_batch import RewardBatch
 from .standardized_idea_replication import StandardizedIdeaReplication
 
@@ -26,6 +27,7 @@ __all__ = [
     "ScoreCriteria",
     "ScoreCriteriaSet",
     "ActualBenefitEvaluation",
+    "LaborSecondPrice",
     "RewardBatch",
     "StandardizedIdeaReplication",
 ]

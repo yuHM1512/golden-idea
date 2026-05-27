@@ -214,6 +214,115 @@
           </div>
         </section>
 
+        <section
+          id="cardIdeaTaxonomy"
+          class="hidden bg-white rounded-[1.5rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]"
+        >
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div class="text-xl font-black font-['Manrope'] text-[#002b73]">Chủ đề và công đoạn ý tưởng</div>
+              <div class="mt-2 text-slate-600">
+                Chuẩn hoá danh sách chủ đề và chi tiết/công đoạn dùng cho màn hình đăng ký ý tưởng. Mỗi dòng là một giá trị.
+              </div>
+            </div>
+            <a
+              href="/pages/admin-idea-taxonomy"
+              class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-4 py-2 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]"
+            >
+              <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+              Lưu danh mục
+            </a>
+          </div>
+
+          <div class="hidden mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <section class="rounded-[1.35rem] border border-slate-200 bg-slate-50/70 p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Chủ đề</div>
+                  <div class="mt-2 text-sm text-slate-600">Tên chủ đề và trạng thái có dùng công đoạn hay không.</div>
+                </div>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-3 py-2 text-sm font-semibold text-white"
+                  onclick="openIdeaCategoryModal()"
+                >
+                  <span class="material-symbols-outlined text-[18px]">add</span>
+                  Thêm chủ đề
+                </button>
+              </div>
+              <div id="ideaCategoryList" class="mt-5 space-y-3"></div>
+            </section>
+            <section class="rounded-[1.35rem] border border-slate-200 bg-slate-50/70 p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Chi tiết / Công đoạn</div>
+                  <div class="mt-2 text-sm text-slate-600">Danh sách dùng cho phần 2 của tên ý tưởng.</div>
+                </div>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-3 py-2 text-sm font-semibold text-white"
+                  onclick="openIdeaStageModal()"
+                >
+                  <span class="material-symbols-outlined text-[18px]">add</span>
+                  Thêm công đoạn
+                </button>
+              </div>
+              <div id="ideaStageList" class="mt-5 space-y-3"></div>
+            </section>
+          </div>
+          <div class="hidden mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Chủ đề nào tắt tuỳ chọn <strong>Chi tiết/Công đoạn</strong> sẽ bỏ qua phần 2 ở form đăng ký ý tưởng.
+          </div>
+        </section>
+
+        <section
+          id="cardLaborSecondPrice"
+          class="bg-white rounded-[1.5rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)]"
+        >
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div class="text-xl font-black font-['Manrope'] text-[#002b73]">Đơn giá giây CN theo năm</div>
+              <div class="mt-2 text-slate-600">
+                Chá»n nÄƒm vÃ  nháº­p Ä‘Æ¡n giÃ¡ giÃ¢y CN. GiÃ¡ Ä‘Ã£ lÆ°u sáº½ tá»± Ä‘á»™ng Ã¡p dá»¥ng cho Ã½ tÆ°á»Ÿng cÃ³ nÄƒm gá»­i tÆ°Æ¡ng á»©ng.
+              </div>
+            </div>
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-4 py-2 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]"
+              onclick="saveLaborSecondPrices()"
+            >
+              <span class="material-symbols-outlined text-[18px]">save</span>
+              Lưu đơn giá
+            </button>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)_auto] gap-4">
+            <label class="block">
+              <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Năm</div>
+              <input id="laborSecondPriceYearInput" type="number" min="2000" max="2100" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]" />
+            </label>
+            <label class="block">
+              <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Đơn giá giây CN</div>
+              <input id="laborSecondPriceValueInput" type="number" min="0" step="0.01" class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]" />
+            </label>
+            <div class="flex items-end">
+              <button
+                type="button"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                onclick="upsertLaborSecondPrice()"
+              >
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Thêm / Cập nhật
+              </button>
+            </div>
+          </div>
+
+          <div id="laborSecondPriceList" class="mt-5 space-y-3"></div>
+          <div class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Nếu năm chưa có cấu hình, module duyệt hiệu quả sẽ fallback về 6.14.
+          </div>
+        </section>
+
         <a
           id="cardDangerZone"
           href="/pages/admin-idea-cleanup"
@@ -256,6 +365,51 @@
         </section>
       </div>
     </main>
+
+    <div
+      id="ideaTaxonomyModal"
+      class="fixed inset-0 bg-slate-950/55 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+      onclick="closeIdeaTaxonomyModal()"
+    >
+      <div
+        class="w-full max-w-xl overflow-hidden rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(0,0,0,0.2)]"
+        onclick="event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Popup cấu hình</div>
+            <h2 id="ideaTaxonomyModalTitle" class="mt-2 text-2xl font-black font-['Manrope'] text-[#002b73]">Thêm chủ đề</h2>
+          </div>
+          <button
+            type="button"
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100"
+            onclick="closeIdeaTaxonomyModal()"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="space-y-5 px-6 py-6">
+          <input id="ideaTaxonomyModalType" type="hidden" value="category" />
+          <label class="block">
+            <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Tên</div>
+            <input
+              id="ideaTaxonomyNameInput"
+              type="text"
+              class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+              placeholder="Nhập tên"
+            />
+          </label>
+          <label id="ideaTaxonomyRequiresStageWrap" class="hidden flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <input id="ideaTaxonomyRequiresStage" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-[#002b73] focus:ring-[#002b73]" checked />
+            <span class="text-sm text-slate-700">Có đi với "Chi tiết/Công đoạn"</span>
+          </label>
+        </div>
+        <div class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-5">
+          <button type="button" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100" onclick="closeIdeaTaxonomyModal()">Đóng</button>
+          <button type="button" class="rounded-xl bg-[#002b73] px-5 py-2.5 text-sm font-semibold text-white" onclick="submitIdeaTaxonomyModal()">Thêm</button>
+        </div>
+      </div>
+    </div>
 
     <div
       id="criteriaModal"
@@ -374,14 +528,146 @@
       </div>
     </div>
 
-    <script src="../js/api.js?v=20260521-admin-settings-v4"></script>
+    <script src="../js/api.js?v=20260526-labor-second-price-table"></script>
     <script>
       let currentUser = null;
       let criteriaSets = [];
       let editingCriteriaSetId = null;
       let isCriteriaModalExpanded = false;
       let activeCriteriaTab = "K1";
-      let adminSettings = { email_automation_enabled: false };
+      let adminSettings = { email_automation_enabled: false, idea_taxonomy: { categories: [], stages: [] } };
+      let laborSecondPriceSettings = { items: [] };
+
+      function ensureLaborSecondPriceState() {
+        if (!laborSecondPriceSettings || typeof laborSecondPriceSettings !== "object") {
+          laborSecondPriceSettings = { items: [] };
+        }
+        if (!Array.isArray(laborSecondPriceSettings.items)) {
+          laborSecondPriceSettings.items = [];
+        }
+      }
+
+      function ensureIdeaTaxonomyState() {
+        if (!adminSettings || typeof adminSettings !== "object") {
+          adminSettings = { email_automation_enabled: false, idea_taxonomy: { categories: [], stages: [] } };
+        }
+        if (!adminSettings.idea_taxonomy || typeof adminSettings.idea_taxonomy !== "object") {
+          adminSettings.idea_taxonomy = { categories: [], stages: [] };
+        }
+        if (!Array.isArray(adminSettings.idea_taxonomy.categories)) {
+          adminSettings.idea_taxonomy.categories = [];
+        }
+        if (!Array.isArray(adminSettings.idea_taxonomy.stages)) {
+          adminSettings.idea_taxonomy.stages = [];
+        }
+      }
+
+      function safeIdeaTaxonomyName(value) {
+        return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function renderIdeaTaxonomyManager() {
+        ensureIdeaTaxonomyState();
+        const categoryWrap = document.getElementById("ideaCategoryList");
+        const stageWrap = document.getElementById("ideaStageList");
+        const categories = adminSettings.idea_taxonomy.categories;
+        const stages = adminSettings.idea_taxonomy.stages;
+
+        categoryWrap.innerHTML = categories.length
+          ? categories.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div>
+                  <div class="font-semibold text-slate-900">${safeIdeaTaxonomyName(item.name)}</div>
+                  <div class="mt-1 text-sm ${item.requires_stage === false ? "text-amber-700" : "text-emerald-700"}">
+                    ${item.requires_stage === false ? "Không dùng Chi tiết/Công đoạn" : "Có dùng Chi tiết/Công đoạn"}
+                  </div>
+                </div>
+                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeIdeaCategory(${index})">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Chưa có chủ đề nào.</div>';
+
+        stageWrap.innerHTML = stages.length
+          ? stages.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div class="font-semibold text-slate-900">${safeIdeaTaxonomyName(item)}</div>
+                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeIdeaStage(${index})">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Chưa có công đoạn nào.</div>';
+      }
+
+      function openIdeaCategoryModal() {
+        document.getElementById("ideaTaxonomyModalType").value = "category";
+        document.getElementById("ideaTaxonomyModalTitle").textContent = "Thêm chủ đề";
+        document.getElementById("ideaTaxonomyNameInput").value = "";
+        document.getElementById("ideaTaxonomyRequiresStage").checked = true;
+        document.getElementById("ideaTaxonomyRequiresStageWrap").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.add("flex");
+      }
+
+      function openIdeaStageModal() {
+        document.getElementById("ideaTaxonomyModalType").value = "stage";
+        document.getElementById("ideaTaxonomyModalTitle").textContent = "Thêm chi tiết / công đoạn";
+        document.getElementById("ideaTaxonomyNameInput").value = "";
+        document.getElementById("ideaTaxonomyRequiresStageWrap").classList.add("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.add("flex");
+      }
+
+      function closeIdeaTaxonomyModal() {
+        document.getElementById("ideaTaxonomyModal").classList.add("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("flex");
+      }
+
+      function submitIdeaTaxonomyModal() {
+        ensureIdeaTaxonomyState();
+        const type = document.getElementById("ideaTaxonomyModalType").value;
+        const name = document.getElementById("ideaTaxonomyNameInput").value.trim();
+        if (!name) {
+          showNotification("Vui lòng nhập tên", "error");
+          return;
+        }
+
+        if (type === "category") {
+          const exists = adminSettings.idea_taxonomy.categories.some((item) => String(item?.name || "").trim().toLocaleLowerCase("vi-VN") === name.toLocaleLowerCase("vi-VN"));
+          if (exists) {
+            showNotification("Chủ đề này đã tồn tại", "error");
+            return;
+          }
+          adminSettings.idea_taxonomy.categories.push({
+            name,
+            requires_stage: Boolean(document.getElementById("ideaTaxonomyRequiresStage").checked),
+          });
+        } else {
+          const exists = adminSettings.idea_taxonomy.stages.some((item) => String(item || "").trim().toLocaleLowerCase("vi-VN") === name.toLocaleLowerCase("vi-VN"));
+          if (exists) {
+            showNotification("Công đoạn này đã tồn tại", "error");
+            return;
+          }
+          adminSettings.idea_taxonomy.stages.push(name);
+        }
+
+        renderIdeaTaxonomyManager();
+        closeIdeaTaxonomyModal();
+      }
+
+      function removeIdeaCategory(index) {
+        ensureIdeaTaxonomyState();
+        adminSettings.idea_taxonomy.categories.splice(index, 1);
+        renderIdeaTaxonomyManager();
+      }
+
+      function removeIdeaStage(index) {
+        ensureIdeaTaxonomyState();
+        adminSettings.idea_taxonomy.stages.splice(index, 1);
+        renderIdeaTaxonomyManager();
+      }
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -412,6 +698,13 @@
         }).format(new Date());
       }
 
+      function getCurrentTimeZoneYear() {
+        return Number(new Intl.DateTimeFormat("en-CA", {
+          timeZone: DISPLAY_TIME_ZONE,
+          year: "numeric",
+        }).format(new Date()));
+      }
+
       function formatDateTime(value) {
         if (!value) return "Chưa cập nhật";
         try {
@@ -425,6 +718,72 @@
 
       function safeText(value) {
         return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function renderLaborSecondPriceSettings() {
+        ensureLaborSecondPriceState();
+        const wrap = document.getElementById("laborSecondPriceList");
+        if (!wrap) return;
+        const items = laborSecondPriceSettings.items
+          .slice()
+          .sort((a, b) => Number(b.year || 0) - Number(a.year || 0));
+        wrap.innerHTML = items.length
+          ? items.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div>
+                  <div class="font-semibold text-slate-900">Năm ${safeText(item.year)}</div>
+                  <div class="mt-1 text-sm text-slate-600">${safeText(Number(item.labor_second_price || 0).toFixed(2))} / giÃ¢y</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700" onclick="prefillLaborSecondPrice(${index})">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
+                  <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeLaborSecondPrice(${index})">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">ChÆ°a cÃ³ nÄƒm nÃ o Ä‘Æ°á»£c cáº¥u hÃ¬nh.</div>';
+      }
+
+      function prefillLaborSecondPrice(index) {
+        ensureLaborSecondPriceState();
+        const item = laborSecondPriceSettings.items[index];
+        if (!item) return;
+        document.getElementById("laborSecondPriceYearInput").value = item.year || "";
+        document.getElementById("laborSecondPriceValueInput").value = item.labor_second_price ?? "";
+      }
+
+      function upsertLaborSecondPrice() {
+        ensureLaborSecondPriceState();
+        const year = Number(document.getElementById("laborSecondPriceYearInput").value || 0);
+        const laborSecondPrice = Number(document.getElementById("laborSecondPriceValueInput").value || 0);
+        if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+          showNotification("Vui lÃ²ng nháº­p nÄƒm há»£p lá»‡", "error");
+          return;
+        }
+        if (!Number.isFinite(laborSecondPrice) || laborSecondPrice < 0) {
+          showNotification("Vui lÃ²ng nháº­p Ä‘Æ¡n giÃ¡ giÃ¢y há»£p lá»‡", "error");
+          return;
+        }
+        const existingIndex = laborSecondPriceSettings.items.findIndex((item) => Number(item?.year) === year);
+        const nextItem = { year, labor_second_price: Number(laborSecondPrice.toFixed(2)) };
+        if (existingIndex >= 0) {
+          laborSecondPriceSettings.items.splice(existingIndex, 1, nextItem);
+        } else {
+          laborSecondPriceSettings.items.push(nextItem);
+        }
+        laborSecondPriceSettings.items.sort((a, b) => Number(b.year || 0) - Number(a.year || 0));
+        renderLaborSecondPriceSettings();
+        document.getElementById("laborSecondPriceYearInput").value = "";
+        document.getElementById("laborSecondPriceValueInput").value = "";
+      }
+
+      function removeLaborSecondPrice(index) {
+        ensureLaborSecondPriceState();
+        laborSecondPriceSettings.items.splice(index, 1);
+        renderLaborSecondPriceSettings();
       }
 
       function criterionIndexFromCode(code = "") {
@@ -1118,6 +1477,7 @@
       }
 
       function renderAdminSettings() {
+        ensureIdeaTaxonomyState();
         const toggle = document.getElementById("emailAutomationToggle");
         const label = document.getElementById("emailAutomationLabel");
         const hint = document.getElementById("emailAutomationHint");
@@ -1127,11 +1487,214 @@
         hint.textContent = enabled
           ? "Email tự động được phép chạy khi SMTP đã cấu hình đầy đủ."
           : "Email tự động đang bị khóa ở mức hệ thống.";
+        renderIdeaTaxonomyManager();
+      }
+
+      function syncLaborSecondPriceCopy() {
+        const card = document.getElementById("cardLaborSecondPrice");
+        if (!card) return;
+        const title = card.querySelector(".text-xl.font-black");
+        const desc = card.querySelector(".mt-2.text-slate-600");
+        const labels = card.querySelectorAll(".text-xs.uppercase.tracking-\\[0\\.25em\\].text-slate-500");
+        const saveButton = card.querySelector('button[onclick="saveLaborSecondPrices()"]');
+        const upsertButton = card.querySelector('button[onclick="upsertLaborSecondPrice()"]');
+        const hint = card.querySelector(".mt-4.rounded-2xl.bg-slate-50");
+        if (title) title.textContent = "Đơn giá giây CN theo năm";
+        if (desc) desc.textContent = "Chọn năm và nhập đơn giá giây CN. Giá đã lưu sẽ tự động áp dụng cho ý tưởng có năm gửi tương ứng.";
+        if (labels[0]) labels[0].textContent = "Năm";
+        if (labels[1]) labels[1].textContent = "Đơn giá giây CN";
+        if (saveButton) saveButton.childNodes[saveButton.childNodes.length - 1].textContent = " Lưu đơn giá";
+        if (upsertButton) upsertButton.childNodes[upsertButton.childNodes.length - 1].textContent = " Thêm / Cập nhật";
+        if (hint) hint.textContent = "Nếu năm chưa có cấu hình, module duyệt hiệu quả sẽ fallback về 6.14.";
+      }
+
+      async function loadLaborSecondPrices() {
+        laborSecondPriceSettings = await api.getLaborSecondPrices(currentUser.employee_code);
+        ensureLaborSecondPriceState();
+        renderLaborSecondPriceSettings();
+        syncLaborSecondPriceCopy();
+      }
+
+      async function saveLaborSecondPrices() {
+        ensureLaborSecondPriceState();
+        showLoading(true, "Đang lưu đơn giá giây CN...");
+        try {
+          laborSecondPriceSettings = await api.updateLaborSecondPrices(currentUser.employee_code, laborSecondPriceSettings.items);
+          ensureLaborSecondPriceState();
+          renderLaborSecondPriceSettings();
+          showNotification("Đã lưu đơn giá giây CN theo năm", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được đơn giá giây CN", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function renderLaborSecondPriceSettings() {
+        ensureLaborSecondPriceState();
+        const wrap = document.getElementById("laborSecondPriceList");
+        if (!wrap) return;
+        const items = laborSecondPriceSettings.items
+          .slice()
+          .sort((a, b) => Number(b.year || 0) - Number(a.year || 0));
+        wrap.innerHTML = items.length
+          ? items.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div>
+                  <div class="font-semibold text-slate-900">Năm ${safeText(item.year)}</div>
+                  <div class="mt-1 text-sm text-slate-600">${safeText(Number(item.labor_second_price || 0).toFixed(2))} / giây</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700" onclick="prefillLaborSecondPrice(${index})">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                  </button>
+                  <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeLaborSecondPrice(${index})">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Chưa có năm nào được cấu hình.</div>';
+      }
+
+      function syncLaborSecondPriceCopy() {
+        const card = document.getElementById("cardLaborSecondPrice");
+        if (!card) return;
+        const title = card.querySelector(".text-xl.font-black");
+        const desc = card.querySelector(".mt-2.text-slate-600");
+        const labels = card.querySelectorAll(".text-xs.uppercase.tracking-\\[0\\.25em\\].text-slate-500");
+        const saveButton = card.querySelector('button[onclick="saveLaborSecondPrices()"]');
+        const upsertButton = card.querySelector('button[onclick="upsertLaborSecondPrice()"]');
+        const hint = card.querySelector(".mt-4.rounded-2xl.bg-slate-50");
+        if (title) title.textContent = "Đơn giá giây CN theo năm";
+        if (desc) desc.textContent = "Chọn năm và nhập đơn giá giây CN. Giá đã lưu sẽ tự động áp dụng cho ý tưởng có năm gửi tương ứng.";
+        if (labels[0]) labels[0].textContent = "Năm";
+        if (labels[1]) labels[1].textContent = "Đơn giá giây CN";
+        if (saveButton) saveButton.childNodes[saveButton.childNodes.length - 1].textContent = " Lưu đơn giá";
+        if (upsertButton) upsertButton.childNodes[upsertButton.childNodes.length - 1].textContent = " Thêm / Cập nhật";
+        if (hint) hint.textContent = "Nếu năm chưa có cấu hình, module duyệt hiệu quả sẽ fallback về 6.14.";
+      }
+
+      function upsertLaborSecondPrice() {
+        ensureLaborSecondPriceState();
+        const year = Number(document.getElementById("laborSecondPriceYearInput").value || 0);
+        const laborSecondPrice = Number(document.getElementById("laborSecondPriceValueInput").value || 0);
+        if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+          showNotification("Vui lòng nhập năm hợp lệ", "error");
+          return;
+        }
+        if (!Number.isFinite(laborSecondPrice) || laborSecondPrice < 0) {
+          showNotification("Vui lòng nhập đơn giá giây hợp lệ", "error");
+          return;
+        }
+        const existingIndex = laborSecondPriceSettings.items.findIndex((item) => Number(item?.year) === year);
+        const nextItem = { year, labor_second_price: Number(laborSecondPrice.toFixed(2)) };
+        if (existingIndex >= 0) {
+          laborSecondPriceSettings.items.splice(existingIndex, 1, nextItem);
+        } else {
+          laborSecondPriceSettings.items.push(nextItem);
+        }
+        laborSecondPriceSettings.items.sort((a, b) => Number(b.year || 0) - Number(a.year || 0));
+        renderLaborSecondPriceSettings();
+        syncLaborSecondPriceCopy();
+        document.getElementById("laborSecondPriceYearInput").value = "";
+        document.getElementById("laborSecondPriceValueInput").value = "";
+      }
+
+      async function saveLaborSecondPrices() {
+        ensureLaborSecondPriceState();
+        showLoading(true, "Đang lưu đơn giá giây CN...");
+        try {
+          laborSecondPriceSettings = await api.updateLaborSecondPrices(currentUser.employee_code, laborSecondPriceSettings.items);
+          ensureLaborSecondPriceState();
+          renderLaborSecondPriceSettings();
+          syncLaborSecondPriceCopy();
+          showNotification("Đã lưu đơn giá giây CN theo năm", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được đơn giá giây CN", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function syncLaborSecondPriceCopy() {
+        const card = document.getElementById("cardLaborSecondPrice");
+        if (!card) return;
+        const title = card.querySelector(".text-xl.font-black");
+        const desc = card.querySelector(".mt-2.text-slate-600");
+        const labels = card.querySelectorAll(".text-xs.uppercase.tracking-\\[0\\.25em\\].text-slate-500");
+        const saveButton = card.querySelector('button[onclick="saveLaborSecondPrices()"]');
+        const upsertButton = card.querySelector('button[onclick="upsertLaborSecondPrice()"]');
+        const hint = card.querySelector(".mt-4.rounded-2xl.bg-slate-50");
+        if (title) title.textContent = "Đơn giá giây CN theo năm";
+        if (desc) desc.textContent = "Chọn năm và nhập đơn giá giây CN. Bấm lưu năm này để ghi ngay vào cấu hình.";
+        if (labels[0]) labels[0].textContent = "Năm";
+        if (labels[1]) labels[1].textContent = "Đơn giá giây CN";
+        if (saveButton) saveButton.classList.add("hidden");
+        if (upsertButton) upsertButton.childNodes[upsertButton.childNodes.length - 1].textContent = " Lưu năm này";
+        if (hint) hint.textContent = "Giá được áp dụng theo năm gửi ý tưởng. Năm chưa cấu hình sẽ fallback về 6.14.";
+      }
+
+      async function upsertLaborSecondPrice() {
+        ensureLaborSecondPriceState();
+        const year = Number(document.getElementById("laborSecondPriceYearInput").value || 0);
+        const laborSecondPrice = Number(document.getElementById("laborSecondPriceValueInput").value || 0);
+        if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+          showNotification("Vui lòng nhập năm hợp lệ", "error");
+          return;
+        }
+        if (!Number.isFinite(laborSecondPrice) || laborSecondPrice < 0) {
+          showNotification("Vui lòng nhập đơn giá giây hợp lệ", "error");
+          return;
+        }
+        const existingIndex = laborSecondPriceSettings.items.findIndex((item) => Number(item?.year) === year);
+        const nextItem = { year, labor_second_price: Number(laborSecondPrice.toFixed(2)) };
+        if (existingIndex >= 0) {
+          laborSecondPriceSettings.items.splice(existingIndex, 1, nextItem);
+        } else {
+          laborSecondPriceSettings.items.push(nextItem);
+        }
+        laborSecondPriceSettings.items.sort((a, b) => Number(b.year || 0) - Number(a.year || 0));
+        renderLaborSecondPriceSettings();
+        syncLaborSecondPriceCopy();
+        await saveLaborSecondPrices({ resetForm: true });
+      }
+
+      async function saveLaborSecondPrices(options = {}) {
+        ensureLaborSecondPriceState();
+        showLoading(true, "Đang lưu đơn giá giây CN...");
+        try {
+          laborSecondPriceSettings = await api.updateLaborSecondPrices(currentUser.employee_code, laborSecondPriceSettings.items);
+          ensureLaborSecondPriceState();
+          renderLaborSecondPriceSettings();
+          syncLaborSecondPriceCopy();
+          if (options.resetForm) {
+            document.getElementById("laborSecondPriceYearInput").value = "";
+            document.getElementById("laborSecondPriceValueInput").value = "";
+          }
+          showNotification("Đã lưu đơn giá giây CN theo năm", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được đơn giá giây CN", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      function syncIdeaTaxonomyShortcut() {
+        const taxonomyShortcut = document.querySelector('#cardIdeaTaxonomy a[href="/pages/admin-idea-taxonomy"]');
+        if (!taxonomyShortcut) {
+          return;
+        }
+        taxonomyShortcut.innerHTML = `
+          <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+          Mở setting
+        `;
       }
 
       async function loadAdminSettings() {
         adminSettings = await api.getAdminSettings(currentUser.employee_code);
         renderAdminSettings();
+        syncIdeaTaxonomyShortcut();
       }
 
       async function toggleEmailAutomation(input) {
@@ -1140,11 +1703,48 @@
         try {
           adminSettings = await api.updateEmailAutomation(currentUser.employee_code, enabled);
           renderAdminSettings();
+          syncIdeaTaxonomyShortcut();
           showNotification(enabled ? "Đã bật gửi email tự động" : "Đã tắt gửi email tự động", "success");
         } catch (error) {
           input.checked = !enabled;
           renderAdminSettings();
+          syncIdeaTaxonomyShortcut();
           showNotification(error.message || "Không cập nhật được cấu hình email", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function saveIdeaTaxonomy() {
+        ensureIdeaTaxonomyState();
+        const categories = adminSettings.idea_taxonomy.categories
+          .map((item) => ({
+            name: String(item?.name || "").trim(),
+            requires_stage: item?.requires_stage !== false,
+          }))
+          .filter((item) => item.name);
+        const stages = adminSettings.idea_taxonomy.stages
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+        const needsStages = categories.some((item) => item.requires_stage !== false);
+        if (!categories.length) {
+          showNotification("Vui lòng nhập ít nhất 1 chủ đề", "error");
+          return;
+        }
+        if (needsStages && !stages.length) {
+          showNotification("Vui lòng nhập ít nhất 1 công đoạn", "error");
+          return;
+        }
+
+        showLoading(true, "Đang lưu danh mục chủ đề và công đoạn...");
+        try {
+          const ideaTaxonomy = await api.updateIdeaTaxonomy(currentUser.employee_code, { categories, stages });
+          adminSettings = { ...(adminSettings || {}), idea_taxonomy: ideaTaxonomy };
+          renderAdminSettings();
+          syncIdeaTaxonomyShortcut();
+          showNotification("Đã lưu danh mục chủ đề và công đoạn", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được danh mục chủ đề", "error");
         } finally {
           showLoading(false);
         }
@@ -1169,9 +1769,14 @@
           : "Cập nhật bộ tiêu chí chuẩn để áp dụng cho các đợt chấm điểm.";
         document.getElementById("cardUsers").classList.toggle("hidden", !isAdmin);
         document.getElementById("cardEmailAutomation").classList.toggle("hidden", !isAdmin);
+        document.getElementById("cardIdeaTaxonomy").classList.toggle("hidden", !isAdmin);
         document.getElementById("cardDangerZone").classList.toggle("hidden", !isAdmin);
+        document.getElementById("laborSecondPriceYearInput").value = String(getCurrentTimeZoneYear() || "");
+        renderLaborSecondPriceSettings();
+        syncLaborSecondPriceCopy();
 
         await loadCriteriaSets();
+        await loadLaborSecondPrices();
         if (isAdmin) {
           await loadAdminSettings();
         }

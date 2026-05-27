@@ -21,6 +21,7 @@ class PaymentSlipResponse(BaseModel):
     idea_id: int
     employee_code: str
     employee_name: str
+    register_reward_code: Optional[str] = None
     amount: Decimal
     printed_by_manager_id: Optional[int]
     print_date: Optional[datetime]
@@ -42,6 +43,7 @@ class PaymentSlipListResponse(BaseModel):
     id: int
     idea_id: int
     employee_name: str
+    register_reward_code: Optional[str] = None
     amount: Decimal
     is_printed: bool
     print_date: Optional[datetime]

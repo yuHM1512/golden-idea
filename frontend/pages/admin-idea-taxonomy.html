@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Chủ đề và công đoạn ý tưởng</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#002b73",
+              "surface-low": "#f4f7fb",
+              "text-main": "#15233b",
+              "text-soft": "#6b7a93",
+            },
+            fontFamily: {
+              headline: ["Manrope"],
+              body: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="min-h-screen bg-[#f5f7fb] font-body text-text-main">
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur shadow-sm">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-8">
+        <a href="/pages/settings" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span>Settings</span>
+        </a>
+        <button type="button" onclick="logout()" class="inline-flex items-center gap-2 text-text-soft hover:text-text-main">
+          <span class="material-symbols-outlined">logout</span>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 pb-16 pt-8 md:px-8">
+      <section class="rounded-[2rem] bg-white p-7 shadow-[0px_20px_45px_rgba(15,23,42,0.06)]">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-text-soft">Idea taxonomy</div>
+            <h1 class="mt-2 font-headline text-[2rem] font-extrabold tracking-tight text-primary">Chủ đề và công đoạn ý tưởng</h1>
+            <p class="mt-3 max-w-3xl text-[1.02rem] text-text-soft">
+              Quản lý riêng danh sách chủ đề, chi tiết/công đoạn và cờ có dùng phần 2 trong tên ý tưởng hay không.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-4 py-2 text-sm font-semibold text-white shadow-[0px_14px_28px_rgba(0,43,115,0.18)]"
+            onclick="saveIdeaTaxonomy()"
+          >
+            <span class="material-symbols-outlined text-[18px]">save</span>
+            Lưu danh mục
+          </button>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <section class="rounded-[1.35rem] border border-slate-200 bg-slate-50/70 p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Chủ đề</div>
+                <div class="mt-2 text-sm text-slate-600">Tên chủ đề và trạng thái có dùng công đoạn hay không.</div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-3 py-2 text-sm font-semibold text-white"
+                onclick="openIdeaCategoryModal()"
+              >
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Thêm chủ đề
+              </button>
+            </div>
+            <div id="ideaCategoryList" class="mt-5 space-y-3"></div>
+          </section>
+
+          <section class="rounded-[1.35rem] border border-slate-200 bg-slate-50/70 p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Chi tiết / Công đoạn</div>
+                <div class="mt-2 text-sm text-slate-600">Danh sách dùng cho phần 2 của tên ý tưởng.</div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-[#002b73] px-3 py-2 text-sm font-semibold text-white"
+                onclick="openIdeaStageModal()"
+              >
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Thêm công đoạn
+              </button>
+            </div>
+            <div id="ideaStageList" class="mt-5 space-y-3"></div>
+          </section>
+        </div>
+
+        <div class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Chủ đề nào tắt tuỳ chọn <strong>Chi tiết/Công đoạn</strong> sẽ bỏ qua phần 2 ở form đăng ký ý tưởng.
+        </div>
+      </section>
+    </main>
+
+    <div
+      id="ideaTaxonomyModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
+      onclick="closeIdeaTaxonomyModal()"
+    >
+      <div
+        class="w-full max-w-xl overflow-hidden rounded-[2rem] bg-white shadow-[0px_35px_70px_rgba(0,0,0,0.2)]"
+        onclick="event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
+          <div>
+            <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Popup cấu hình</div>
+            <h2 id="ideaTaxonomyModalTitle" class="mt-2 text-2xl font-black font-['Manrope'] text-[#002b73]">Thêm chủ đề</h2>
+          </div>
+          <button
+            type="button"
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100"
+            onclick="closeIdeaTaxonomyModal()"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="space-y-5 px-6 py-6">
+          <input id="ideaTaxonomyModalType" type="hidden" value="category" />
+          <label class="block">
+            <div class="text-xs uppercase tracking-[0.25em] text-slate-500">Tên</div>
+            <input
+              id="ideaTaxonomyNameInput"
+              type="text"
+              class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#002b73] focus:ring-[#002b73]"
+              placeholder="Nhập tên"
+            />
+          </label>
+          <label id="ideaTaxonomyRequiresStageWrap" class="hidden flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <input id="ideaTaxonomyRequiresStage" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-[#002b73] focus:ring-[#002b73]" checked />
+            <span class="text-sm text-slate-700">Có đi với "Chi tiết/Công đoạn"</span>
+          </label>
+        </div>
+        <div class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-5">
+          <button type="button" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100" onclick="closeIdeaTaxonomyModal()">Đóng</button>
+          <button type="button" class="rounded-xl bg-[#002b73] px-5 py-2.5 text-sm font-semibold text-white" onclick="submitIdeaTaxonomyModal()">Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/api.js?v=20260525-admin-idea-taxonomy-v1"></script>
+    <script>
+      let currentUser = null;
+      let adminSettings = { email_automation_enabled: false, idea_taxonomy: { categories: [], stages: [] } };
+
+      function logout() {
+        localStorage.removeItem("is_logged_in");
+        localStorage.removeItem("employee_code");
+        window.location.href = "/pages/login";
+      }
+
+      function ensureIdeaTaxonomyState() {
+        if (!adminSettings || typeof adminSettings !== "object") {
+          adminSettings = { email_automation_enabled: false, idea_taxonomy: { categories: [], stages: [] } };
+        }
+        if (!adminSettings.idea_taxonomy || typeof adminSettings.idea_taxonomy !== "object") {
+          adminSettings.idea_taxonomy = { categories: [], stages: [] };
+        }
+        if (!Array.isArray(adminSettings.idea_taxonomy.categories)) {
+          adminSettings.idea_taxonomy.categories = [];
+        }
+        if (!Array.isArray(adminSettings.idea_taxonomy.stages)) {
+          adminSettings.idea_taxonomy.stages = [];
+        }
+      }
+
+      function safeIdeaTaxonomyName(value) {
+        return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function renderIdeaTaxonomyManager() {
+        ensureIdeaTaxonomyState();
+        const categoryWrap = document.getElementById("ideaCategoryList");
+        const stageWrap = document.getElementById("ideaStageList");
+        const categories = adminSettings.idea_taxonomy.categories;
+        const stages = adminSettings.idea_taxonomy.stages;
+
+        categoryWrap.innerHTML = categories.length
+          ? categories.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div>
+                  <div class="font-semibold text-slate-900">${safeIdeaTaxonomyName(item.name)}</div>
+                  <div class="mt-1 text-sm ${item.requires_stage === false ? "text-amber-700" : "text-emerald-700"}">
+                    ${item.requires_stage === false ? "Không dùng Chi tiết/Công đoạn" : "Có dùng Chi tiết/Công đoạn"}
+                  </div>
+                </div>
+                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeIdeaCategory(${index})">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Chưa có chủ đề nào.</div>';
+
+        stageWrap.innerHTML = stages.length
+          ? stages.map((item, index) => `
+              <div class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div class="font-semibold text-slate-900">${safeIdeaTaxonomyName(item)}</div>
+                <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-600" onclick="removeIdeaStage(${index})">
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            `).join("")
+          : '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">Chưa có công đoạn nào.</div>';
+      }
+
+      function openIdeaCategoryModal() {
+        document.getElementById("ideaTaxonomyModalType").value = "category";
+        document.getElementById("ideaTaxonomyModalTitle").textContent = "Thêm chủ đề";
+        document.getElementById("ideaTaxonomyNameInput").value = "";
+        document.getElementById("ideaTaxonomyRequiresStage").checked = true;
+        document.getElementById("ideaTaxonomyRequiresStageWrap").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.add("flex");
+      }
+
+      function openIdeaStageModal() {
+        document.getElementById("ideaTaxonomyModalType").value = "stage";
+        document.getElementById("ideaTaxonomyModalTitle").textContent = "Thêm chi tiết / công đoạn";
+        document.getElementById("ideaTaxonomyNameInput").value = "";
+        document.getElementById("ideaTaxonomyRequiresStageWrap").classList.add("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.add("flex");
+      }
+
+      function closeIdeaTaxonomyModal() {
+        document.getElementById("ideaTaxonomyModal").classList.add("hidden");
+        document.getElementById("ideaTaxonomyModal").classList.remove("flex");
+      }
+
+      function submitIdeaTaxonomyModal() {
+        ensureIdeaTaxonomyState();
+        const type = document.getElementById("ideaTaxonomyModalType").value;
+        const name = document.getElementById("ideaTaxonomyNameInput").value.trim();
+        if (!name) {
+          showNotification("Vui lòng nhập tên", "error");
+          return;
+        }
+
+        if (type === "category") {
+          const exists = adminSettings.idea_taxonomy.categories.some((item) => String(item?.name || "").trim().toLocaleLowerCase("vi-VN") === name.toLocaleLowerCase("vi-VN"));
+          if (exists) {
+            showNotification("Chủ đề này đã tồn tại", "error");
+            return;
+          }
+          adminSettings.idea_taxonomy.categories.push({
+            name,
+            requires_stage: Boolean(document.getElementById("ideaTaxonomyRequiresStage").checked),
+          });
+        } else {
+          const exists = adminSettings.idea_taxonomy.stages.some((item) => String(item || "").trim().toLocaleLowerCase("vi-VN") === name.toLocaleLowerCase("vi-VN"));
+          if (exists) {
+            showNotification("Công đoạn này đã tồn tại", "error");
+            return;
+          }
+          adminSettings.idea_taxonomy.stages.push(name);
+        }
+
+        renderIdeaTaxonomyManager();
+        closeIdeaTaxonomyModal();
+      }
+
+      function removeIdeaCategory(index) {
+        ensureIdeaTaxonomyState();
+        adminSettings.idea_taxonomy.categories.splice(index, 1);
+        renderIdeaTaxonomyManager();
+      }
+
+      function removeIdeaStage(index) {
+        ensureIdeaTaxonomyState();
+        adminSettings.idea_taxonomy.stages.splice(index, 1);
+        renderIdeaTaxonomyManager();
+      }
+
+      async function saveIdeaTaxonomy() {
+        ensureIdeaTaxonomyState();
+        const categories = adminSettings.idea_taxonomy.categories
+          .map((item) => ({
+            name: String(item?.name || "").trim(),
+            requires_stage: item?.requires_stage !== false,
+          }))
+          .filter((item) => item.name);
+        const stages = adminSettings.idea_taxonomy.stages
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+        const needsStages = categories.some((item) => item.requires_stage !== false);
+        if (!categories.length) {
+          showNotification("Vui lòng nhập ít nhất 1 chủ đề", "error");
+          return;
+        }
+        if (needsStages && !stages.length) {
+          showNotification("Vui lòng nhập ít nhất 1 công đoạn", "error");
+          return;
+        }
+
+        showLoading(true, "Đang lưu danh mục chủ đề và công đoạn...");
+        try {
+          const ideaTaxonomy = await api.updateIdeaTaxonomy(currentUser.employee_code, { categories, stages });
+          adminSettings = { ...(adminSettings || {}), idea_taxonomy: ideaTaxonomy };
+          renderIdeaTaxonomyManager();
+          showNotification("Đã lưu danh mục chủ đề và công đoạn", "success");
+        } catch (error) {
+          showNotification(error.message || "Không lưu được danh mục chủ đề", "error");
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      async function init() {
+        if (localStorage.getItem("is_logged_in") !== "true") {
+          window.location.href = "/pages/login";
+          return;
+        }
+        const code = (localStorage.getItem("employee_code") || "").trim();
+        currentUser = await api.getUserByCode(code).catch(() => null);
+        if (!currentUser || currentUser.role !== "admin") {
+          window.location.href = "/pages/menu";
+          return;
+        }
+
+        adminSettings = await api.getAdminSettings(currentUser.employee_code);
+        renderIdeaTaxonomyManager();
+      }
+
+      init().catch((error) => {
+        showNotification(error.message || "Không tải được cấu hình chủ đề ý tưởng", "error");
+      });
+    </script>
+  </body>
+</html>

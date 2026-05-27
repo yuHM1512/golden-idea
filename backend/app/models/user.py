@@ -11,6 +11,7 @@ class UserRole(str, Enum):
     DEPT_MANAGER = "dept_manager"
     SUB_DEPT_MANAGER = "sub_dept_manager"
     IE_MANAGER = "ie_manager"
+    DIGITAL_MANAGER = "digital_manager"
     BOD_MANAGER = "bod_manager"
     UNIT_REPRESENT = "unit_represent"
 
@@ -39,3 +40,9 @@ class User(Base):
     payment_slips = relationship("PaymentSlip", back_populates="printed_by_manager", foreign_keys="[PaymentSlip.printed_by_manager_id]")
     paid_payment_slips = relationship("PaymentSlip", back_populates="paid_by_user", foreign_keys="[PaymentSlip.paid_by_user_id]")
     managed_unit = relationship("Unit", back_populates="manager", foreign_keys="[Unit.manager_user_id]")
+
+    @property
+    def roles(self) -> list[str]:
+        from app.services.roles import user_roles
+
+        return user_roles(self)

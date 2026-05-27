@@ -81,7 +81,7 @@
               class="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
               onclick="switchTab('register')"
             >
-              Tiền đăng ký
+              Thưởng nóng
             </button>
             <button
               id="tabRecognitionBtn"
@@ -642,6 +642,7 @@
           tr.innerHTML = `
             <td class="px-6 py-5 align-top">
               <div class="font-semibold text-slate-900 line-clamp-2">${safeText(item.title)}</div>
+              <div class="mt-1 text-xs font-semibold text-primary">${safeText(item.register_reward_code || "Chưa cấp mã phiếu")}</div>
               <div class="mt-2 text-xs text-slate-500 line-clamp-2">${safeText(item.description || "")}</div>
             </td>
             <td class="px-4 py-5 align-top">${safeText(item.unit_name || "—")}</td>
@@ -708,6 +709,7 @@
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet("Chi tien dang ky");
         sheet.columns = [
+          { header: "Mã phiếu", key: "register_reward_code", width: 16 },
           { header: "Phiếu", key: "title", width: 36 },
           { header: "Đơn vị", key: "unit_name", width: 20 },
           { header: "Người nhận", key: "employee_name", width: 28 },
@@ -719,8 +721,8 @@
           { header: "Người chi", key: "paid_by_name", width: 24 },
         ];
 
-        sheet.addRow(["Danh sách chi tiền đăng ký"]);
-        sheet.mergeCells("A1:I1");
+        sheet.addRow(["Danh sách chi thưởng nóng"]);
+        sheet.mergeCells("A1:J1");
         const titleCell = sheet.getCell("A1");
         titleCell.font = { bold: true, size: 14 };
         titleCell.alignment = { horizontal: "center", vertical: "middle" };
@@ -735,6 +737,7 @@
         paidItems.forEach((item) => {
           sheet.addRow({
             title: item.title,
+            register_reward_code: item.register_reward_code || "",
             unit_name: item.unit_name,
             employee_name: item.employee_name,
             employee_code: item.employee_code,
@@ -762,7 +765,7 @@
 
         sheet.getColumn("reward_amount").numFmt = "#,##0";
         sheet.views = [{ state: "frozen", ySplit: 2 }];
-        sheet.autoFilter = "A2:I2";
+        sheet.autoFilter = "A2:J2";
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -771,7 +774,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "chi-tien-dang-ky-da-chi.xlsx";
+        a.download = "chi-thuong-nong-da-chi.xlsx";
         document.body.appendChild(a);
         a.click();
         a.remove();

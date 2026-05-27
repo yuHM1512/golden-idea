@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, func, or_
@@ -7,12 +7,13 @@ from typing import List, Optional
 
 from app.database import get_db
 from app.models.attachment import FileAttachment
-from app.models.idea import Idea, IdeaCategory, IdeaStatus
+from app.models.idea import Idea, IdeaStatus
 from app.models.review import IdeaReview, ReviewLevel
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.unit import Unit
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
+from app.services.roles import has_role, primary_role, user_roles
 from app.schemas.library import (
     IdeaLibraryAttachment,
     IdeaLibraryDetail,
@@ -20,6 +21,7 @@ from app.schemas.library import (
     StandardizedIdeaReplicationCreate,
     StandardizedIdeaReplicationResponse,
 )
+from app.time_utils import now_display_tz, to_display_tz
 
 router = APIRouter(prefix="/library", tags=["library"])
 
@@ -57,7 +59,7 @@ def _attachment_to_view(attachment: FileAttachment) -> IdeaLibraryAttachment:
 
 
 def _normalize_role(user: User | None) -> str:
-    return (user.role or "").strip().lower() if user else ""
+    return primary_role(user_roles(user)) if user else ""
 
 
 def _resolve_user(db: Session, employee_code: str | None) -> User | None:
@@ -78,6 +80,24 @@ def _can_view_unit_library(user: User | None) -> bool:
     if user is None or user.unit_id is None:
         return False
     return _normalize_role(user) in UNIT_LIBRARY_ALLOWED_ROLES
+
+
+def _subtract_12_months(value: date) -> date:
+    try:
+        return value.replace(year=value.year - 1)
+    except ValueError:
+        return value.replace(year=value.year - 1, day=28)
+
+
+def _replication_cutoff_date() -> date:
+    return _subtract_12_months(now_display_tz().date())
+
+
+def _is_replication_eligible_by_date(idea: Idea) -> bool:
+    submitted = to_display_tz(idea.submitted_at)
+    if submitted is None:
+        return False
+    return submitted.date() >= _replication_cutoff_date()
 
 
 def _latest_council_result_subquery(db: Session):
@@ -141,7 +161,7 @@ async def list_library_ideas(
     library_type: str = Query(default=LIBRARY_TYPE_STANDARDIZATION),
     q: Optional[str] = None,
     product_code: Optional[str] = None,
-    category: Optional[IdeaCategory] = None,
+    category: Optional[str] = None,
     status: Optional[IdeaStatus] = None,
     unit_id: Optional[int] = None,
     skip: int = 0,
@@ -162,6 +182,8 @@ async def list_library_ideas(
             Idea.status,
             Idea.submitted_at,
             Idea.description,
+            Idea.description_before,
+            Idea.description_after,
             Idea.full_name,
             Idea.employee_code,
             Idea.product_code,
@@ -184,6 +206,8 @@ async def list_library_ideas(
             Idea.status,
             Idea.submitted_at,
             Idea.description,
+            Idea.description_before,
+            Idea.description_after,
             Idea.full_name,
             Idea.employee_code,
             Idea.product_code,
@@ -241,6 +265,8 @@ async def list_library_ideas(
                 employee_code=(row.employee_code or None),
                 product_code=(row.product_code or None),
                 description=row.description or "",
+                description_before=row.description_before or None,
+                description_after=row.description_after or None,
                 attachment_count=int(row.attachment_count or 0),
                 library_type=current_library_type,
             )
@@ -303,6 +329,8 @@ async def get_library_idea_detail(
         position=idea.position or None,
         product_code=idea.product_code or None,
         description=idea.description or "",
+        description_before=idea.description_before or None,
+        description_after=idea.description_after or None,
         attachment_count=len(attachments),
         library_type=current_library_type,
         attachments=attachments,
@@ -330,6 +358,10 @@ async def create_standardized_idea_replication(
     latest_result_type = _latest_council_result_type(idea)
     if latest_result_type not in (STANDARDIZATION_RESULT_TYPES | NON_STANDARDIZATION_RESULT_TYPES):
         raise HTTPException(status_code=400, detail="Chỉ ý tưởng thuộc 2 kho chuẩn hoá mới được nhân rộng")
+
+    if not _is_replication_eligible_by_date(idea):
+        cutoff = _replication_cutoff_date().strftime("%d/%m/%Y")
+        raise HTTPException(status_code=400, detail=f"Chá»‰ nhÃ¢n rá»™ng Ã½ tÆ°á»Ÿng tá»« {cutoff} Ä‘áº¿n nay")
 
     description = (payload.description or "").strip()
     if not description:

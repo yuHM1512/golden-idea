@@ -5,13 +5,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-class IdeaCategory(str, Enum):
-    TOOLS = "TOOLS"
-    PROCESS = "PROCESS"
-    DIGITIZATION = "DIGITIZATION"
-    OTHER = "OTHER"
-
-
 class IdeaStatus(str, Enum):
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"
@@ -71,8 +64,10 @@ class IdeaCreate(BaseModel):
     position: Optional[str] = Field(None, description="Chức vụ")
     title: str = Field(..., description="Tên ý tưởng")
     product_code: Optional[str] = Field(None, description="Mã hàng")
-    category: IdeaCategory = Field(..., description="Nội dung ý tưởng liên quan")
-    description: str = Field(..., description="Mô tả ý tưởng")
+    category: str = Field(..., description="Nội dung ý tưởng liên quan")
+    description: Optional[str] = Field(None, description="Mô tả ý tưởng gộp")
+    description_before: Optional[str] = Field(None, description="Mô tả trước cải tiến")
+    description_after: Optional[str] = Field(None, description="Mô tả sau cải tiến")
     is_anonymous: bool = Field(default=True, description="Ẩn danh")
     unit_id: int = Field(..., description="Unit ID")
 
@@ -86,8 +81,10 @@ class IdeaUpdate(BaseModel):
     position: Optional[str] = None
     title: Optional[str] = None
     product_code: Optional[str] = None
-    category: Optional[IdeaCategory] = None
+    category: Optional[str] = None
     description: Optional[str] = None
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
     is_anonymous: Optional[bool] = None
 
 
@@ -101,8 +98,10 @@ class IdeaDetailResponse(BaseModel):
     position: Optional[str]
     title: str
     product_code: Optional[str]
-    category: IdeaCategory
+    category: str
     description: str
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
     is_anonymous: bool
     status: IdeaStatus
     unit_id: int
@@ -121,10 +120,12 @@ class IdeaListResponse(BaseModel):
     id: int
     title: str
     full_name: str
-    category: IdeaCategory
+    category: str
     status: IdeaStatus
     submitted_at: datetime
     description: str = Field(..., description="First 100 chars of description")
+    description_before: Optional[str] = None
+    description_after: Optional[str] = None
 
     class Config:
         from_attributes = True

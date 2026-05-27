@@ -96,18 +96,9 @@
               <label class="text-xs uppercase tracking-widest text-slate-500">full_name *</label>
               <input id="fFullName" class="mt-1 w-full rounded-xl bg-slate-50 border-0" placeholder="Họ và tên" />
             </div>
-            <div>
+            <div class="md:col-span-2">
               <label class="text-xs uppercase tracking-widest text-slate-500">role *</label>
-              <select id="fRole" class="mt-1 w-full rounded-xl bg-slate-50 border-0">
-                <option value="employee">employee</option>
-                <option value="dept_manager">dept_manager</option>
-                <option value="sub_dept_manager">sub_dept_manager</option>
-                <option value="ie_manager">ie_manager</option>
-                <option value="bod_manager">bod_manager</option>
-                <option value="unit_represent">unit_represent</option>
-                <option value="treasurer">treasurer</option>
-                <option value="admin">admin</option>
-              </select>
+              <div id="fRoleGroup" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
             </div>
             <div>
               <label class="text-xs uppercase tracking-widest text-slate-500">unit *</label>
@@ -181,18 +172,9 @@
               <label class="text-xs uppercase tracking-widest text-slate-500">full_name *</label>
               <input id="eFullName" class="mt-1 w-full rounded-xl bg-slate-50 border-0" />
             </div>
-            <div>
+            <div class="md:col-span-2">
               <label class="text-xs uppercase tracking-widest text-slate-500">role *</label>
-              <select id="eRole" class="mt-1 w-full rounded-xl bg-slate-50 border-0">
-                <option value="employee">employee</option>
-                <option value="dept_manager">dept_manager</option>
-                <option value="sub_dept_manager">sub_dept_manager</option>
-                <option value="ie_manager">ie_manager</option>
-                <option value="bod_manager">bod_manager</option>
-                <option value="unit_represent">unit_represent</option>
-                <option value="treasurer">treasurer</option>
-                <option value="admin">admin</option>
-              </select>
+              <div id="eRoleGroup" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
             </div>
             <div>
               <label class="text-xs uppercase tracking-widest text-slate-500">unit</label>
@@ -232,6 +214,17 @@
       let currentUsers = [];
       let editingEmployeeCode = "";
       const LEADERSHIP_UNIT_VALUE = "__LEADERSHIP__";
+      const ROLE_OPTIONS = [
+        "employee",
+        "dept_manager",
+        "sub_dept_manager",
+        "ie_manager",
+        "digital_manager",
+        "bod_manager",
+        "unit_represent",
+        "treasurer",
+        "admin",
+      ];
 
       function requireAdmin() {
         const code = (localStorage.getItem("employee_code") || "").toLowerCase();
@@ -247,6 +240,7 @@
       }
 
       function openModal() {
+        setSelectedRoles("fRole", ["employee"]);
         document.getElementById("modalBackdrop").classList.remove("hidden");
         document.getElementById("modalBackdrop").classList.add("flex");
       }
@@ -259,6 +253,35 @@
       function openEditModal() {
         document.getElementById("editModalBackdrop").classList.remove("hidden");
         document.getElementById("editModalBackdrop").classList.add("flex");
+      }
+
+      function renderRoleCheckboxes(groupId, name) {
+        const wrap = document.getElementById(groupId);
+        wrap.innerHTML = ROLE_OPTIONS.map((role) => `
+          <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-[#002b73] hover:bg-white">
+            <input
+              type="checkbox"
+              name="${name}"
+              value="${role}"
+              class="h-4 w-4 rounded border-slate-300 text-[#002b73] focus:ring-[#002b73]"
+              onchange="onRoleCheckboxChange('${name}')"
+            />
+            <span>${role}</span>
+          </label>
+        `).join("");
+      }
+
+      function onRoleCheckboxChange(name) {
+        const roles = getSelectedRoles(name);
+        const employeeBox = document.querySelector(`input[name="${name}"][value="employee"]`);
+        if (employeeBox && roles.length > 1 && roles.includes("employee")) {
+          employeeBox.checked = false;
+        }
+        if (!getSelectedRoles(name).length && employeeBox) {
+          employeeBox.checked = true;
+        }
+        if (name === "fRole") syncRoleUnitUi();
+        if (name === "eRole") syncEditRoleUnitUi();
       }
 
       function closeEditModal() {
@@ -301,11 +324,11 @@
       }
 
       function syncRoleUnitUi() {
-        const role = document.getElementById("fRole").value;
+        const roles = getSelectedRoles("fRole");
         const unitSelect = document.getElementById("fUnitId");
-        if (role === "bod_manager") {
+        if (roles.length === 1 && roles.includes("bod_manager")) {
           unitSelect.value = LEADERSHIP_UNIT_VALUE;
-        } else if (["treasurer", "admin"].includes(role)) {
+        } else if (roles.every((role) => ["treasurer", "admin", "bod_manager"].includes(role))) {
           return;
         } else if (unitSelect.value === LEADERSHIP_UNIT_VALUE && units.length) {
           unitSelect.value = String(units[0].id);
@@ -313,21 +336,39 @@
       }
 
       function syncEditRoleUnitUi() {
-        const role = document.getElementById("eRole").value;
+        const roles = getSelectedRoles("eRole");
         const unitSelect = document.getElementById("eUnitId");
-        if (role === "bod_manager") {
+        if (roles.length === 1 && roles.includes("bod_manager")) {
           unitSelect.value = LEADERSHIP_UNIT_VALUE;
-        } else if (["treasurer", "admin"].includes(role)) {
+        } else if (roles.every((role) => ["treasurer", "admin", "bod_manager"].includes(role))) {
           return;
         } else if (unitSelect.value === LEADERSHIP_UNIT_VALUE && units.length) {
           unitSelect.value = String(units[0].id);
         }
       }
 
+      function getSelectedRoles(selectId) {
+        const roles = Array.from(document.querySelectorAll(`input[name="${selectId}"]:checked`)).map((input) => input.value).filter(Boolean);
+        return roles.length ? roles : ["employee"];
+      }
+
+      function setSelectedRoles(name, roles) {
+        const selected = Array.isArray(roles) && roles.length ? roles : ["employee"];
+        document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+          input.checked = selected.includes(input.value);
+        });
+      }
+
+      function rolesLabel(userOrRow) {
+        const roles = Array.isArray(userOrRow?.roles) && userOrRow.roles.length ? userOrRow.roles : [userOrRow?.role || "employee"];
+        return roles.join(", ");
+      }
+
       function addToBatch() {
         const employee_code = document.getElementById("fEmployeeCode").value.trim();
         const full_name = document.getElementById("fFullName").value.trim();
-        const role = document.getElementById("fRole").value;
+        const roles = getSelectedRoles("fRole");
+        const role = roles[0] || "employee";
         const rawUnitValue = document.getElementById("fUnitId").value;
         const unit_id = rawUnitValue === LEADERSHIP_UNIT_VALUE ? null : parseInt(rawUnitValue, 10);
         const email = document.getElementById("fEmail").value.trim() || null;
@@ -338,12 +379,12 @@
           return;
         }
 
-        if (!["bod_manager", "treasurer", "admin"].includes(role) && (!unit_id || Number.isNaN(unit_id))) {
+        if (!roles.every((item) => ["bod_manager", "treasurer", "admin"].includes(item)) && (!unit_id || Number.isNaN(unit_id))) {
           alert("Vui lòng chọn đơn vị");
           return;
         }
 
-        batch.push({ employee_code, full_name, role, unit_id, email, phone_number });
+        batch.push({ employee_code, full_name, role, roles, unit_id, email, phone_number });
         renderBatch();
 
         document.getElementById("fEmployeeCode").value = "";
@@ -370,7 +411,7 @@
           tr.innerHTML = `
             <td class="px-4 py-2 font-mono">${row.employee_code}</td>
             <td class="px-4 py-2">${row.full_name}</td>
-            <td class="px-4 py-2">${row.role}</td>
+            <td class="px-4 py-2">${rolesLabel(row)}</td>
             <td class="px-4 py-2">${unitLabel}</td>
             <td class="px-4 py-2 text-right">
               <button class="px-3 py-1 rounded-lg hover:bg-slate-100" onclick="removeBatch(${idx})">Xóa</button>
@@ -420,7 +461,7 @@
           tr.innerHTML = `
             <td class="px-6 py-3 font-mono">${u.employee_code}</td>
             <td class="px-6 py-3">${u.full_name}</td>
-            <td class="px-6 py-3">${u.role}</td>
+            <td class="px-6 py-3">${rolesLabel(u)}</td>
             <td class="px-6 py-3">${unitLabel}</td>
             <td class="px-6 py-3 text-slate-600">${u.email || ""}</td>
             <td class="px-6 py-3 text-right">
@@ -441,8 +482,9 @@
         editingEmployeeCode = user.employee_code;
         document.getElementById("eEmployeeCode").value = user.employee_code || "";
         document.getElementById("eFullName").value = user.full_name || "";
-        document.getElementById("eRole").value = user.role || "employee";
-        document.getElementById("eUnitId").value = user.role === "bod_manager" ? LEADERSHIP_UNIT_VALUE : String(user.unit_id ?? LEADERSHIP_UNIT_VALUE);
+        const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role || "employee"];
+        setSelectedRoles("eRole", roles);
+        document.getElementById("eUnitId").value = roles.length === 1 && roles.includes("bod_manager") ? LEADERSHIP_UNIT_VALUE : String(user.unit_id ?? LEADERSHIP_UNIT_VALUE);
         document.getElementById("eEmail").value = user.email || "";
         document.getElementById("ePhone").value = user.phone_number || "";
         document.getElementById("ePosition").value = user.position || "";
@@ -457,7 +499,8 @@
         }
 
         const full_name = document.getElementById("eFullName").value.trim();
-        const role = document.getElementById("eRole").value;
+        const roles = getSelectedRoles("eRole");
+        const role = roles[0] || "employee";
         const rawUnitValue = document.getElementById("eUnitId").value;
         const unit_id = rawUnitValue === LEADERSHIP_UNIT_VALUE ? null : parseInt(rawUnitValue, 10);
         const email = document.getElementById("eEmail").value.trim();
@@ -468,7 +511,7 @@
           alert("Vui lòng nhập full_name");
           return;
         }
-        if (!["bod_manager", "treasurer", "admin"].includes(role) && (!unit_id || Number.isNaN(unit_id))) {
+        if (!roles.every((item) => ["bod_manager", "treasurer", "admin"].includes(item)) && (!unit_id || Number.isNaN(unit_id))) {
           alert("Vui lòng chọn đơn vị");
           return;
         }
@@ -477,6 +520,7 @@
           await api.updateUser(editingEmployeeCode, {
             full_name,
             role,
+            roles,
             unit_id,
             email: email || null,
             phone_number: phone_number || null,
@@ -502,9 +546,10 @@
       async function init() {
         requireAdmin();
         units = await api.getUnits();
+        renderRoleCheckboxes("fRoleGroup", "fRole");
+        renderRoleCheckboxes("eRoleGroup", "eRole");
+        setSelectedRoles("fRole", ["employee"]);
         renderUnitOptions();
-        document.getElementById("fRole").addEventListener("change", syncRoleUnitUi);
-        document.getElementById("eRole").addEventListener("change", syncEditRoleUnitUi);
         await refreshUsers();
       }
 
