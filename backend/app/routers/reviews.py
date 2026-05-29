@@ -1128,6 +1128,11 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
     idea.bod_register_approved = True
     idea.bod_register_approved_at = now_utc()
     idea.bod_register_approved_by_id = user.id
+    if _normalize_status(idea.status) != IdeaStatus.REWARDED.value:
+        idea.status = IdeaStatus.APPROVED
+    if idea.approved_at is None:
+        idea.approved_at = idea.bod_register_approved_at
+    idea.reviewed_at = idea.bod_register_approved_at
     slip = _get_or_create_payment_slip(db, idea)
     _assign_register_reward_code(db, slip, idea.bod_register_approved_at)
     db.add(

@@ -1232,10 +1232,12 @@
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
           const allowed = new Set(allowedBodMoneyResultTypes());
           items = items.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          const approvedStatuses = new Set(["APPROVED", "REWARDED"]);
+          const approved = items.filter((item) => approvedStatuses.has(String(item?.status || "").trim().toUpperCase())).length;
           return {
             total: items.length,
-            approved: items.filter((item) => bodRegisterFilterBucket(item) === "BOD_REGISTER_APPROVED").length,
-            pending: items.filter((item) => bodRegisterFilterBucket(item) === "BOD_REGISTER_PENDING").length,
+            approved,
+            pending: Math.max(items.length - approved, 0),
             rejected: 0,
           };
         }
