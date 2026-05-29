@@ -183,11 +183,13 @@
     function statusChip(item) {
       const label = item.status === "REWARDED" && item.employee_received
         ? "Đã nhận tiền"
-        : (STATUS_LABELS[item.status] || item.status || "—");
+        : item.status === "LEADERSHIP_REVIEW" && item.bod_register_approved
+          ? "Đã duyệt đủ 3 cấp"
+          : (STATUS_LABELS[item.status] || item.status || "—");
       if (item.status === "REJECTED") {
         return `<span class="inline-flex items-center rounded-full bg-[#fff1f3] px-3 py-1 font-semibold text-[#b42318]">${safeText(label)}</span>`;
       }
-      if (["APPROVED", "REWARDED"].includes(item.status)) {
+      if (["APPROVED", "REWARDED"].includes(item.status) || (item.status === "LEADERSHIP_REVIEW" && item.bod_register_approved)) {
         return `<span class="inline-flex items-center rounded-full bg-[#eef9f2] px-3 py-1 font-semibold text-[#0f7a43]">${safeText(label)}</span>`;
       }
       return `<span class="inline-flex items-center rounded-full bg-surface-low px-3 py-1 font-semibold text-text-main">${safeText(label)}</span>`;

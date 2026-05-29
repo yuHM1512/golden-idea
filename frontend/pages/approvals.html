@@ -463,6 +463,18 @@
         REJECTED: "Không duyệt",
         CANCELLED: "Đã huỷ",
       };
+      function displayStatusLabel(item) {
+        if (item?.status === "REWARDED" && item?.employee_received) return "Đã nhận tiền";
+        if (item?.status === "LEADERSHIP_REVIEW" && item?.bod_register_approved) return "Đã duyệt đủ 3 cấp";
+        return STATUS_LABELS[item?.status] || item?.status || "—";
+      }
+
+      function displayStatusTone(item) {
+        if (item?.status === "REJECTED") return "rejected";
+        if (item?.status === "APPROVED" || item?.status === "REWARDED") return "approved";
+        if (item?.status === "LEADERSHIP_REVIEW" && item?.bod_register_approved) return "approved";
+        return "default";
+      }
       const SCORE_STAGE_LABELS = {
         dept_manager: "Cấp đơn vị",
         sub_dept_manager: "Cấp đơn vị",
@@ -1730,7 +1742,13 @@
             </td>
             <td class="px-4 py-5 align-top ${primaryTextClass}">${safeText(CATEGORY_LABELS[item.category] || item.category || "Khác")}</td>
             <td class="px-4 py-5 align-top">
-              <span class="${chipClass}">${safeText(item.status === 'REWARDED' && item.employee_received ? 'Đã nhận tiền' : (STATUS_LABELS[item.status] || item.status))}</span>
+              <span class="${
+                displayStatusTone(item) === "rejected"
+                  ? "inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-400 font-semibold"
+                  : displayStatusTone(item) === "approved"
+                    ? "inline-flex items-center px-3 py-1 rounded-full bg-[#eef9f2] text-[#0f7a43] font-semibold"
+                    : chipClass
+              }">${safeText(displayStatusLabel(item))}</span>
             </td>
             <td class="px-4 py-5 align-top">${scoreChip(item.dept_score)}</td>
             <td class="px-4 py-5 align-top">${scoreChip(item.ie_score)}</td>

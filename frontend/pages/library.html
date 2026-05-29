@@ -419,6 +419,11 @@
         REJECTED: "Không duyệt",
         CANCELLED: "Đã huỷ",
       };
+      function displayStatusLabel(item) {
+        if (item?.status === "REWARDED" && item?.employee_received) return "Đã nhận tiền";
+        if (item?.status === "LEADERSHIP_REVIEW" && item?.bod_register_approved) return "Đã duyệt đủ 3 cấp";
+        return STATUS_LABELS[item?.status] || item?.status || "—";
+      }
       const LIBRARY_TAB_LABELS = {
         standardization: "Đưa vào chuẩn hoá",
         non_standardization: "Không đưa vào chuẩn hoá",
@@ -1227,7 +1232,7 @@
           const cat = CATEGORY_LABELS[r.category] || r.category;
           const categoryBadgeClass = CATEGORY_BADGE_CLASSES[r.category] || CATEGORY_BADGE_CLASSES.OTHER;
           const unit = r.unit_name ? `${r.unit_name}` : "";
-          const statusLabel = STATUS_LABELS[r.status] || r.status || "\u2014";
+          const statusLabel = displayStatusLabel(r);
           const replicateCell = canReplicateIdea()
             ? canReplicateRow(r)
               ? `
