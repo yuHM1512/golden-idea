@@ -692,6 +692,17 @@ def _build_stage_context(db: Session, idea: Idea, stage: str) -> ApprovalEmailCo
             action_text="theo dõi",
             idea=idea,
         )
+    if stage == "register_slip_approved_notice":
+        recipients = _query_unit_leadership_recipients(db, idea)
+        return ApprovalEmailContext(
+            recipients=recipients,
+            greeting_name=unit_name,
+            subject=f"[Ý tưởng vàng] Phiếu nhận thưởng nóng đã được duyệt - {idea.title}",
+            content_line="Ban lãnh đạo đã duyệt phiếu nhận thưởng nóng cho YTV sau:",
+            action_url=settings.APPROVAL_PAGE_URL,
+            action_text="in phiếu và mang lên phòng Kế toán để nhận thưởng",
+            idea=idea,
+        )
     return None
 
 

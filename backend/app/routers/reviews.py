@@ -1156,6 +1156,8 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
         .filter(Idea.id == idea.id)
         .first()
     )
+    if refreshed is not None:
+        send_approval_stage_email(db, refreshed, "register_slip_approved_notice")
     return _idea_to_detail(refreshed, _can_review(user, refreshed))
 
 
