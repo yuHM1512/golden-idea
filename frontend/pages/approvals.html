@@ -88,6 +88,24 @@
                 <option value="REJECTED">Không duyệt</option>
               </select>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Quý</label>
+                <select id="quarterFilter" class="mt-2 w-full rounded-2xl border-none bg-surface-low" onchange="onQueueDateFilterChange()">
+                  <option value="">Tất cả</option>
+                  <option value="1">Q1</option>
+                  <option value="2">Q2</option>
+                  <option value="3">Q3</option>
+                  <option value="4">Q4</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs uppercase tracking-[0.25em] text-text-soft">Năm</label>
+                <select id="yearFilter" class="mt-2 w-full rounded-2xl border-none bg-surface-low" onchange="onQueueDateFilterChange()">
+                  <option value="">Tất cả</option>
+                </select>
+              </div>
+            </div>
             <button
               class="w-full rounded-2xl bg-primary text-white font-semibold py-3 shadow-[0px_18px_36px_rgba(0,43,115,0.16)]"
               onclick="loadQueue()"
@@ -626,6 +644,8 @@
       let currentBodApprovalTab = "register_slip";
       let activeCouncilScoreIdea = null;
       let replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
+      let currentQueueQuarterFilter = "";
+      let currentQueueYearFilter = "";
       let currentCouncilQuarterFilter = "";
       let currentCouncilYearFilter = "";
       let currentIeModalMode = "view";
@@ -871,6 +891,13 @@
         renderQueue(getDisplayedQueueItems());
       }
 
+      function onQueueDateFilterChange() {
+        currentQueueQuarterFilter = document.getElementById("quarterFilter")?.value || "";
+        currentQueueYearFilter = document.getElementById("yearFilter")?.value || "";
+        renderKpis(getActiveMetrics());
+        renderQueue(getDisplayedQueueItems());
+      }
+
       function canCreateCouncilRewardBatch() {
         return ["ie_manager", "digital_manager", "bod_manager"].includes(currentRole)
           && isCouncilReviewMode()
@@ -911,6 +938,19 @@
         yearSelect.value = currentCouncilYearFilter;
         quarterSelect.value = currentCouncilQuarterFilter;
         renderCouncilRewardBatchAction();
+      }
+
+      function renderQueueDateFilterOptions() {
+        const yearSelect = document.getElementById("yearFilter");
+        const quarterSelect = document.getElementById("quarterFilter");
+        if (!yearSelect || !quarterSelect) return;
+        const source = Array.isArray(queueData?.items) ? queueData.items : [];
+        const years = [...new Set(source.map((item) => itemYearFromDate(item?.submitted_at)).filter(Boolean))].sort((a, b) => b - a);
+        yearSelect.innerHTML = ['<option value="">Tất cả</option>']
+          .concat(years.map((year) => `<option value="${year}">${year}</option>`))
+          .join('');
+        yearSelect.value = currentQueueYearFilter;
+        quarterSelect.value = currentQueueQuarterFilter;
       }
       function safeText(text) {
         return String(text ?? "").split("<").join("&lt;").split(">").join("&gt;");
@@ -1105,9 +1145,12 @@
         }
         const statusFilter = document.getElementById("statusFilter");
         if (statusFilter) statusFilter.value = "";
+        currentQueueQuarterFilter = "";
+        currentQueueYearFilter = "";
         renderDualRoleTabs();
         renderRoleSwitcher();
         syncStatusFilterOptions();
+        renderQueueDateFilterOptions();
         renderIeApprovalTabs();
         renderBodApprovalTabs();
         renderCouncilFilterOptions();
@@ -1119,6 +1162,7 @@
       function setBodApprovalTab(tab) {
         currentBodApprovalTab = tab === "council_review" ? "council_review" : "register_slip";
         syncStatusFilterOptions();
+        renderQueueDateFilterOptions();
         renderBodApprovalTabs();
         renderCouncilFilterOptions();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
@@ -1129,6 +1173,7 @@
       function setIeApprovalTab(tab) {
         currentIeApprovalTab = tab === "replication_review" ? "replication_review" : (tab === "council_review" ? "council_review" : "idea_review");
         renderIeApprovalTabs();
+        renderQueueDateFilterOptions();
         renderCouncilFilterOptions();
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
@@ -1192,6 +1237,12 @@
             base = base.filter((item) => String(itemYearFromDate(item?.submitted_at) || "") === String(currentCouncilYearFilter));
           }
         }
+        if (currentQueueQuarterFilter) {
+          base = base.filter((item) => String(itemQuarterFromDate(item?.submitted_at) || "") === String(currentQueueQuarterFilter));
+        }
+        if (currentQueueYearFilter) {
+          base = base.filter((item) => String(itemYearFromDate(item?.submitted_at) || "") === String(currentQueueYearFilter));
+        }
         const q = normalizeSearchText(queueSearchTerm);
         if (!q) return base;
 
@@ -1228,6 +1279,12 @@
             (item) => !isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
           );
+        }
+        if (currentQueueQuarterFilter) {
+          items = items.filter((item) => String(itemQuarterFromDate(item?.submitted_at) || "") === String(currentQueueQuarterFilter));
+        }
+        if (currentQueueYearFilter) {
+          items = items.filter((item) => String(itemYearFromDate(item?.submitted_at) || "") === String(currentQueueYearFilter));
         }
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
           const allowed = new Set(allowedBodMoneyResultTypes());
@@ -3079,6 +3136,7 @@
           renderDualRoleTabs();
           renderIeApprovalTabs();
           renderBodApprovalTabs();
+          renderQueueDateFilterOptions();
           renderCouncilFilterOptions();
           renderPendingFilterButton();
           renderQueue(getDisplayedQueueItems());
@@ -3125,6 +3183,7 @@
         if (currentRole === "admin") currentBodApprovalTab = "council_review";
         renderIeApprovalTabs();
         renderBodApprovalTabs();
+        renderQueueDateFilterOptions();
         renderCouncilFilterOptions();
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint({});
