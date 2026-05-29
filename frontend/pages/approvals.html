@@ -463,6 +463,11 @@
         REJECTED: "Không duyệt",
         CANCELLED: "Đã huỷ",
       };
+      const BOD_REGISTER_FILTER_OPTIONS = [
+        { value: "", label: "Tất cả" },
+        { value: "BOD_REGISTER_PENDING", label: "BCT đã duyệt, chờ lãnh đạo" },
+        { value: "BOD_REGISTER_APPROVED", label: "Đã duyệt đủ 3 cấp" },
+      ];
       function displayStatusLabel(item) {
         if (item?.status === "REWARDED" && item?.employee_received) return "Đã nhận tiền";
         if (item?.status === "LEADERSHIP_REVIEW" && item?.bod_register_approved) return "Đã duyệt đủ 3 cấp";
@@ -951,14 +956,39 @@
       function syncStatusFilterOptions() {
         const statusFilter = document.getElementById("statusFilter");
         if (!statusFilter) return;
-        const rejectedOption = Array.from(statusFilter.options).find((option) => option.value === "REJECTED");
-        if (!rejectedOption) return;
+        const currentValue = statusFilter.value;
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          statusFilter.innerHTML = BOD_REGISTER_FILTER_OPTIONS
+            .map((option) => `<option value="${option.value}">${option.label}</option>`)
+            .join("");
+          if (BOD_REGISTER_FILTER_OPTIONS.some((option) => option.value === currentValue)) {
+            statusFilter.value = currentValue;
+          }
+          return;
+        }
+
+        statusFilter.innerHTML = `
+          <option value="">Tất cả</option>
+          <option value="SUBMITTED">Chờ duyệt cấp đơn vị</option>
+          <option value="DEPT_APPROVED">Đơn vị đã duyệt, chờ BCT</option>
+          <option value="LEADERSHIP_REVIEW">BCT đã duyệt, chờ lãnh đạo</option>
+          <option value="APPROVED">Đã duyệt đủ 3 cấp</option>
+          <option value="REJECTED">Không duyệt</option>
+        `;
 
         if (currentRole === "bod_manager") {
-          if (statusFilter.value === "REJECTED") {
+          if (currentValue === "REJECTED") {
             statusFilter.value = "";
+          } else if (Array.from(statusFilter.options).some((option) => option.value === currentValue)) {
+            statusFilter.value = currentValue;
           }
-          rejectedOption.remove();
+          const rejectedOption = Array.from(statusFilter.options).find((option) => option.value === "REJECTED");
+          if (rejectedOption) rejectedOption.remove();
+          return;
+        }
+
+        if (Array.from(statusFilter.options).some((option) => option.value === currentValue)) {
+          statusFilter.value = currentValue;
         }
       }
 
@@ -990,6 +1020,10 @@
           && Boolean(item?.eligible_register_reward)
           && !Boolean(item?.bod_register_approved)
           && ["LEADERSHIP_REVIEW", "APPROVED"].includes(status);
+      }
+
+      function bodRegisterFilterBucket(item) {
+        return item?.bod_register_approved ? "BOD_REGISTER_APPROVED" : "BOD_REGISTER_PENDING";
       }
 
       function allowedBodCouncilResultTypes() {
@@ -1084,6 +1118,7 @@
 
       function setBodApprovalTab(tab) {
         currentBodApprovalTab = tab === "council_review" ? "council_review" : "register_slip";
+        syncStatusFilterOptions();
         renderBodApprovalTabs();
         renderCouncilFilterOptions();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
@@ -1138,10 +1173,14 @@
         }
         let base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          const statusFilterValue = document.getElementById("statusFilter")?.value || "";
           const allowed = new Set(allowedBodMoneyResultTypes());
           base = base.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
           if (showPendingReviewOnly) {
             base = base.filter((item) => canApproveRegisterSlip(item));
+          }
+          if (statusFilterValue) {
+            base = base.filter((item) => bodRegisterFilterBucket(item) === statusFilterValue);
           }
         } else if (isCouncilReviewMode()) {
           const allowed = new Set(allowedBodCouncilResultTypes());
@@ -1189,6 +1228,16 @@
             (item) => !isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
           );
+        }
+        if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
+          const allowed = new Set(allowedBodMoneyResultTypes());
+          items = items.filter((item) => allowed.has(String(item?.ie_result_type || "").trim().toUpperCase()));
+          return {
+            total: items.length,
+            approved: items.filter((item) => bodRegisterFilterBucket(item) === "BOD_REGISTER_APPROVED").length,
+            pending: items.filter((item) => bodRegisterFilterBucket(item) === "BOD_REGISTER_PENDING").length,
+            rejected: 0,
+          };
         }
         return calculateFrontendMetrics(currentRole, items);
       }
@@ -3007,18 +3056,21 @@
       async function loadQueue() {
         const code = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
         const statusValue = document.getElementById("statusFilter").value;
+        const backendStatusValue = currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
+          ? ""
+          : statusValue;
         showLoading(true);
         try {
           // Dual role digital tab: chỉ là digital_manager thuần – không load replication
           if (isSecondLevelRole(currentRole) && !isDualDeptDigital()) {
             const [ideas, replications] = await Promise.all([
-              api.getApprovalQueue(code, statusValue),
+              api.getApprovalQueue(code, backendStatusValue),
               api.getReplicationApprovalQueue(code),
             ]);
             queueData = ideas;
             replicationQueueData = replications;
           } else {
-            queueData = await api.getApprovalQueue(code, statusValue);
+            queueData = await api.getApprovalQueue(code, backendStatusValue);
             replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
           }
           renderKpis(getActiveMetrics());
