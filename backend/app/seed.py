@@ -1177,13 +1177,11 @@ def seed_score_criteria() -> int:
                 inserted += 1
                 continue
 
-            changed = False
-            for field in ("label", "tooltip", "note", "score", "input_type", "sort_order", "is_active"):
-                new_value = item.get(field, True if field == "is_active" else None)
-                if getattr(row, field) != new_value:
-                    setattr(row, field, new_value)
-                    changed = True
-            if changed:
+            # Preserve admin-edited criteria content. Startup seeding should only
+            # backfill missing rows, not overwrite labels/tooltips/scores that were
+            # customized from the settings UI.
+            if row.criteria_set_id is None:
+                row.criteria_set_id = criteria_set.id
                 db.add(row)
 
         db.commit()
