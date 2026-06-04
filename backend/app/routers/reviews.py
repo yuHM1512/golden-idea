@@ -264,8 +264,16 @@ def _can_review(user: User, idea: Idea) -> bool:
         return idea.unit_id == user.unit_id and status_value in {IdeaStatus.SUBMITTED.value, IdeaStatus.UNDER_REVIEW.value}
     if scope == "ie":
         if _idea_uses_digital_review(idea):
-            return has_role(user, "digital_manager") and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
-        return has_role(user, "ie_manager") and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
+            return (
+                has_role(user, "digital_manager")
+                and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
+                and _has_dept_level_score(idea)
+            )
+        return (
+            has_role(user, "ie_manager")
+            and status_value in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}
+            and _has_dept_level_score(idea)
+        )
     if scope == "bod":
         return status_value == IdeaStatus.LEADERSHIP_REVIEW.value and not bool(idea.bod_register_approved)
     if scope == "admin":
@@ -594,6 +602,11 @@ def _has_dept_approved_review(idea: Idea) -> bool:
         if _normalize_status(review.level) == ReviewLevel.DEPT_HEAD.value and _normalize_status(review.action) == ReviewAction.APPROVE.value:
             return True
     return False
+
+
+def _has_dept_level_score(idea: Idea) -> bool:
+    dept_score, _, _ = _get_latest_scores(idea)
+    return dept_score is not None
 
 
 def _is_register_slip_eligible(idea: Idea) -> bool:
