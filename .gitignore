@@ -14,3 +14,7 @@ backend/data/*.xls
 Thumbs.db
 
 .claude/
+AI images/
+claude_process/
+Bài tập/
+Quy trình hoá/

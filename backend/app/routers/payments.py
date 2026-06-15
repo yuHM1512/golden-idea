@@ -3,7 +3,7 @@
 import json
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import date, datetime
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -25,6 +25,7 @@ from app.time_utils import format_display_datetime, now_utc, to_display_tz
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 SLIP_AMOUNT = 100000
+HOT_REWARD_SLIP_CUTOFF_DATE = date(2025, 12, 1)
 BROWSER_CANDIDATES = (
     Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
     Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
@@ -79,6 +80,13 @@ def _is_register_slip_eligible(idea: Idea) -> bool:
         "APPROVED_NO_STANDARDIZATION",
         "APPROVED_STANDARDIZATION",
     }
+
+
+def _is_hot_reward_slip_allowed_for_idea(idea: Idea) -> bool:
+    submitted = to_display_tz(idea.submitted_at) or idea.submitted_at
+    if submitted is None:
+        return False
+    return submitted.date() >= HOT_REWARD_SLIP_CUTOFF_DATE
 
 
 def _require_user(db: Session, employee_code: str) -> User:
@@ -610,6 +618,8 @@ async def print_payment_slip_for_idea(
         raise HTTPException(status_code=400, detail="Chỉ in phiếu sau khi lãnh đạo duyệt ở tab Duyệt phiếu nhận thưởng nóng")
     if status_value not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
         raise HTTPException(status_code=400, detail="Chỉ in phiếu cho ý tưởng đã đủ điều kiện nhận thưởng nóng")
+    if not _is_hot_reward_slip_allowed_for_idea(idea):
+        raise HTTPException(status_code=400, detail="Ý tưởng trước tháng 12/2025 không hiển thị phiếu nhận thưởng nóng")
 
     slip = _get_or_create_payment_slip(db, idea)
     register_reward_code = _assign_register_reward_code(db, slip, idea.bod_register_approved_at or now_utc())

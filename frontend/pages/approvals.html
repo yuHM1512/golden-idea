@@ -975,6 +975,14 @@
         }
       }
 
+      function isLegacyIdeaForHotRewardSlip(item) {
+        const parts = getTimeZoneDateParts(item?.submitted_at);
+        if (!parts) return false;
+        if (parts.year < 2025) return true;
+        if (parts.year > 2025) return false;
+        return parts.month <= 11;
+      }
+
       function renderKpis(metrics) {
         document.getElementById("kpiTotal").textContent = metrics.total || 0;
         document.getElementById("kpiApproved").textContent = metrics.approved || 0;
@@ -1343,6 +1351,7 @@
       function canPrintPaymentSlip(item) {
         const printableRoles = ["unit_represent", "dept_manager", "sub_dept_manager"];
         return printableRoles.includes(currentRole)
+          && !isLegacyIdeaForHotRewardSlip(item)
           && Boolean(item?.eligible_register_reward)
           && Boolean(item?.bod_register_approved)
           && ["LEADERSHIP_REVIEW", "APPROVED", "REWARDED"].includes(item?.status || "");
