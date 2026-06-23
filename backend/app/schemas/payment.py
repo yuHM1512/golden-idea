@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 class PaymentSlipCreate(BaseModel):
@@ -28,6 +28,7 @@ class PaymentSlipResponse(BaseModel):
     is_printed: bool
     paid_by_user_id: Optional[int]
     paid_at: Optional[datetime]
+    payout_slip_created_on: Optional[date]
     leadership_signed: bool
     tech_chief_signed: bool
     dept_head_signed: bool
@@ -49,6 +50,7 @@ class PaymentSlipListResponse(BaseModel):
     print_date: Optional[datetime]
     paid_by_user_id: Optional[int] = None
     paid_at: Optional[datetime] = None
+    payout_slip_created_on: Optional[date] = None
     created_at: datetime
 
     class Config:

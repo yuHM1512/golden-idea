@@ -561,12 +561,15 @@ const api = {
     }
   },
 
-  async settleRegisterBonus(ideaId, employeeCode, paid) {
+  async settleRegisterBonus(ideaId, employeeCode, paid, payoutSlipCreatedOn = '') {
     try {
       const qs = new URLSearchParams({
         employee_code: (employeeCode || '').trim().toUpperCase(),
         paid: paid ? 'true' : 'false',
       });
+      if (payoutSlipCreatedOn) {
+        qs.set('payout_slip_created_on', payoutSlipCreatedOn);
+      }
       const response = await fetch(`${API_BASE}/payments/register-bonuses/${ideaId}/settle?${qs.toString()}`, {
         method: 'POST',
       });

@@ -294,7 +294,7 @@
       }
 
       function canAccessRewards(role) {
-        return false;
+        return role === "admin" || role === "treasurer";
       }
 
       async function init() {
@@ -323,10 +323,12 @@
           : `${code || "?"} • ${knownRole ? role : "Nhân viên"}`;
 
         const approvals = document.getElementById("cardApprovals");
+        const rewards = document.getElementById("cardRewards");
         const settings = document.getElementById("cardSettings");
         const library = document.getElementById("cardLibrary");
         const myIdeas = document.getElementById("cardMyIdeas");
         const navApprovals = document.getElementById("navApprovals");
+        const navRewards = document.getElementById("navRewards");
         const navSettings = document.getElementById("navSettings");
         const navLibrary = document.getElementById("navLibrary");
         const navMyIdeas = document.getElementById("navMyIdeas");
@@ -347,8 +349,10 @@
 
         if (role === "admin") {
           approvals.classList.remove("hidden");
+          rewards.classList.remove("hidden");
           settings.classList.remove("hidden");
           navApprovals.classList.remove("hidden");
+          navRewards.classList.remove("hidden");
           navSettings.classList.remove("hidden");
         } else if (role === "ie_manager") {
           approvals.classList.remove("hidden");

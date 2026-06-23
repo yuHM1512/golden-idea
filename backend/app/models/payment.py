@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, DECIMAL
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, ForeignKey, DECIMAL
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -25,6 +25,7 @@ class PaymentSlip(Base):
     # Reward payout info
     paid_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     paid_at = Column(DateTime(timezone=True), nullable=True)
+    payout_slip_created_on = Column(Date, nullable=True)
 
     # Signature tracking (for future use - form submission)
     leadership_signed = Column(Boolean, default=False)

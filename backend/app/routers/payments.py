@@ -501,6 +501,8 @@ async def list_register_bonuses(
         participants = _parse_participants(idea.participants_json, idea.full_name or "", idea.employee_code)
         full_name, primary_codes = _participant_display(participants)
         slip = idea.payment_slip
+        if slip is None or not (slip.register_reward_code or "").strip():
+            continue
         approved_reviews = [
             review
             for review in (idea.reviews or [])
@@ -528,6 +530,7 @@ async def list_register_bonuses(
                 "print_date": slip.print_date if slip else None,
                 "is_paid": bool(slip.employee_received) if slip else False,
                 "paid_at": slip.paid_at if slip else None,
+                "payout_slip_created_on": slip.payout_slip_created_on if slip else None,
                 "paid_by_name": (slip.paid_by_user.full_name or "").strip() if slip and slip.paid_by_user else "",
             }
         )
@@ -540,6 +543,7 @@ async def settle_register_bonus(
     idea_id: int,
     employee_code: str = Query(...),
     paid: bool = Query(...),
+    payout_slip_created_on: date | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
     user = _require_user(db, employee_code)
@@ -554,24 +558,27 @@ async def settle_register_bonus(
     )
     if idea is None:
         raise HTTPException(status_code=404, detail="Ý tưởng không tồn tại")
-        if not _is_register_slip_eligible(idea):
-            raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng nóng")
+    if not _is_register_slip_eligible(idea):
+        raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng nóng")
     if not idea.bod_register_approved:
         raise HTTPException(status_code=400, detail="Phiếu chưa được lãnh đạo duyệt ở luồng phiếu nhận thưởng nóng")
     if _normalize_status(idea.status) not in {IdeaStatus.LEADERSHIP_REVIEW.value, IdeaStatus.APPROVED.value, IdeaStatus.REWARDED.value}:
         raise HTTPException(status_code=400, detail="Phiếu chưa đủ điều kiện nhận thưởng")
 
     slip = _get_or_create_payment_slip(db, idea)
-    if paid and not slip.is_printed:
+    if not paid:
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ xác nhận đã chi, không thể bỏ tick phiếu đã nhận")
+    if not slip.is_printed:
         raise HTTPException(status_code=400, detail="Phiếu chưa in, chưa thể xác nhận chi thưởng")
-    if paid:
-        slip.employee_received = True
-        slip.paid_at = now_utc()
-        slip.paid_by_user_id = user.id
-    else:
-        slip.employee_received = False
-        slip.paid_at = None
-        slip.paid_by_user_id = None
+    if not payout_slip_created_on:
+        raise HTTPException(status_code=400, detail="Vui lòng nhập ngày tạo phiếu chi trước khi xác nhận đã chi")
+    if slip.employee_received or slip.paid_at is not None:
+        raise HTTPException(status_code=400, detail="Phiếu này đã được chi rồi, mỗi phiếu chỉ nhận được 1 lần")
+
+    slip.employee_received = True
+    slip.paid_at = now_utc()
+    slip.paid_by_user_id = user.id
+    slip.payout_slip_created_on = payout_slip_created_on
 
     db.commit()
     db.refresh(slip)
@@ -581,6 +588,7 @@ async def settle_register_bonus(
         "is_paid": bool(slip.employee_received),
         "paid_at": slip.paid_at,
         "paid_by_user_id": slip.paid_by_user_id,
+        "payout_slip_created_on": slip.payout_slip_created_on,
     }
 
 

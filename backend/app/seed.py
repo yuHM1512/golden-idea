@@ -792,6 +792,8 @@ def migrate_payment_slip_reward_columns() -> None:
             conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN paid_by_user_id integer REFERENCES public.users(id)"))
         if "paid_at" not in existing:
             conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN paid_at timestamp with time zone"))
+        if "payout_slip_created_on" not in existing:
+            conn.execute(text("ALTER TABLE public.payment_slips ADD COLUMN payout_slip_created_on date"))
 
 
 def migrate_payment_slip_amount_default() -> None:
