@@ -276,7 +276,7 @@
           meta.textContent = `${idea.register_reward_code || "—"} • ${idea.title || "Ý tưởng"}`;
         }
         if (dateInput) {
-          dateInput.value = toDateInputValue(idea.payout_slip_created_on) || todayInputValue();
+          dateInput.value = toDateInputValue(idea.payout_slip_created_on) || "";
         }
         if (modal) {
           modal.classList.remove("hidden");
@@ -305,7 +305,7 @@
 
         rewardItems.forEach((item) => {
           const disabledClass = item.is_paid ? "bg-emerald-50/40" : "";
-          const payoutSlipDate = toDateInputValue(item.payout_slip_created_on) || (!item.is_paid ? todayInputValue() : "");
+          const payoutSlipDate = toDateInputValue(item.payout_slip_created_on) || "";
           const tr = document.createElement("tr");
           tr.className = disabledClass;
           tr.innerHTML = `
@@ -321,8 +321,7 @@
               <div class="font-semibold">${safeText(item.employee_name || "—")}</div>
             </td>
             <td class="px-6 py-5 align-top ${item.is_paid ? "bg-emerald-50/30" : "bg-amber-50/40"}">
-              <div class="font-semibold text-slate-900">${safeText(payoutSlipDate || "Chưa nhập")}</div>
-              <div class="mt-2 text-xs text-slate-500">${item.is_paid ? safeText(item.paid_by_name || "") : "Sẽ nhập trong popup khi tick."}</div>
+              <div class="font-semibold text-slate-900">${safeText(payoutSlipDate)}</div>
             </td>
             <td class="px-4 py-5 align-top text-center">
               ${item.is_paid
