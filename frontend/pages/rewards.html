@@ -78,7 +78,14 @@
             <div class="text-xs uppercase tracking-[0.3em] text-slate-500">Thủ quỹ</div>
             <div class="mt-2 text-lg font-black font-['Manrope'] text-primary">Chi thưởng nóng theo mã số phiếu</div>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input
+              id="registerRewardCodeFilter"
+              type="search"
+              class="w-full sm:w-64 rounded-2xl border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-primary focus:ring-primary"
+              placeholder="Tìm theo mã số phiếu..."
+              oninput="onRegisterRewardCodeFilterInput()"
+            />
             <div id="tableMeta" class="text-sm text-slate-500">0 phiếu</div>
             <button
               type="button"
@@ -151,6 +158,7 @@
       let currentUser = null;
       let rewardItems = [];
       let pendingSettleIdea = null;
+      let registerRewardCodeFilter = "";
 
       function logout() {
         localStorage.removeItem("is_logged_in");
@@ -257,11 +265,26 @@
           .replace(/[\u0300-\u036f]/g, "")
           .trim();
       }
+
+      function onRegisterRewardCodeFilterInput() {
+        const input = document.getElementById("registerRewardCodeFilter");
+        registerRewardCodeFilter = input?.value || "";
+        renderKpis();
+        renderRegisterRows();
+      }
+
+      function getDisplayedRewardItems() {
+        const query = normalizeSearchText(registerRewardCodeFilter);
+        if (!query) return rewardItems;
+        return rewardItems.filter((item) => normalizeSearchText(item?.register_reward_code || "").includes(query));
+      }
+
       function renderKpis() {
-        const paidItems = rewardItems.filter((item) => item.is_paid);
-        document.getElementById("kpiTotal").textContent = rewardItems.length;
+        const displayedItems = getDisplayedRewardItems();
+        const paidItems = displayedItems.filter((item) => item.is_paid);
+        document.getElementById("kpiTotal").textContent = displayedItems.length;
         document.getElementById("kpiPaid").textContent = paidItems.length;
-        document.getElementById("tableMeta").textContent = `${rewardItems.length} phiếu`;
+        document.getElementById("tableMeta").textContent = `${displayedItems.length} phiếu`;
         document.getElementById("exportPaidBtn").disabled = paidItems.length === 0;
       }
 
@@ -297,13 +320,14 @@
 
       function renderRegisterRows() {
         const tbody = document.getElementById("registerBody");
+        const displayedItems = getDisplayedRewardItems();
         tbody.innerHTML = "";
-        if (!rewardItems.length) {
+        if (!displayedItems.length) {
           tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center text-slate-500">Chưa có phiếu đủ điều kiện nhận thưởng.</td></tr>';
           return;
         }
 
-        rewardItems.forEach((item) => {
+        displayedItems.forEach((item) => {
           const disabledClass = item.is_paid ? "bg-emerald-50/40" : "";
           const payoutSlipDate = toDateInputValue(item.payout_slip_created_on) || "";
           const tr = document.createElement("tr");
@@ -366,7 +390,7 @@
       }
 
       async function exportPaidExcel() {
-        const paidItems = rewardItems.filter((item) => item.is_paid);
+        const paidItems = getDisplayedRewardItems().filter((item) => item.is_paid);
         if (!paidItems.length) return;
         if (typeof ExcelJS === "undefined") {
           showNotification("Chưa tải được thư viện Excel", "error");
