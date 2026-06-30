@@ -308,17 +308,28 @@ def _render_payment_slip_html(
   <head>
     <meta charset="utf-8" />
     <style>
+      :root {{
+        --slip-scale: 1;
+      }}
       @page {{
         size: A4;
         margin: 18mm 18mm 20mm 18mm;
       }}
       body {{
         font-family: "Times New Roman", serif;
-        font-size: 14pt;
+        font-size: calc(14pt * var(--slip-scale));
         color: #111;
-        line-height: 1.45;
+        line-height: calc(1.45 - ((1 - var(--slip-scale)) * 0.18));
+        margin: 0;
       }}
       .page {{
+        width: 100%;
+      }}
+      .page-shell {{
+        height: 259mm;
+        overflow: hidden;
+      }}
+      .page-content {{
         width: 100%;
       }}
       .center {{
@@ -329,25 +340,25 @@ def _render_payment_slip_html(
         text-transform: uppercase;
       }}
       .nation-sub {{
-        margin-top: 4px;
+        margin-top: calc(4px * var(--slip-scale));
         font-weight: 700;
       }}
       .title {{
-        margin-top: 26px;
-        font-size: 22pt;
+        margin-top: calc(26px * var(--slip-scale));
+        font-size: calc(22pt * var(--slip-scale));
         font-weight: 700;
         text-transform: uppercase;
       }}
       .slip-code {{
-        margin-top: 18px;
+        margin-top: calc(18px * var(--slip-scale));
         text-align: right;
         font-weight: 700;
       }}
       .content {{
-        margin-top: 26px;
+        margin-top: calc(26px * var(--slip-scale));
       }}
       .row {{
-        margin-bottom: 12px;
+        margin-bottom: calc(12px * var(--slip-scale));
       }}
       .label {{
         font-weight: 700;
@@ -371,17 +382,17 @@ def _render_payment_slip_html(
         padding-right: 6px;
       }}
       .desc {{
-        min-height: 72px;
+        min-height: calc(48px + (24px * var(--slip-scale)));
         white-space: pre-wrap;
         text-align: justify;
       }}
       .city-date {{
-        margin-top: 18px;
+        margin-top: calc(18px * var(--slip-scale));
         text-align: right;
         font-style: italic;
       }}
       .signatures {{
-        margin-top: 34px;
+        margin-top: calc(34px * var(--slip-scale));
         display: table;
         width: 100%;
         table-layout: fixed;
@@ -391,78 +402,120 @@ def _render_payment_slip_html(
         width: 25%;
         text-align: center;
         vertical-align: top;
-        padding: 0 4px;
+        padding: 0 calc(4px * var(--slip-scale));
       }}
       .signature-title {{
         font-weight: 700;
-        font-size: 13pt;
+        font-size: calc(13pt * var(--slip-scale));
       }}
       .signature-space {{
-        height: 70px;
+        height: calc(52px + (18px * var(--slip-scale)));
       }}
       .approved-tick {{
-        font-size: 10pt;
+        font-size: calc(10pt * var(--slip-scale));
         color: #0f5a2d;
         font-weight: 700;
         text-align: center;
-        margin-bottom: 8px;
+        margin-bottom: calc(8px * var(--slip-scale));
       }}
       .approved-tick-empty {{
-        height: 20px;
-        margin-bottom: 8px;
+        height: calc(12px + (8px * var(--slip-scale)));
+        margin-bottom: calc(8px * var(--slip-scale));
       }}
       .signature-name {{
-        min-height: 18px;
-        font-size: 9pt;
+        min-height: calc(16px * var(--slip-scale));
+        font-size: calc(9pt * var(--slip-scale));
         font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }}
       .inline-gap {{
-        margin-left: 18px;
+        margin-left: calc(18px * var(--slip-scale));
+      }}
+      @media print {{
+        html, body {{
+          height: auto;
+        }}
+        .page {{
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }}
       }}
     </style>
+    <script>
+      function fitSlipToSinglePage() {{
+        const root = document.documentElement;
+        const shell = document.querySelector('.page-shell');
+        const content = document.querySelector('.page-content');
+        if (!shell || !content) return;
+
+        let scale = 1;
+        root.style.setProperty('--slip-scale', scale.toFixed(2));
+
+        for (let i = 0; i < 14; i += 1) {{
+          const fits = content.scrollHeight <= shell.clientHeight;
+          if (fits) break;
+          scale -= 0.02;
+          if (scale < 0.72) {{
+            scale = 0.72;
+            root.style.setProperty('--slip-scale', scale.toFixed(2));
+            break;
+          }}
+          root.style.setProperty('--slip-scale', scale.toFixed(2));
+        }}
+      }}
+
+      window.addEventListener('load', () => {{
+        fitSlipToSinglePage();
+        window.setTimeout(fitSlipToSinglePage, 60);
+      }});
+      window.addEventListener('beforeprint', fitSlipToSinglePage);
+    </script>
   </head>
   <body>
     <div class="page">
-      <div class="center nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-      <div class="center nation-sub">ĐỘC LẬP - TỰ DO - HẠNH PHÚC</div>
+      <div class="page-shell">
+        <div class="page-content">
+          <div class="center nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+          <div class="center nation-sub">ĐỘC LẬP - TỰ DO - HẠNH PHÚC</div>
 
-      <div class="center title">GIẤY NHẬN TIỀN Ý TƯỞNG VÀNG</div>
-      <div class="slip-code">Mã số phiếu: {escape(register_reward_code or "—")}</div>
+          <div class="center title">GIẤY NHẬN TIỀN Ý TƯỞNG VÀNG</div>
+          <div class="slip-code">Mã số phiếu: {escape(register_reward_code or "—")}</div>
 
-      <div class="content">
-        <div class="row">
-          <span class="label">Tôi tên là:</span>
-          <span class="value">{escape(full_name)}</span>
-          <span class="label inline-gap">Mã số:</span>
-          <span class="value">{escape(employee_code or "—")}</span>
+          <div class="content">
+            <div class="row">
+              <span class="label">Tôi tên là:</span>
+              <span class="value">{escape(full_name)}</span>
+              <span class="label inline-gap">Mã số:</span>
+              <span class="value">{escape(employee_code or "—")}</span>
+            </div>
+    <div class="row"><span class="label">Đơn vị:</span> <span class="value">{escape(unit_name or "—")}</span></div>
+    <div class="row"><span class="label">Bộ phận:</span> <span class="value">{escape(bo_phan or "—")}</span></div>
+    <div class="row"><span class="label">Chức vụ:</span> <span class="value">{escape(position or "—")}</span></div>
+
+            <div class="row amount-row">
+              <div class="amount-cell"><span class="label">Có nhận tiền:</span> <span class="value">{amount_text}</span></div>
+              <div class="amount-cell right"><span class="label">Bằng chữ:</span> <span class="value">Một trăm ngàn đồng chẵn</span></div>
+            </div>
+
+            <div class="row">
+              <div class="label">Tên ý tưởng:</div>
+              <div class="desc">{escape(title or "—")}</div>
+            </div>
+
+            <div class="row">
+              <div class="label">Nội dung ý tưởng vàng:</div>
+              <div class="desc">{escape(description)}</div>
+            </div>
+
+            <div class="row"><span class="label">Ngày đăng nhập trên hệ thống ý tưởng vàng:</span> <span class="value">{escape(created_at_text)}</span></div>
+
+            <div class="city-date">Đà Nẵng, ngày {printed_day} tháng {printed_month} năm {printed_year}</div>
+
+            <div class="signatures">{signatures_html}</div>
+          </div>
         </div>
-<div class="row"><span class="label">Đơn vị:</span> <span class="value">{escape(unit_name or "—")}</span></div>
-<div class="row"><span class="label">Bộ phận:</span> <span class="value">{escape(bo_phan or "—")}</span></div>
-<div class="row"><span class="label">Chức vụ:</span> <span class="value">{escape(position or "—")}</span></div>
-
-        <div class="row amount-row">
-          <div class="amount-cell"><span class="label">Có nhận tiền:</span> <span class="value">{amount_text}</span></div>
-          <div class="amount-cell right"><span class="label">Bằng chữ:</span> <span class="value">Một trăm ngàn đồng chẵn</span></div>
-        </div>
-
-        <div class="row">
-          <div class="label">Tên ý tưởng:</div>
-          <div class="desc">{escape(title or "—")}</div>
-        </div>
-
-        <div class="row">
-          <div class="label">Nội dung ý tưởng vàng:</div>
-          <div class="desc">{escape(description)}</div>
-        </div>
-
-        <div class="row"><span class="label">Ngày đăng nhập trên hệ thống ý tưởng vàng:</span> <span class="value">{escape(created_at_text)}</span></div>
-
-        <div class="city-date">Đà Nẵng, ngày {printed_day} tháng {printed_month} năm {printed_year}</div>
-
-        <div class="signatures">{signatures_html}</div>
       </div>
     </div>
   </body>
