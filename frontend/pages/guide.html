@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Hướng dẫn sử dụng - Ý tưởng vàng</title>
+    <title>Hướng dẫn & Quy chế - Ý tưởng vàng</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -61,6 +61,11 @@
       .soft-panel {
         box-shadow: 0px 20px 40px rgba(25, 28, 29, 0.05);
       }
+      .doc-tab.is-active {
+        background: linear-gradient(135deg, #002b73 0%, #0056d2 100%);
+        color: #ffffff;
+        box-shadow: 0px 24px 48px rgba(0, 43, 115, 0.18);
+      }
     </style>
   </head>
   <body class="bg-background text-on-surface font-body-lg min-h-screen selection:bg-secondary-container selection:text-primary">
@@ -75,7 +80,7 @@
         </div>
         <nav class="hidden md:flex items-center gap-8">
           <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/menu">Menu</a>
-          <a class="text-blue-800 font-bold font-manrope transition-colors" href="/pages/guide">Hướng dẫn</a>
+          <a class="text-blue-800 font-bold font-manrope transition-colors" href="/pages/guide">Hướng dẫn & Quy chế</a>
           <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/submit-idea">Đăng ký</a>
           <a class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/library">Kho ý tưởng</a>
         </nav>
@@ -96,15 +101,15 @@
         <div class="xl:col-span-8 editorial-gradient rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden soft-panel">
           <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/10 blur-3xl"></div>
           <div class="relative z-10">
-            <div class="text-xs uppercase tracking-[0.3em] text-white/70">Hướng dẫn sử dụng</div>
+            <div class="text-xs uppercase tracking-[0.3em] text-white/70">Hướng dẫn & Quy chế</div>
             <h1 class="mt-4 text-3xl md:text-5xl font-black font-manrope leading-tight">
               Nắm nhanh chức năng,
               <br />
-              <span class="text-[#dbe1ff] italic">đúng quyền, đúng bước.</span>
+              <span class="text-[#dbe1ff] italic">đúng quyền, đúng quy chế.</span>
             </h1>
             <p class="mt-5 max-w-3xl text-white/80 leading-relaxed">
-              Trang này giúp người dùng hiểu app có những gì, mỗi role được truy cập chức năng nào, và nên thao tác theo
-              trình tự nào để gửi, duyệt, tra cứu và chi thưởng ý tưởng.
+              Trang này giúp người dùng hiểu app có những gì, mỗi role được truy cập chức năng nào, nên thao tác theo
+              trình tự nào và có thể xem trực tiếp các quyết định, quy chế nền tảng của chương trình Ý tưởng vàng.
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
               <a href="/pages/submit-idea" class="inline-flex items-center gap-2 rounded-full bg-white text-primary px-5 py-3 font-semibold shadow-lg hover:opacity-95">
@@ -133,6 +138,62 @@
             <div class="rounded-[1.5rem] bg-surface-container-low p-5">
               <div class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Hành động nên làm đầu tiên</div>
               <div id="currentRoleFirstStep" class="mt-3 text-lg font-semibold text-primary">Đăng nhập để xem gợi ý.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-on-surface-variant">Tài liệu nền tảng</div>
+            <h2 class="mt-2 text-3xl md:text-4xl font-black font-manrope text-primary">Hướng dẫn & Quy chế cần xem nhanh</h2>
+          </div>
+          <p class="max-w-2xl text-on-surface-variant">
+            Chọn tài liệu để xem ngay trên trang, mở toàn màn hình hoặc tải file PDF gốc khi cần in ấn và phổ biến nội bộ.
+          </p>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div id="documentTabs" class="xl:col-span-4 grid grid-cols-1 gap-4"></div>
+
+          <div class="xl:col-span-8 bg-surface-container-lowest rounded-[2rem] p-4 md:p-6 soft-panel overflow-hidden">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 border-b border-outline-variant pb-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.22em] text-on-surface-variant">Đang xem</div>
+                <h3 id="documentTitle" class="mt-2 text-2xl md:text-3xl font-black font-manrope text-primary"></h3>
+                <p id="documentSummary" class="mt-3 max-w-3xl text-on-surface-variant leading-relaxed"></p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <a
+                  id="documentOpenLink"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-full bg-primary text-white px-5 py-3 font-semibold shadow-lg hover:opacity-95"
+                >
+                  <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                  Mở PDF
+                </a>
+                <a
+                  id="documentDownloadLink"
+                  href="#"
+                  download
+                  class="inline-flex items-center gap-2 rounded-full bg-surface-container-low text-primary px-5 py-3 font-semibold hover:bg-surface-container"
+                >
+                  <span class="material-symbols-outlined text-[18px]">download</span>
+                  Tải file
+                </a>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-[1.5rem] bg-surface-container-low p-2 md:p-3">
+              <iframe
+                id="documentViewer"
+                src=""
+                title="Tài liệu Ý tưởng vàng"
+                class="w-full h-[30rem] md:h-[40rem] xl:h-[52rem] rounded-[1.1rem] bg-white"
+              ></iframe>
             </div>
           </div>
         </div>
@@ -215,6 +276,25 @@
 
     <script src="../js/api.js?v=20260428-actual-benefit"></script>
     <script>
+      const POLICY_DOCUMENTS = [
+        {
+          id: "council-decision",
+          title: "Quyết định thành lập Hội đồng xét duyệt YTV",
+          summary: "Quyết định xác lập thành phần Hội đồng xét duyệt, làm căn cứ phân công vai trò và thẩm quyền đánh giá sáng kiến Ý tưởng vàng.",
+          meta: "Quyết định 32/QĐ-CT",
+          file: "../static/docs/hoi-dong-xet-duyet-ytv.pdf",
+          icon: "groups",
+        },
+        {
+          id: "reward-regulation",
+          title: "Quy chế khen thưởng YTV",
+          summary: "Quy chế quy định phạm vi áp dụng, nguyên tắc xét thưởng và cách triển khai khen thưởng cho chương trình Ý tưởng vàng trong công ty.",
+          meta: "Quyết định 31/QĐ-CT",
+          file: "../static/docs/quy-che-khen-thuong-ytv.pdf",
+          icon: "gavel",
+        },
+      ];
+
       const FEATURE_CARDS = [
         {
           title: "Đăng ký ý tưởng",
@@ -519,6 +599,40 @@
         `).join("");
       }
 
+      function renderPolicyDocuments(activeId = POLICY_DOCUMENTS[0].id) {
+        const wrap = document.getElementById("documentTabs");
+        const activeDoc = POLICY_DOCUMENTS.find((item) => item.id === activeId) || POLICY_DOCUMENTS[0];
+
+        wrap.innerHTML = POLICY_DOCUMENTS.map((item) => `
+          <button
+            type="button"
+            data-doc-id="${item.id}"
+            class="doc-tab ${item.id === activeDoc.id ? "is-active" : "bg-surface-container-lowest"} text-left rounded-[1.5rem] p-6 soft-panel transition-all duration-200 hover:-translate-y-0.5"
+          >
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 rounded-2xl ${item.id === activeDoc.id ? "bg-white/15" : "bg-surface-container-low text-primary"} flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined">${item.icon}</span>
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-[0.18em] ${item.id === activeDoc.id ? "text-white/70" : "text-on-surface-variant"}">${item.meta}</div>
+                <div class="mt-2 text-xl font-bold font-manrope ${item.id === activeDoc.id ? "text-white" : "text-primary"}">${item.title}</div>
+                <p class="mt-3 leading-relaxed ${item.id === activeDoc.id ? "text-white/80" : "text-on-surface-variant"}">${item.summary}</p>
+              </div>
+            </div>
+          </button>
+        `).join("");
+
+        document.getElementById("documentTitle").textContent = activeDoc.title;
+        document.getElementById("documentSummary").textContent = activeDoc.summary;
+        document.getElementById("documentOpenLink").href = activeDoc.file;
+        document.getElementById("documentDownloadLink").href = activeDoc.file;
+        document.getElementById("documentViewer").src = `${activeDoc.file}#toolbar=0&navpanes=0`;
+
+        wrap.querySelectorAll("[data-doc-id]").forEach((button) => {
+          button.addEventListener("click", () => renderPolicyDocuments(button.dataset.docId));
+        });
+      }
+
       function createWorkflowSteps() {
         const wrap = document.getElementById("workflowSteps");
         wrap.innerHTML = WORKFLOW_STEPS.map((item, index) => `
@@ -584,6 +698,7 @@
       }
 
       async function init() {
+        renderPolicyDocuments();
         createFeatureCards();
         createWorkflowSteps();
 
