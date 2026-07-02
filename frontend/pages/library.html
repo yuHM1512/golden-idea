@@ -438,6 +438,7 @@
       let activeIdeaDetail = null;
       let unitChartLastData = [];
       let unitChartLastParams = { month: "", year: "" };
+      let categoryChartLastData = [];
       let currentUser = null;
       let currentLibraryTab = "standardization";
       let canViewUnitLibrary = false;
@@ -851,21 +852,39 @@
           });
       }
 
-      async function refreshUnitChart() {
-        const month = document.getElementById("unitChartMonth").value;
-        const year = document.getElementById("unitChartYear").value;
-        unitChartLastParams = { month, year };
+      function getUnitChartFilters() {
+        return {
+          month: document.getElementById("unitChartMonth").value,
+          year: document.getElementById("unitChartYear").value,
+        };
+      }
 
-        const data = await api.getIdeasByUnit({ month, year });
-        unitChartLastData = data || [];
+      async function refreshDashboardCharts(params = {}, options = {}) {
+        const { openModal = false } = options;
+        const monthText = params.month ? `Tháng ${params.month}` : "Tất cả tháng";
+        const yearText = params.year ? `Năm ${params.year}` : "Tất cả năm";
+
+        unitChartLastParams = { month: params.month || "", year: params.year || "" };
+
+        const [unitData, categoryData] = await Promise.all([
+          api.getIdeasByUnit(params),
+          api.getIdeasByCategory(params),
+        ]);
+
+        unitChartLastData = unitData || [];
+        categoryChartLastData = categoryData || [];
         renderUnitChart(unitChartLastData);
+        renderCategoryDonut(categoryChartLastData);
 
         const meta = document.getElementById("unitChartModalMeta");
-        const monthText = month ? `Tháng ${month}` : "Tất cả tháng";
-        const yearText = year ? `Năm ${year}` : "Tất cả năm";
         meta.textContent = `${monthText} • ${yearText}`;
         renderUnitChartTable(unitChartLastData);
-        openUnitChartModal();
+
+        if (openModal) openUnitChartModal();
+      }
+
+      async function refreshUnitChart() {
+        await refreshDashboardCharts(getUnitChartFilters(), { openModal: true });
       }
 
       function formatFileSize(size) {
@@ -1358,17 +1377,13 @@
         });
 
         try {
-          const [metrics, unitChart, categoryChart, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
+          const [metrics, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
             api.getIdeaMetrics(),
-            api.getIdeasByUnit(),
-            api.getIdeasByCategory(),
             api.getReplicationsByUnit(),
             api.getTopReplicatedIdeas(5),
           ]);
           renderKpis(metrics);
-          unitChartLastData = unitChart || [];
-          renderUnitChart(unitChartLastData);
-          renderCategoryDonut(categoryChart);
+          await refreshDashboardCharts(getUnitChartFilters());
           renderReplicationUnitChart(replicationUnitChart || []);
           renderTopReplicatedIdeas(topReplicatedIdeas || []);
         } catch (error) {

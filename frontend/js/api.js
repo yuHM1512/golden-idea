@@ -201,9 +201,15 @@ const api = {
     }
   },
 
-  async getIdeasByCategory() {
+  async getIdeasByCategory(params = {}) {
     try {
-      const response = await fetch(`${API_BASE}/dashboard/ideas-by-category`);
+      const qs = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === "") return;
+        qs.set(k, String(v));
+      });
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      const response = await fetch(`${API_BASE}/dashboard/ideas-by-category${suffix}`);
       if (!response.ok) throw new Error('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c chart data');
       return await response.json();
     } catch (error) {

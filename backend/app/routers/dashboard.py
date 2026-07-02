@@ -101,17 +101,21 @@ async def idea_metrics(db: Session = Depends(get_db)):
 
 
 @router.get("/ideas-by-category", response_model=List[Dict[str, Any]])
-async def ideas_by_category(db: Session = Depends(get_db)):
+async def ideas_by_category(
+    month: int | None = Query(default=None, ge=1, le=12),
+    year: int | None = Query(default=None, ge=2000, le=2100),
+    db: Session = Depends(get_db),
+):
     """
     For charts: number of ideas per category.
     """
-    rows = (
-        db.query(Idea.category, func.count(Idea.id))
-        .filter(Idea.status.in_(LIBRARY_DASHBOARD_STATUSES))
-        .group_by(Idea.category)
-        .order_by(func.count(Idea.id).desc())
-        .all()
-    )
+    query = db.query(Idea.category, func.count(Idea.id)).filter(Idea.status.in_(LIBRARY_DASHBOARD_STATUSES))
+    if year is not None:
+        query = query.filter(func.extract("year", Idea.submitted_at) == year)
+    if month is not None:
+        query = query.filter(func.extract("month", Idea.submitted_at) == month)
+
+    rows = query.group_by(Idea.category).order_by(func.count(Idea.id).desc()).all()
     return [{"category": getattr(category, "value", str(category)), "count": int(count)} for category, count in rows]
 
 
