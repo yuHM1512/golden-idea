@@ -1400,13 +1400,15 @@
           monthSel.appendChild(opt);
         }
         const yearSel = document.getElementById("unitChartYear");
-        const currentYear = getTimeZoneYear();
-        for (let y = currentYear; y >= currentYear - 4; y -= 1) {
+        const dashboardYears = await api.getIdeaYears().catch(() => []);
+        const fallbackYears = [getTimeZoneYear()];
+        const years = (dashboardYears.length ? dashboardYears : fallbackYears).filter((year, index, arr) => arr.indexOf(year) === index);
+        years.forEach((y) => {
           const opt = document.createElement("option");
           opt.value = String(y);
           opt.textContent = String(y);
           yearSel.appendChild(opt);
-        }
+        });
       }
 
       init().catch((e) => {

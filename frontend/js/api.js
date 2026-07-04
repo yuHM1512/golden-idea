@@ -218,6 +218,17 @@ const api = {
     }
   },
 
+  async getIdeaYears() {
+    try {
+      const response = await fetch(`${API_BASE}/dashboard/idea-years`);
+      if (!response.ok) throw new Error('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c danh s\u00e1ch n\u0103m');
+      return await response.json();
+    } catch (error) {
+      console.error('Idea years error:', error);
+      throw error;
+    }
+  },
+
   async getReplicationsByUnit() {
     try {
       const response = await fetch(`${API_BASE}/dashboard/replications-by-unit`);

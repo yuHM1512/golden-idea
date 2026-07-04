@@ -119,6 +119,19 @@ async def ideas_by_category(
     return [{"category": getattr(category, "value", str(category)), "count": int(count)} for category, count in rows]
 
 
+@router.get("/idea-years", response_model=List[int])
+async def idea_years(db: Session = Depends(get_db)):
+    rows = (
+        db.query(func.extract("year", Idea.submitted_at).label("year"))
+        .filter(Idea.status.in_(LIBRARY_DASHBOARD_STATUSES))
+        .filter(Idea.submitted_at.isnot(None))
+        .group_by(func.extract("year", Idea.submitted_at))
+        .order_by(func.extract("year", Idea.submitted_at).desc())
+        .all()
+    )
+    return [int(row.year) for row in rows if row.year is not None]
+
+
 @router.get("/replications-by-unit", response_model=List[Dict[str, Any]])
 async def replications_by_unit(db: Session = Depends(get_db)):
     rows = (
