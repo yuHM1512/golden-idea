@@ -46,11 +46,12 @@ function parseIdeaCategoryRequiresStage(value, name = '') {
 
 function normalizeIdeaCategory(item) {
   if (item && typeof item === 'object' && !Array.isArray(item)) {
-    const name = String(item.name || '').trim();
+    const rawName = String(item.name || '').trim();
+    const name = parseIdeaCategoryName(rawName);
     return {
       value: name,
       label: name,
-      requires_stage: item.requires_stage !== false,
+      requires_stage: rawName !== name ? parseIdeaCategoryRequiresStage(rawName, name) : item.requires_stage !== false,
     };
   }
 

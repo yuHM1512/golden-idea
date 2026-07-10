@@ -132,11 +132,21 @@ def _normalize_idea_taxonomy(raw_value: object | None = None) -> IdeaTaxonomyRes
         seen: set[str] = set()
         for item in source:
             if isinstance(item, dict):
-                name = str(item.get("name") or "").strip()
-                requires_stage = bool(item.get("requires_stage", True))
+                raw_name = str(item.get("name") or "").strip()
+                name = _category_name_from_string(raw_name)
+                requires_stage = (
+                    _category_requires_stage_from_string(raw_name, name)
+                    if raw_name != name
+                    else bool(item.get("requires_stage", True))
+                )
             elif hasattr(item, "name"):
-                name = str(getattr(item, "name", "") or "").strip()
-                requires_stage = bool(getattr(item, "requires_stage", True))
+                raw_name = str(getattr(item, "name", "") or "").strip()
+                name = _category_name_from_string(raw_name)
+                requires_stage = (
+                    _category_requires_stage_from_string(raw_name, name)
+                    if raw_name != name
+                    else bool(getattr(item, "requires_stage", True))
+                )
             else:
                 name = _category_name_from_string(item)
                 requires_stage = _category_requires_stage_from_string(item, name)
