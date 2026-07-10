@@ -115,6 +115,7 @@ class ApprovalEmailContext:
     subject: str
     content_line: str
     idea: Idea
+    cc_recipients: list[str] | None = None
     action_url: str | None = None
     action_text: str | None = None
     extra_html: str = ""
@@ -204,6 +205,30 @@ def _query_unit_leadership_recipients(db: Session, idea: Idea) -> list[str]:
     return _normalize_emails(emails)
 
 
+def _query_unit_represent_recipients(db: Session, idea: Idea) -> list[str]:
+    if idea.unit_id is None:
+        return []
+    rows = (
+        db.query(User)
+        .filter(
+            User.unit_id == idea.unit_id,
+            User.is_active.is_(True),
+            User.email.is_not(None),
+        )
+        .all()
+    )
+    return _normalize_emails(user.email for user in rows if has_role(user, UserRole.UNIT_REPRESENT))
+
+
+def _unit_represent_cc(db: Session, idea: Idea, recipients: Iterable[str | None]) -> list[str]:
+    recipient_emails = {email.lower() for email in _normalize_emails(recipients)}
+    return [
+        email
+        for email in _query_unit_represent_recipients(db, idea)
+        if email.lower() not in recipient_emails
+    ]
+
+
 def _format_submitted_at(value: datetime | None) -> str:
     return format_display_datetime(value)
 
@@ -286,20 +311,29 @@ def _build_text(context: ApprovalEmailContext) -> str:
     )
 
 
-def _send_email(recipients: list[str], subject: str, html_body: str, text_body: str) -> None:
+def _send_email(
+    recipients: list[str],
+    subject: str,
+    html_body: str,
+    text_body: str,
+    cc_recipients: list[str] | None = None,
+) -> None:
     if not recipients:
         return
     if not _email_enabled():
-        print(f"WARN: SMTP not configured, skip email '{subject}' to {recipients}")
+        print(f"WARN: SMTP not configured, skip email '{subject}' to {recipients}, cc={cc_recipients or []}")
         return
 
     host, username, password, from_email = _smtp_runtime_config()
+    cc = _normalize_emails(cc_recipients or [])
 
     message = EmailMessage()
     from_name = (settings.SMTP_FROM_NAME or "").strip()
     message["Subject"] = subject
     message["From"] = f"{from_name} <{from_email}>" if from_name else from_email
     message["To"] = ", ".join(recipients)
+    if cc:
+        message["Cc"] = ", ".join(cc)
     message.set_content(text_body)
     message.add_alternative(html_body, subtype="html")
 
@@ -496,6 +530,7 @@ def _build_ie_result_context(db: Session, idea: Idea) -> ApprovalEmailContext | 
     recipients = _query_unit_leadership_recipients(db, idea)
     if not recipients:
         return None
+    cc_recipients = _unit_represent_cc(db, idea, recipients)
 
     unit_name = (idea.unit.name if idea.unit else "") or "đơn vị"
     extra_html = ""
@@ -509,6 +544,7 @@ def _build_ie_result_context(db: Session, idea: Idea) -> ApprovalEmailContext | 
         greeting_name=unit_name,
         subject=f"[Ý tưởng vàng] Kết quả xét duyệt cấp 2 - {idea.title}",
         content_line=message,
+        cc_recipients=cc_recipients,
         action_url=settings.APPROVAL_PAGE_URL,
         action_text="theo dõi trạng thái xét duyệt",
         idea=idea,
@@ -588,11 +624,13 @@ def send_reward_batch_summary_emails(
         reward_multiplier = float(special_rewards.get(int(idea.id), _reward_multiplier_for_idea(idea)))
         amount = round(int(idea.council_final_score) * float(batch.coefficient) * reward_multiplier)
         unit_name = (idea.unit.name if idea.unit else "") or "đơn vị"
+        recipients = _query_unit_leadership_recipients(db, idea)
         payload = grouped.setdefault(
             int(idea.unit_id),
             {
                 "unit_name": unit_name,
-                "recipients": _query_unit_leadership_recipients(db, idea),
+                "recipients": recipients,
+                "cc_recipients": _unit_represent_cc(db, idea, recipients),
                 "items": [],
             },
         )
@@ -607,6 +645,7 @@ def send_reward_batch_summary_emails(
 
     for payload in grouped.values():
         recipients = payload["recipients"]
+        cc_recipients = payload["cc_recipients"]
         items = payload["items"]
         unit_name = payload["unit_name"]
         if not recipients or not items:
@@ -617,6 +656,7 @@ def send_reward_batch_summary_emails(
             recipients=list(recipients),
             greeting_name=str(unit_name),
             subject=subject,
+            cc_recipients=list(cc_recipients),
             content_line=(
                 f"Chúc mừng các ý tưởng của đơn vị bạn đã được Hội đồng xác nhận kết quả trong "
                 f"Q{int(batch.quarter)}/{int(batch.year)}."
@@ -632,6 +672,7 @@ def send_reward_batch_summary_emails(
                 context.subject,
                 _build_html(context),
                 _build_text(context),
+                context.cc_recipients,
             )
         except Exception as exc:
             print(
@@ -650,6 +691,7 @@ def _build_stage_context(db: Session, idea: Idea, stage: str) -> ApprovalEmailCo
             greeting_name=unit_name,
             subject=f"[Ý tưởng vàng] Ý tưởng mới chờ duyệt cấp 1 - {idea.title}",
             content_line=f"Có ý tưởng mới cần được xét duyệt bởi {unit_name} cấp 1.",
+            cc_recipients=_unit_represent_cc(db, idea, recipients),
             action_url=settings.APPROVAL_PAGE_URL,
             action_text="xử lý",
             idea=idea,
@@ -688,6 +730,7 @@ def _build_stage_context(db: Session, idea: Idea, stage: str) -> ApprovalEmailCo
             greeting_name=unit_name,
             subject=f"[Ý tưởng vàng] Ý tưởng đã được xét duyệt thành công - {idea.title}",
             content_line=f"Ý tưởng của {unit_name} đã được xét duyệt thành công qua đủ 3 cấp.",
+            cc_recipients=_unit_represent_cc(db, idea, recipients),
             action_url=settings.APPROVAL_PAGE_URL,
             action_text="theo dõi",
             idea=idea,
@@ -699,6 +742,7 @@ def _build_stage_context(db: Session, idea: Idea, stage: str) -> ApprovalEmailCo
             greeting_name=unit_name,
             subject=f"[Ý tưởng vàng] Phiếu nhận thưởng nóng đã được duyệt - {idea.title}",
             content_line="Ban lãnh đạo đã duyệt phiếu nhận thưởng nóng cho YTV sau:",
+            cc_recipients=_unit_represent_cc(db, idea, recipients),
             action_url=settings.APPROVAL_PAGE_URL,
             action_text="in phiếu và mang lên phòng Kế toán để nhận thưởng",
             idea=idea,
@@ -716,6 +760,7 @@ def send_approval_stage_email(db: Session, idea: Idea, stage: str) -> None:
             context.subject,
             _build_html(context),
             _build_text(context),
+            context.cc_recipients,
         )
     except Exception as exc:
         print(f"WARN: failed to send approval email for idea_id={idea.id}, stage={stage}: {exc}")

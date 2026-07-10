@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -111,6 +112,20 @@ def _normalize_idea_taxonomy(raw_value: object | None = None) -> IdeaTaxonomyRes
     raw_categories = payload.get("categories") if isinstance(payload, dict) else None
     raw_stages = payload.get("stages") if isinstance(payload, dict) else None
 
+    def _category_name_from_string(value: object) -> str:
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        match = re.match(r"^name=(['\"])(?P<name>.*?)\1(?:\s|$)", text)
+        return (match.group("name") if match else text).strip()
+
+    def _category_requires_stage_from_string(value: object, name: str) -> bool:
+        text = str(value or "").strip()
+        match = re.search(r"requires_stage=(?P<value>True|False|true|false|1|0)", text)
+        if match:
+            return match.group("value").casefold() in {"true", "1"}
+        return name.casefold() != "số hoá".casefold()
+
     def _normalize_category_items(items: object, fallback: list[dict[str, object]]) -> list[dict[str, object]]:
         source = items if isinstance(items, list) else fallback
         result: list[dict[str, object]] = []
@@ -119,9 +134,12 @@ def _normalize_idea_taxonomy(raw_value: object | None = None) -> IdeaTaxonomyRes
             if isinstance(item, dict):
                 name = str(item.get("name") or "").strip()
                 requires_stage = bool(item.get("requires_stage", True))
+            elif hasattr(item, "name"):
+                name = str(getattr(item, "name", "") or "").strip()
+                requires_stage = bool(getattr(item, "requires_stage", True))
             else:
-                name = str(item or "").strip()
-                requires_stage = name.casefold() != "số hoá".casefold()
+                name = _category_name_from_string(item)
+                requires_stage = _category_requires_stage_from_string(item, name)
             if not name:
                 continue
             lowered = name.casefold()
