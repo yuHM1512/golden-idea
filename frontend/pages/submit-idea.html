@@ -312,7 +312,7 @@
         </div>
     </main>
 
-    <script src="../js/api.js?v=20260429-upload-debug"></script>
+    <script src="../js/api.js?v=20260710-taxonomy-normalize"></script>
     <script>
         const MAX_FILE_SIZE_MB = 300;
         const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -561,13 +561,16 @@
                 const item = document.createElement('label');
                 item.className = 'flex items-center gap-4 cursor-pointer';
                 item.innerHTML = `
-                    <input class="sr-only peer" type="radio" name="categoryOption" value="${cat.value}"/>
+                    <input class="sr-only peer" type="radio" name="categoryOption"/>
                     <span class="w-7 h-7 rounded-md border border-outline bg-white flex items-center justify-center text-white peer-checked:bg-primary peer-checked:border-primary transition-colors">
                         <span class="material-symbols-outlined text-[18px]">check</span>
                     </span>
-                    <span class="text-lg text-on-surface">${cat.label}</span>
+                    <span class="category-option-label text-lg text-on-surface"></span>
                 `;
                 const input = item.querySelector('input');
+                const label = item.querySelector('.category-option-label');
+                input.value = cat.value;
+                label.textContent = cat.label;
                 input.checked = input.value === currentValue;
                 input.addEventListener('change', () => {
                     hiddenInput.value = input.value;

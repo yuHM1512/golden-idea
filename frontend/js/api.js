@@ -30,6 +30,38 @@ function formatApiError(error, fallback) {
 
 let ideaTaxonomyCache = null;
 
+function parseIdeaCategoryName(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const match = text.match(/^name=(['"])(.*?)\1(?:\s|$)/);
+  return (match ? match[2] : text).trim();
+}
+
+function parseIdeaCategoryRequiresStage(value, name = '') {
+  const text = String(value ?? '').trim();
+  const match = text.match(/requires_stage=(True|False|true|false|1|0)/);
+  if (match) return ['true', '1'].includes(match[1].toLowerCase());
+  return String(name || '').trim().toLocaleLowerCase('vi-VN') !== 'số hoá'.toLocaleLowerCase('vi-VN');
+}
+
+function normalizeIdeaCategory(item) {
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
+    const name = String(item.name || '').trim();
+    return {
+      value: name,
+      label: name,
+      requires_stage: item.requires_stage !== false,
+    };
+  }
+
+  const name = parseIdeaCategoryName(item);
+  return {
+    value: name,
+    label: name,
+    requires_stage: parseIdeaCategoryRequiresStage(item, name),
+  };
+}
+
 const api = {
   // Submit new idea
   async submitIdea(formData) {
@@ -953,11 +985,7 @@ const api = {
           { name: 'Form', requires_stage: true },
           { name: 'Thao tác', requires_stage: true },
         ];
-    return categories.map((item) => ({
-      value: item?.name || '',
-      label: item?.name || '',
-      requires_stage: item?.requires_stage !== false,
-    })).filter((item) => item.value);
+    return categories.map(normalizeIdeaCategory).filter((item) => item.value);
   },
 
   getIdeaStages() {
