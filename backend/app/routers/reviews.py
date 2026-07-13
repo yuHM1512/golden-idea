@@ -308,6 +308,24 @@ def _score_role_bucket(role: str) -> Optional[str]:
     return None
 
 
+def _score_bucket(score: IdeaScore) -> Optional[str]:
+    if bool(score.is_final):
+        return "ie"
+    return _score_role_bucket(_role_name(score.scorer))
+
+
+def _score_display_role(score: IdeaScore, idea: Idea | None = None) -> str:
+    bucket = _score_bucket(score)
+    if bucket == "ie":
+        return "digital_manager" if _idea_uses_digital_review(idea) else "ie_manager"
+    if bucket == "dept":
+        scorer = score.scorer
+        if has_role(scorer, "sub_dept_manager") and not has_role(scorer, "dept_manager"):
+            return "sub_dept_manager"
+        return "dept_manager"
+    return _role_name(score.scorer)
+
+
 def _criteria_lookup(db: Session) -> dict[str, dict[str, ScoreCriteria]]:
     rows = db.query(ScoreCriteria).filter(ScoreCriteria.is_active.is_(True)).all()
     lookup: dict[str, dict[str, ScoreCriteria]] = {}
@@ -390,13 +408,13 @@ def _calculate_score(db: Session, payload: ApprovalScoreInput) -> dict[str, Any]
     }
 
 
-def _format_score(score: IdeaScore) -> ApprovalScoreView:
+def _format_score(score: IdeaScore, idea: Idea | None = None) -> ApprovalScoreView:
     scorer = score.scorer
     return ApprovalScoreView(
         id=score.id,
         scorer_id=score.scorer_id,
         scorer_name=scorer.full_name if scorer else f"User {score.scorer_id}",
-        scorer_role=_role_name(scorer),
+        scorer_role=_score_display_role(score, idea),
         k1_type=_normalize_status(score.k1_type),
         k1_score=score.k1_score,
         k1_note=score.k1_note,
@@ -468,7 +486,7 @@ def _format_actual_benefit(evaluation: ActualBenefitEvaluation | None) -> Actual
 
 def _has_measurable_ie_score(idea: Idea) -> bool:
     for score in idea.scores:
-        if _role_name(score.scorer) == "ie_manager" and _normalize_status(score.k3_measure_type) in {
+        if _score_bucket(score) == "ie" and _normalize_status(score.k3_measure_type) in {
             K3MeasureType.TIME_SAVED.value,
             K3MeasureType.COST_SAVED.value,
         }:
@@ -573,13 +591,13 @@ def _get_latest_scores(idea: Idea) -> tuple[Optional[ApprovalScoreView], Optiona
     dept_score: Optional[ApprovalScoreView] = None
     ie_score: Optional[ApprovalScoreView] = None
     ordered = sorted(idea.scores, key=lambda item: item.scored_at or datetime.min, reverse=True)
-    formatted = [_format_score(score) for score in ordered]
+    formatted = [_format_score(score, idea) for score in ordered]
     for score in ordered:
-        role_bucket = _score_role_bucket(_role_name(score.scorer))
+        role_bucket = _score_bucket(score)
         if role_bucket == "dept" and dept_score is None:
-            dept_score = _format_score(score)
+            dept_score = _format_score(score, idea)
         if role_bucket == "ie" and ie_score is None:
-            ie_score = _format_score(score)
+            ie_score = _format_score(score, idea)
     return dept_score, ie_score, formatted
 
 
@@ -614,9 +632,13 @@ def _is_register_slip_eligible(idea: Idea) -> bool:
 
 
 def _latest_ie_score_row(idea: Idea) -> IdeaScore | None:
+    return _latest_score_row_by_bucket(idea, "ie")
+
+
+def _latest_score_row_by_bucket(idea: Idea, bucket: str) -> IdeaScore | None:
     ordered = sorted(idea.scores, key=lambda item: item.scored_at or datetime.min, reverse=True)
     for score in ordered:
-        if _score_role_bucket(_role_name(score.scorer)) == "ie":
+        if _score_bucket(score) == bucket:
             return score
     return None
 
@@ -1032,14 +1054,23 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
         or (scope == "ie" and ie_result_type in {IE_RESULT_APPROVED_NO_STANDARDIZATION, IE_RESULT_APPROVED_STANDARDIZATION})
     ):
         score_values = _calculate_score(db, payload.score)
-        db.add(
-            IdeaScore(
-                idea_id=idea.id,
-                scorer_id=user.id,
-                is_final=scope == "ie",
-                **score_values,
+        existing_score = _latest_score_row_by_bucket(idea, scope)
+        if existing_score is not None:
+            _archive_score_before_update(db, existing_score, user.id, revision_note=comment)
+            for field, value in score_values.items():
+                setattr(existing_score, field, value)
+            existing_score.scorer_id = user.id
+            existing_score.is_final = scope == "ie"
+            existing_score.scored_at = now_utc()
+        else:
+            db.add(
+                IdeaScore(
+                    idea_id=idea.id,
+                    scorer_id=user.id,
+                    is_final=scope == "ie",
+                    **score_values,
+                )
             )
-        )
     if action == ReviewAction.APPROVE and payload.actual_benefit is not None:
         _upsert_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
 

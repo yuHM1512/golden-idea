@@ -2015,7 +2015,7 @@
       }
 
       function latestIeScore(scores = []) {
-        return scores.find((score) => score.scorer_role === "ie_manager") || null;
+        return scores.find((score) => ["ie_manager", "digital_manager"].includes(score.scorer_role)) || null;
       }
 
       function latestCouncilReview(reviews = []) {
