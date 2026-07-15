@@ -909,6 +909,10 @@
         return ["ie_manager", "digital_manager", "bod_manager"].includes(currentRole) && isCouncilReviewMode();
       }
 
+      function approvalQueueRoleParam() {
+        return isCouncilReviewMode() ? "council_review" : currentRole;
+      }
+
       function renderCouncilRewardBatchAction() {
         const wrap = document.getElementById("councilRewardBatchAction");
         if (!wrap) return;
@@ -1213,12 +1217,12 @@
         let items = Array.isArray(queueData?.items) ? queueData.items : [];
         if (currentRole === "dept_manager" || currentRole === "sub_dept_manager" || currentRole === "unit_represent") {
           items = items.filter((item) => Number(item.unit_id) === Number(queueData?.unit_id));
-        } else if (currentRole === "digital_manager") {
+        } else if (currentRole === "digital_manager" && !isCouncilReviewMode()) {
           items = items.filter(
             (item) => isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
           );
-        } else if (currentRole === "ie_manager") {
+        } else if (currentRole === "ie_manager" && !isCouncilReviewMode()) {
           items = items.filter(
             (item) => !isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
@@ -1277,12 +1281,12 @@
         let items = Array.isArray(queueData?.items) ? queueData.items : [];
         if (currentRole === "dept_manager" || currentRole === "sub_dept_manager" || currentRole === "unit_represent") {
           items = items.filter((item) => Number(item.unit_id) === Number(queueData?.unit_id));
-        } else if (currentRole === "digital_manager") {
+        } else if (currentRole === "digital_manager" && !isCouncilReviewMode()) {
           items = items.filter(
             (item) => isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
           );
-        } else if (currentRole === "ie_manager") {
+        } else if (currentRole === "ie_manager" && !isCouncilReviewMode()) {
           items = items.filter(
             (item) => !isDigitizationCategory(item.category)
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
@@ -3134,18 +3138,19 @@
         const backendStatusValue = currentRole === "bod_manager" && currentBodApprovalTab === "register_slip"
           ? ""
           : statusValue;
+        const queueRole = approvalQueueRoleParam();
         showLoading(true);
         try {
           // Dual role digital tab: chỉ là digital_manager thuần – không load replication
           if (isSecondLevelRole(currentRole) && !isDualDeptDigital()) {
             const [ideas, replications] = await Promise.all([
-              api.getApprovalQueue(code, backendStatusValue, currentRole),
+              api.getApprovalQueue(code, backendStatusValue, queueRole),
               api.getReplicationApprovalQueue(code),
             ]);
             queueData = ideas;
             replicationQueueData = replications;
           } else {
-            queueData = await api.getApprovalQueue(code, backendStatusValue, currentRole);
+            queueData = await api.getApprovalQueue(code, backendStatusValue, queueRole);
             replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
           }
           renderKpis(getActiveMetrics());

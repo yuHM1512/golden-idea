@@ -280,6 +280,13 @@ def _is_visible_to_requested_role(user: User, idea: Idea, requested_role: str | 
         if status_value == IdeaStatus.REJECTED.value and _latest_council_review_row(idea) is None:
             return False
         return _has_dept_level_score(idea)
+    if role == "council_review":
+        if not any(has_role(user, allowed_role) for allowed_role in {"ie_manager", "digital_manager", "bod_manager", "admin"}):
+            return False
+        status_value = _normalize_status(idea.status)
+        if status_value not in IE_VISIBLE_STATUSES:
+            return False
+        return _has_dept_level_score(idea) and _latest_council_review_row(idea) is not None
     if role == "bod_manager":
         if not (has_role(user, "bod_manager") or has_role(user, "admin")):
             return False
