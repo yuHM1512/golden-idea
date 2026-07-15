@@ -257,6 +257,36 @@ def _is_visible_to_user(user: User, idea: Idea) -> bool:
     return False
 
 
+def _is_visible_to_requested_role(user: User, idea: Idea, requested_role: str | None) -> bool:
+    role = (requested_role or "").strip().lower()
+    if not role:
+        return _is_visible_to_user(user, idea)
+    if role == "admin":
+        return has_role(user, "admin")
+    if role in {"dept_manager", "sub_dept_manager", "unit_represent"}:
+        if not (has_role(user, role) or has_role(user, "admin")):
+            return False
+        return idea.unit_id == user.unit_id and _normalize_status(idea.status) in DEPT_VISIBLE_STATUSES
+    if role in {"ie_manager", "digital_manager"}:
+        if not (has_role(user, role) or has_role(user, "admin")):
+            return False
+        if role == "ie_manager" and _idea_uses_digital_review(idea):
+            return False
+        if role == "digital_manager" and not _idea_uses_digital_review(idea):
+            return False
+        status_value = _normalize_status(idea.status)
+        if status_value not in IE_VISIBLE_STATUSES:
+            return False
+        if status_value == IdeaStatus.REJECTED.value and _latest_council_review_row(idea) is None:
+            return False
+        return _has_dept_level_score(idea)
+    if role == "bod_manager":
+        if not (has_role(user, "bod_manager") or has_role(user, "admin")):
+            return False
+        return _normalize_status(idea.status) in BOD_VISIBLE_STATUSES
+    return _is_visible_to_user(user, idea)
+
+
 def _can_review(user: User, idea: Idea) -> bool:
     scope = _scope_kind(user, idea)
     status_value = _normalize_status(idea.status)
@@ -787,7 +817,7 @@ def _assert_review_permission(user: User, idea: Idea) -> None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ý tưởng chưa ở bước duyệt của bạn")
 
 
-def _load_scoped_ideas(db: Session, user: User, status_filter: Optional[str]) -> list[Idea]:
+def _load_scoped_ideas(db: Session, user: User, status_filter: Optional[str], requested_role: str | None = None) -> list[Idea]:
     query = (
         db.query(Idea)
         .options(
@@ -812,7 +842,7 @@ def _load_scoped_ideas(db: Session, user: User, status_filter: Optional[str]) ->
     if status_filter:
         query = query.filter(Idea.status == status_filter)
     items = query.all()
-    return [idea for idea in items if _is_visible_to_user(user, idea)]
+    return [idea for idea in items if _is_visible_to_requested_role(user, idea, requested_role)]
 
 
 def _build_metrics(scope: str, items: list[Idea]) -> ApprovalMetrics:
@@ -884,11 +914,12 @@ def _build_my_idea_metrics(items: list[Idea]) -> ApprovalMetrics:
 async def get_pending_reviews(
     employee_code: str = Query(...),
     status_filter: Optional[str] = Query(default=None, alias="status"),
+    role: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     user = _require_user(db, employee_code)
-    scope = _scope_kind(user)
-    ideas = _load_scoped_ideas(db, user, status_filter)
+    scope = _score_role_bucket(role or "") or _scope_kind(user)
+    ideas = _load_scoped_ideas(db, user, status_filter, role)
     items = [_idea_to_item(idea, _can_review(user, idea)) for idea in ideas]
     return ApprovalQueueResponse(
         role=_role_name(user),

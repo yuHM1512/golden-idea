@@ -381,10 +381,11 @@ const api = {
     }
   },
 
-  async getApprovalQueue(employeeCode, statusValue = '') {
+  async getApprovalQueue(employeeCode, statusValue = '', role = '') {
     try {
       const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });
       if (statusValue) qs.set('status', statusValue);
+      if (role) qs.set('role', role);
       const response = await fetch(`${API_BASE}/reviews/pending?${qs.toString()}`);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));

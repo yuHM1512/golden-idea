@@ -3139,13 +3139,13 @@
           // Dual role digital tab: chỉ là digital_manager thuần – không load replication
           if (isSecondLevelRole(currentRole) && !isDualDeptDigital()) {
             const [ideas, replications] = await Promise.all([
-              api.getApprovalQueue(code, backendStatusValue),
+              api.getApprovalQueue(code, backendStatusValue, currentRole),
               api.getReplicationApprovalQueue(code),
             ]);
             queueData = ideas;
             replicationQueueData = replications;
           } else {
-            queueData = await api.getApprovalQueue(code, backendStatusValue);
+            queueData = await api.getApprovalQueue(code, backendStatusValue, currentRole);
             replicationQueueData = { items: [], metrics: { total: 0, approved: 0, pending: 0 } };
           }
           renderKpis(getActiveMetrics());
