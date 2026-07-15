@@ -1171,26 +1171,24 @@
         await loadQueue();
       }
 
-      function setBodApprovalTab(tab) {
+      async function setBodApprovalTab(tab) {
         currentBodApprovalTab = tab === "council_review" ? "council_review" : "register_slip";
         syncStatusFilterOptions();
         renderQueueDateFilterOptions();
         renderBodApprovalTabs();
         renderCouncilFilterOptions();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
-        renderKpis(getActiveMetrics());
-        renderQueue(getDisplayedQueueItems());
+        await loadQueue();
       }
 
-      function setIeApprovalTab(tab) {
+      async function setIeApprovalTab(tab) {
         currentIeApprovalTab = tab === "replication_review" ? "replication_review" : (tab === "council_review" ? "council_review" : "idea_review");
         renderIeApprovalTabs();
         renderQueueDateFilterOptions();
         renderCouncilFilterOptions();
         renderPendingFilterButton();
         document.getElementById("roleHint").textContent = currentRoleHint(queueData || {});
-        renderKpis(getActiveMetrics());
-        renderQueue(getDisplayedQueueItems());
+        await loadQueue();
       }
 
       function getDisplayedReplicationItems() {
