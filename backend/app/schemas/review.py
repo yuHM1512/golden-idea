@@ -84,6 +84,13 @@ class IeScoreEditRequest(BaseModel):
     comment: Optional[str] = None
 
 
+class DeptScoreEditRequest(BaseModel):
+    employee_code: str
+    score: ApprovalScoreInput
+    actual_benefit: Optional[ApprovalActualBenefitInput] = None
+    comment: Optional[str] = None
+
+
 class IeReviewEditRequest(BaseModel):
     employee_code: str
     ie_result_type: str
@@ -180,6 +187,7 @@ class ApprovalIdeaItem(BaseModel):
     ie_result_type: Optional[str] = None
     council_final_score: Optional[int] = None
     benefit_value: Optional[float] = None
+    dept_benefit_value: Optional[float] = None
     council_is_featured: bool = False
     council_reward_multiplier: Optional[float] = None
     dept_score: Optional["ApprovalScoreView"] = None
@@ -196,6 +204,7 @@ class ApprovalIdeaDetail(ApprovalIdeaItem):
     reviews: List[ApprovalReviewView] = Field(default_factory=list)
     scores: List[ApprovalScoreView] = Field(default_factory=list)
     actual_benefit: Optional[ActualBenefitView] = None
+    dept_actual_benefit: Optional[ActualBenefitView] = None
 
 
 class ApprovalMetrics(BaseModel):

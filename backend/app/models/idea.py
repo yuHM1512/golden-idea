@@ -85,3 +85,9 @@ class Idea(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    dept_actual_benefit = relationship(
+        "DeptActualBenefitEvaluation",
+        back_populates="idea",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )

@@ -674,6 +674,35 @@ def migrate_score_criteria_tables() -> None:
         conn.execute(
             text(
                 """
+                CREATE TABLE IF NOT EXISTS public.dept_actual_benefit_evaluations (
+                    id serial PRIMARY KEY,
+                    idea_id integer NOT NULL UNIQUE REFERENCES public.ideas(id) ON DELETE CASCADE,
+                    evaluator_id integer NOT NULL REFERENCES public.users(id),
+                    before_seconds double precision NOT NULL,
+                    after_seconds double precision NOT NULL,
+                    improvement_percent double precision NOT NULL,
+                    quantity integer NOT NULL,
+                    labor_second_price double precision NOT NULL DEFAULT 6.14,
+                    benefit_value double precision NOT NULL,
+                    note text,
+                    evaluated_at timestamp with time zone DEFAULT now(),
+                    updated_at timestamp with time zone
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE INDEX IF NOT EXISTS ix_dept_actual_benefit_evaluations_idea_id
+                ON public.dept_actual_benefit_evaluations (idea_id)
+                """
+            )
+        )
+
+        conn.execute(
+            text(
+                """
                 CREATE TABLE IF NOT EXISTS public.score_criteria_sets (
                     id serial PRIMARY KEY,
                     name varchar(255) NOT NULL,
@@ -1043,6 +1072,40 @@ def migrate_ie_review_logic_columns() -> None:
                     ELSE council_result_type
                 END
                 WHERE council_result_type IS NOT NULL
+                """
+            )
+        )
+
+
+def repair_approval_stage_integrity() -> None:
+    """Repair ideas that skipped council review because the reviewer had multiple roles."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                UPDATE public.ideas AS idea
+                SET status = 'DEPT_APPROVED',
+                    eligible_register_reward = false,
+                    bod_register_approved = false,
+                    bod_register_approved_at = NULL,
+                    bod_register_approved_by_id = NULL,
+                    approved_at = NULL,
+                    rejected_at = NULL,
+                    rejection_reason = NULL
+                WHERE idea.status::text = 'LEADERSHIP_REVIEW'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM public.idea_reviews AS dept_review
+                      WHERE dept_review.idea_id = idea.id
+                        AND dept_review.level::text = 'DEPT_HEAD'
+                        AND dept_review.action::text = 'APPROVE'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM public.idea_reviews AS council_review
+                      WHERE council_review.idea_id = idea.id
+                        AND council_review.level::text = 'COUNCIL'
+                  )
                 """
             )
         )

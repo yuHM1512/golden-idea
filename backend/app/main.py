@@ -30,6 +30,7 @@ from app.seed import (
     migrate_payment_slip_code_unique_index,
     migrate_reward_batch_special_coefficients_column,
     migrate_ie_review_logic_columns,
+    repair_approval_stage_integrity,
     migrate_file_attachments_drive_columns,
     migrate_standardized_idea_replications_table,
     migrate_k3_cost_saved_criteria_codes,
@@ -65,6 +66,7 @@ async def lifespan(app: FastAPI):
     migrate_payment_slip_code_unique_index()
     migrate_reward_batch_special_coefficients_column()
     migrate_ie_review_logic_columns()
+    repair_approval_stage_integrity()
     migrate_file_attachments_drive_columns()
     migrate_standardized_idea_replications_table()
     migrate_k3_cost_saved_criteria_codes()

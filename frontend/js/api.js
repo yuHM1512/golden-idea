@@ -494,6 +494,28 @@ const api = {
     }
   },
 
+  async updateDeptScore(ideaId, payload) {
+    try {
+      const normalizedPayload = {
+        ...payload,
+        employee_code: (payload?.employee_code || '').trim().toUpperCase(),
+      };
+      const response = await fetch(`${API_BASE}/reviews/${ideaId}/dept-score`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(normalizedPayload),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(formatApiError(error, 'Không cập nhật được điểm cấp 1'));
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Update dept score error:', error);
+      throw error;
+    }
+  },
+
   async updateIeReview(ideaId, payload) {
     try {
       const normalizedPayload = {

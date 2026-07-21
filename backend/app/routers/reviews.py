@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models.actual_benefit import ActualBenefitEvaluation
+from app.models.actual_benefit import ActualBenefitEvaluation, DeptActualBenefitEvaluation
 from app.models.payment import PaymentSlip
 from app.models.idea import Idea, IdeaStatus
 from app.models.labor_second_price import LaborSecondPrice
@@ -40,6 +40,7 @@ from app.schemas import (
     ApprovalScoreInput,
     ApprovalScoreView,
     ApprovalSubmitRequest,
+    DeptScoreEditRequest,
     IeScoreEditRequest,
     IeReviewEditRequest,
     BodRegisterApprovalRequest,
@@ -324,10 +325,9 @@ def _can_review(user: User, idea: Idea) -> bool:
     return False
 
 
-def _next_status(user: User, action: ReviewAction) -> IdeaStatus:
+def _next_status(scope: str, action: ReviewAction) -> IdeaStatus:
     if action == ReviewAction.REJECT:
         return IdeaStatus.REJECTED
-    scope = _scope_kind(user)
     if scope == "dept":
         return IdeaStatus.DEPT_APPROVED
     if scope == "ie":
@@ -614,6 +614,55 @@ def _upsert_actual_benefit_record(
     return evaluation
 
 
+def _validate_actual_benefit_payload(payload: ApprovalActualBenefitInput | ActualBenefitInput) -> None:
+    if payload.before_seconds <= 0:
+        raise HTTPException(status_code=400, detail="Trước cải tiến phải lớn hơn 0")
+    if payload.after_seconds < 0:
+        raise HTTPException(status_code=400, detail="Sau cải tiến không được âm")
+    if payload.after_seconds > payload.before_seconds:
+        raise HTTPException(status_code=400, detail="Sau cải tiến không được lớn hơn trước cải tiến")
+    if payload.quantity < 0:
+        raise HTTPException(status_code=400, detail="Số lượng không được âm")
+    if payload.labor_second_price < 0:
+        raise HTTPException(status_code=400, detail="Đơn giá giây CN không được âm")
+
+
+def _upsert_dept_actual_benefit_record(
+    db: Session,
+    *,
+    idea: Idea,
+    user: User,
+    payload: ApprovalActualBenefitInput,
+) -> DeptActualBenefitEvaluation:
+    if not (has_role(user, "dept_manager") or has_role(user, "sub_dept_manager")):
+        raise HTTPException(status_code=403, detail="Chỉ trưởng/phó đơn vị được nhập giá trị làm lợi cấp 1")
+    if idea.unit_id != user.unit_id:
+        raise HTTPException(status_code=403, detail="Ý tưởng không thuộc đơn vị của bạn")
+    if _latest_council_review_row(idea) is not None:
+        raise HTTPException(status_code=400, detail="Ban cải tiến đã phê duyệt cấp 2, không thể sửa giá trị làm lợi cấp 1")
+
+    _validate_actual_benefit_payload(payload)
+    effective_labor_second_price = _resolve_labor_second_price(db, idea, fallback=payload.labor_second_price)
+    improvement_percent = ((payload.before_seconds - payload.after_seconds) / payload.before_seconds) * 100
+    benefit_value = (payload.before_seconds - payload.after_seconds) * payload.quantity * effective_labor_second_price
+
+    evaluation = idea.dept_actual_benefit
+    if evaluation is None:
+        evaluation = DeptActualBenefitEvaluation(idea_id=idea.id, evaluator_id=user.id)
+        db.add(evaluation)
+
+    evaluation.evaluator_id = user.id
+    evaluation.before_seconds = payload.before_seconds
+    evaluation.after_seconds = payload.after_seconds
+    evaluation.improvement_percent = improvement_percent
+    evaluation.quantity = payload.quantity
+    evaluation.labor_second_price = effective_labor_second_price
+    evaluation.benefit_value = benefit_value
+    evaluation.note = (payload.note or "").strip() or None
+    evaluation.updated_at = now_utc()
+    return evaluation
+
+
 def _build_title(idea: Idea) -> str:
     title = (idea.title or "").strip()
     if title:
@@ -672,6 +721,10 @@ def _latest_ie_score_row(idea: Idea) -> IdeaScore | None:
     return _latest_score_row_by_bucket(idea, "ie")
 
 
+def _latest_dept_score_row(idea: Idea) -> IdeaScore | None:
+    return _latest_score_row_by_bucket(idea, "dept")
+
+
 def _latest_score_row_by_bucket(idea: Idea, bucket: str) -> IdeaScore | None:
     ordered = sorted(idea.scores, key=lambda item: item.scored_at or datetime.min, reverse=True)
     for score in ordered:
@@ -681,9 +734,13 @@ def _latest_score_row_by_bucket(idea: Idea, bucket: str) -> IdeaScore | None:
 
 
 def _latest_council_review_row(idea: Idea) -> IdeaReview | None:
+    return _latest_review_row_by_level(idea, ReviewLevel.COUNCIL)
+
+
+def _latest_review_row_by_level(idea: Idea, level: ReviewLevel) -> IdeaReview | None:
     ordered = sorted(idea.reviews, key=lambda item: item.reviewed_at or datetime.min, reverse=True)
     for review in ordered:
-        if _normalize_status(review.level) == ReviewLevel.COUNCIL.value:
+        if _normalize_status(review.level) == level.value:
             return review
     return None
 
@@ -769,6 +826,7 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
         ie_result_type=ie_result_type,
         council_final_score=idea.council_final_score,
         benefit_value=idea.actual_benefit.benefit_value if idea.actual_benefit else None,
+        dept_benefit_value=idea.dept_actual_benefit.benefit_value if idea.dept_actual_benefit else None,
         council_is_featured=bool(getattr(idea, "council_is_featured", False)),
         council_reward_multiplier=idea.council_reward_multiplier,
         dept_score=dept_score,
@@ -791,6 +849,7 @@ def _idea_to_detail(idea: Idea, can_review: bool) -> ApprovalIdeaDetail:
         reviews=reviews,
         scores=scores,
         actual_benefit=_format_actual_benefit(idea.actual_benefit),
+        dept_actual_benefit=_format_actual_benefit(idea.dept_actual_benefit),
     )
 
 
@@ -1110,7 +1169,10 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
                 )
             )
     if action == ReviewAction.APPROVE and payload.actual_benefit is not None:
-        _upsert_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
+        if scope == "dept":
+            _upsert_dept_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
+        else:
+            _upsert_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
 
     review_level = _review_level(user, idea)
     if review_level is None:
@@ -1132,7 +1194,7 @@ async def submit_review(payload: ApprovalSubmitRequest, db: Session = Depends(ge
     if scope == "ie":
         next_status = IdeaStatus.REJECTED if ie_result_type == IE_RESULT_BCT_REJECTED else IdeaStatus.LEADERSHIP_REVIEW
     else:
-        next_status = _next_status(user, action)
+        next_status = _next_status(scope, action)
     idea.status = next_status
     idea.reviewed_at = now_utc()
     if scope == "ie":
@@ -1245,6 +1307,76 @@ async def approve_register_slip(idea_id: int, payload: BodRegisterApprovalReques
     )
     if refreshed is not None:
         send_approval_stage_email(db, refreshed, "register_slip_approved_notice")
+    return _idea_to_detail(refreshed, _can_review(user, refreshed))
+
+
+@router.put("/{idea_id}/dept-score", response_model=ApprovalIdeaDetail)
+async def update_dept_score(idea_id: int, payload: DeptScoreEditRequest, db: Session = Depends(get_db)):
+    user = _require_user(db, payload.employee_code)
+    if not (has_role(user, "dept_manager") or has_role(user, "sub_dept_manager")):
+        raise HTTPException(status_code=403, detail="Chỉ trưởng/phó đơn vị được sửa điểm cấp 1")
+
+    idea = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea_id)
+        .first()
+    )
+    if idea is None:
+        raise HTTPException(status_code=404, detail="Idea không tồn tại")
+    if idea.unit_id != user.unit_id:
+        raise HTTPException(status_code=403, detail="Ý tưởng không thuộc đơn vị của bạn")
+    if _latest_council_review_row(idea) is not None:
+        raise HTTPException(status_code=400, detail="Ban cải tiến đã phê duyệt cấp 2, không thể sửa điểm cấp 1")
+
+    status_value = _normalize_status(idea.status)
+    if status_value not in {IdeaStatus.DEPT_APPROVED.value, IdeaStatus.COUNCIL_REVIEW.value}:
+        raise HTTPException(status_code=400, detail="Chỉ được sửa điểm cấp 1 sau khi đơn vị đã duyệt và trước cấp 2 phê duyệt")
+
+    latest_score = _latest_dept_score_row(idea)
+    if latest_score is None:
+        raise HTTPException(status_code=400, detail="Ý tưởng này chưa có điểm cấp 1 để chỉnh sửa")
+
+    comment = (payload.comment or "").strip() or None
+    _archive_score_before_update(db, latest_score, user.id, revision_note=comment)
+    score_values = _calculate_score(db, payload.score)
+    for field, value in score_values.items():
+        setattr(latest_score, field, value)
+    latest_score.scorer_id = user.id
+    latest_score.is_final = False
+    latest_score.scored_at = now_utc()
+
+    latest_dept_review = _latest_review_row_by_level(idea, ReviewLevel.DEPT_HEAD)
+    if latest_dept_review is not None:
+        latest_dept_review.comment = comment if comment is not None else latest_dept_review.comment
+        latest_dept_review.reviewed_at = now_utc()
+
+    if payload.actual_benefit is not None:
+        _upsert_dept_actual_benefit_record(db, idea=idea, user=user, payload=payload.actual_benefit)
+
+    idea.reviewed_at = now_utc()
+    db.commit()
+
+    refreshed = (
+        db.query(Idea)
+        .options(
+            joinedload(Idea.unit),
+            joinedload(Idea.attachments),
+            joinedload(Idea.actual_benefit).joinedload(ActualBenefitEvaluation.evaluator),
+            joinedload(Idea.reviews).joinedload(IdeaReview.reviewer),
+            joinedload(Idea.scores).joinedload(IdeaScore.scorer),
+            joinedload(Idea.payment_slip),
+        )
+        .filter(Idea.id == idea.id)
+        .first()
+    )
     return _idea_to_detail(refreshed, _can_review(user, refreshed))
 
 

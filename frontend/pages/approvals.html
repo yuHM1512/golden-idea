@@ -656,6 +656,10 @@
         return currentRole === role || currentRoles.includes(role);
       }
 
+      function hasDeptApprovalEditRole() {
+        return hasCurrentRole("dept_manager") || hasCurrentRole("sub_dept_manager");
+      }
+
       function isDigitizationCategory(category) {
         if (!category) return false;
         const folded = normalizeSearchText(category);
@@ -1226,7 +1230,7 @@
               && IE_LEVEL_STATUSES.has(String(item.status || "").trim().toUpperCase())
           );
         }
-        let base = showPendingReviewOnly ? items.filter((item) => item.can_review) : items;
+        let base = showPendingReviewOnly ? items.filter((item) => item.can_review || canEditDeptScoreItem(item)) : items;
         if (currentRole === "bod_manager" && currentBodApprovalTab === "register_slip") {
           const statusFilterValue = document.getElementById("statusFilter")?.value || "";
           const allowed = new Set(allowedBodMoneyResultTypes());
@@ -1837,7 +1841,8 @@
           const hasIeDecision = Boolean(item.ie_result_type);
           const councilLocked = isCouncilScored(item);
           const allowIeRowEdit = isIeIdeaQueue && hasIeDecision && !councilLocked;
-          const rowModalMode = allowIeRowEdit ? "edit" : "view";
+          const allowDeptRowEdit = canEditDeptScoreItem(item);
+          const rowModalMode = allowIeRowEdit ? "edit" : (allowDeptRowEdit ? "dept_edit" : "view");
           const buttonModalMode = "view";
           const rowMutedClass = isRejected ? "opacity-55" : "";
           const primaryTextClass = isRejected ? "text-slate-400" : "text-text-main";
@@ -1845,8 +1850,8 @@
           const chipClass = isRejected
             ? "inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-400 font-semibold"
             : "inline-flex items-center px-3 py-1 rounded-full bg-surface-low text-text-main font-semibold";
-          tr.className = `${rowMutedClass} ${allowIeRowEdit ? "cursor-pointer hover:bg-[#f8fbff] transition-colors" : ""}`.trim();
-          if (allowIeRowEdit) {
+          tr.className = `${rowMutedClass} ${allowIeRowEdit || allowDeptRowEdit ? "cursor-pointer hover:bg-[#f8fbff] transition-colors" : ""}`.trim();
+          if (allowIeRowEdit || allowDeptRowEdit) {
             tr.onclick = () => openReviewModal(item.id, rowModalMode);
           }
           tr.innerHTML = `
@@ -1888,6 +1893,11 @@
                       <button class="px-4 py-2 rounded-xl ${councilLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-primary text-white"} font-semibold" ${councilLocked ? 'disabled title="Hội đồng đã chốt điểm, không thể sửa duyệt cấp 2 của Ban cải tiến"' : `onclick="event.stopPropagation(); openReviewModal(${item.id}, 'edit')"`}>Sửa cấp 2</button>
                       <button class="px-4 py-2 rounded-xl bg-surface-low text-text-main font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'view')">Xem</button>
                     </div>`
+                  : allowDeptRowEdit
+                    ? `<div class="inline-flex items-center gap-2">
+                        <button class="px-4 py-2 rounded-xl bg-primary text-white font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'dept_edit')">Sửa điểm</button>
+                        <button class="px-4 py-2 rounded-xl bg-surface-low text-text-main font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, 'view')">Xem</button>
+                      </div>`
                   : `<button class="px-4 py-2 rounded-xl ${item.can_review ? "bg-primary text-white" : isRejected ? "bg-slate-100 text-slate-400" : "bg-surface-low text-text-main"} font-semibold" onclick="event.stopPropagation(); openReviewModal(${item.id}, '${buttonModalMode}')">
                       ${item.can_review ? "Phê duyệt" : "Xem"}
                     </button>`
@@ -2020,6 +2030,10 @@
         return scores.find((score) => ["ie_manager", "digital_manager"].includes(score.scorer_role)) || null;
       }
 
+      function latestDeptScore(scores = []) {
+        return scores.find((score) => ["dept_manager", "sub_dept_manager"].includes(score.scorer_role)) || null;
+      }
+
       function latestCouncilReview(reviews = []) {
         return reviews.find((review) => review.level === "COUNCIL") || null;
       }
@@ -2031,6 +2045,35 @@
       function isIeEditMode(detail = activeDetail) {
         const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
         return isSecondLevelRole(currentRole) && currentIeModalMode === "edit" && Boolean(latestCouncilReview(reviews)) && !isCouncilScored(detail);
+      }
+
+      function isDeptEditMode(detail = activeDetail) {
+        const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
+        const scores = Array.isArray(detail?.scores) ? detail.scores : [];
+        return hasDeptApprovalEditRole()
+          && currentIeModalMode === "dept_edit"
+          && Boolean(detail?.dept_score || latestDeptScore(scores))
+          && !latestCouncilReview(reviews);
+      }
+
+      function canEditDeptScoreItem(item) {
+        return hasDeptApprovalEditRole()
+          && !item?.ie_result_type
+          && ["DEPT_APPROVED", "COUNCIL_REVIEW"].includes(String(item?.status || "").trim().toUpperCase());
+      }
+
+      function canEditDeptScoreDetail(detail = activeDetail) {
+        const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
+        const scores = Array.isArray(detail?.scores) ? detail.scores : [];
+        return hasDeptApprovalEditRole()
+          && Boolean(detail?.dept_score || latestDeptScore(scores))
+          && !latestCouncilReview(reviews)
+          && ["DEPT_APPROVED", "COUNCIL_REVIEW"].includes(String(detail?.status || "").trim().toUpperCase());
+      }
+
+      function isDeptBenefitEntryMode(detail = activeDetail) {
+        return hasDeptApprovalEditRole()
+          && (Boolean(detail?.can_review) || isDeptEditMode(detail));
       }
 
       function ieDecisionValue() {
@@ -2106,23 +2149,74 @@
         `;
       }
 
+      function renderDeptActualBenefitSummary(detail, options = {}) {
+        const item = detail?.dept_actual_benefit || {};
+        const benefitValue = item.benefit_value ?? detail?.dept_benefit_value;
+        if (benefitValue === null || benefitValue === undefined) {
+          if (!options.showEmpty) return "";
+          return `
+          <section class="rounded-[1.5rem] border border-dashed border-[#b9d2ff] bg-[#f8fbff] p-6 space-y-3">
+            <div class="text-xs uppercase tracking-[0.25em] text-primary">Giá trị làm lợi cấp 1</div>
+            <h4 class="text-xl font-black text-primary font-display">Chưa nhập giá trị làm lợi</h4>
+            <div class="text-sm text-text-soft">Có thể bổ sung trước khi Ban cải tiến phê duyệt cấp 2.</div>
+          </section>
+          `;
+        }
+        return `
+          <section class="rounded-[1.5rem] border border-[#b9d2ff] bg-[#f8fbff] p-6 space-y-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="text-xs uppercase tracking-[0.25em] text-primary">Giá trị làm lợi cấp 1</div>
+                <h4 class="mt-2 text-xl font-black text-primary font-display">Đơn vị đã nhập</h4>
+              </div>
+              ${item.evaluated_at ? `<div class="text-xs text-text-soft">Cập nhật: ${formatDate(item.evaluated_at)}</div>` : ""}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div class="rounded-2xl bg-white px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Trước cải tiến</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.before_seconds ?? "—")} giây</div>
+              </div>
+              <div class="rounded-2xl bg-white px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Sau cải tiến</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.after_seconds ?? "—")} giây</div>
+              </div>
+              <div class="rounded-2xl bg-white px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Số lượng</div>
+                <div class="mt-2 text-xl font-black text-primary">${safeText(item.quantity ?? "—")}</div>
+              </div>
+              <div class="rounded-2xl bg-[#e8f6ee] px-4 py-3">
+                <div class="text-xs uppercase tracking-[0.2em] text-text-soft">Giá trị làm lợi</div>
+                <div class="mt-2 text-xl font-black text-[#0f7a43]">${formatVnd(benefitValue)} VND</div>
+              </div>
+            </div>
+            ${
+              item.note
+                ? `<div class="rounded-2xl bg-white px-4 py-3 text-sm text-text-soft"><span class="font-semibold text-text-main">Ghi chú đơn vị:</span> ${safeText(item.note)}</div>`
+                : ""
+            }
+          </section>
+        `;
+      }
+
       function renderActualBenefitSection(detail, scores = [], options = {}) {
         const editMode = isIeEditMode(detail);
-        const shouldRender = (isSecondLevelRole(currentRole) && (detail?.can_review || editMode)) || canEvaluateActualBenefit(detail, scores);
+        const deptMode = options.benefitKind === "dept";
+        const shouldRender = deptMode || (isSecondLevelRole(currentRole) && (detail?.can_review || editMode)) || canEvaluateActualBenefit(detail, scores);
         if (!shouldRender) return "";
-        const item = detail.actual_benefit || {};
+        const item = deptMode ? (detail.dept_actual_benefit || {}) : (detail.actual_benefit || {});
         const configuredLaborSecondPrice = resolveIdeaLaborSecondPrice(detail);
         const readOnly = Boolean(options.readOnly);
         const hideUntilIeDecision = isSecondLevelRole(currentRole) && detail?.can_review && !editMode && !readOnly;
+        const hideUntilDeptMeasured = deptMode && !["TIME_SAVED", "COST_SAVED"].includes(document.getElementById("scoreK3Type")?.value || "TIME_SAVED");
         const sectionClassName = options.embedded
           ? "rounded-[1.5rem] border border-slate-100 bg-[#f8fbff] p-6 space-y-5"
           : "rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-5";
         return `
-          <section id="actualBenefitSection" class="${sectionClassName} ${hideUntilIeDecision ? "hidden" : ""}">
+          <section id="actualBenefitSection" class="${sectionClassName} ${hideUntilIeDecision || hideUntilDeptMeasured ? "hidden" : ""}">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">\u0110\u00e1nh gi\u00e1 sau \u00e1p d\u1ee5ng</div>
-                <h4 class="mt-2 text-xl font-black text-primary font-display">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i th\u1ef1c t\u1ebf</h4>
+                <div class="text-xs uppercase tracking-[0.25em] text-text-soft">${deptMode ? "Sau khi chấm điểm K3" : "Đánh giá sau áp dụng"}</div>
+                <h4 class="mt-2 text-xl font-black text-primary font-display">${deptMode ? "Giá trị làm lợi do đơn vị nhập" : "Giá trị làm lợi thực tế"}</h4>
               </div>
               ${item.evaluated_at ? `<div class="text-xs text-text-soft">C\u1eadp nh\u1eadt: ${formatDate(item.evaluated_at)}</div>` : ""}
             </div>
@@ -2160,6 +2254,8 @@
             ${
               readOnly
                 ? '<div class="rounded-2xl bg-[#f6f8ff] px-4 py-3 text-sm text-text-soft">Th\u00f4ng tin n\u00e0y \u0111ang \u1edf ch\u1ebf \u0111\u1ed9 xem. Click v\u00e0o d\u00f2ng \u00fd t\u01b0\u1edfng ho\u1eb7c b\u1ea5m S\u1eeda \u0111i\u1ec3m \u0111\u1ec3 m\u1edf ch\u1ebf \u0111\u1ed9 ch\u1ec9nh s\u1eeda.</div>'
+                : deptMode
+                ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Giá trị làm lợi cấp 1 sẽ được lưu cùng lúc khi bấm nút duyệt hoặc lưu điểm cấp 1.</div>'
                 : editMode
                 ? '<div class="rounded-2xl bg-[#eef7ff] px-4 py-3 text-sm text-text-soft">Gi\u00e1 tr\u1ecb l\u00e0m l\u1ee3i s\u1ebd \u0111\u01b0\u1ee3c l\u01b0u c\u00f9ng l\u00fac khi b\u1ea5m n\u00fat L\u01b0u ch\u1ec9nh s\u1eeda.</div>'
                 : isSecondLevelRole(currentRole) && detail?.can_review
@@ -2442,7 +2538,8 @@
 
       function renderScoreForm(detail, scores = []) {
         const allowIeEdit = isIeEditMode(detail);
-        if (!(detail?.can_review || allowIeEdit) || !["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole)) return "";
+        const allowDeptEdit = isDeptEditMode(detail);
+        if (!(detail?.can_review || allowIeEdit || allowDeptEdit) || !["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole)) return "";
         const k1Options = getCriteriaGroup("K1");
         const k2EasyOptions = getCriteriaGroup("K2_EASY");
         const k2HardOptions = getCriteriaGroup("K2_HARD");
@@ -2451,6 +2548,8 @@
         const showIeDecisionBlock = isIeManager && (detail?.can_review || allowIeEdit);
         const scoreIntro = allowIeEdit
           ? "Bạn có thể chỉnh sửa lại bảng điểm Ban cải tiến đã chấm và cập nhật giá trị làm lợi nếu cần."
+          : allowDeptEdit
+            ? "Bạn có thể chỉnh sửa lại điểm cấp 1 trước khi Ban cải tiến phê duyệt cấp 2."
           : (isIeManager ? "IE chọn kết luận xét duyệt trước. Chỉ khi chọn BCT Duyệt mới cần chấm điểm và nhập giá trị làm lợi." : "Chấm lần lượt theo từng bước để tránh bỏ sót tiêu chí.");
         return `
           <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6 space-y-6">
@@ -2575,6 +2674,8 @@
         const body = document.getElementById("modalBody");
         const actions = document.getElementById("modalActions");
         const canEditIeScore = isIeEditMode(detail);
+        const canEditDeptScore = isDeptEditMode(detail);
+        const canSwitchToDeptEdit = !canEditDeptScore && canEditDeptScoreDetail(detail);
         const isIeViewMode = isSecondLevelRole(currentRole) && currentIeModalMode === "view";
         const canApprove = detail.can_review
           && ["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager", "admin"].includes(currentRole);
@@ -2584,9 +2685,19 @@
         const hasIeScoreDetail = Boolean(latestIeScore(scores));
         const showStandaloneActualBenefit = !(isIeManager && (detail?.can_review || canEditIeScore)) || (isIeViewMode && hasIeScoreDetail);
         const attachments = Array.isArray(detail.attachments) ? detail.attachments : [];
-        document.getElementById("modalTitle").textContent = detail.title;
+        document.getElementById("modalTitle").textContent = canEditDeptScore ? `Sửa điểm cấp 1 - ${detail.title}` : detail.title;
 
         body.innerHTML = `
+          ${canEditDeptScore ? `
+            <section class="rounded-[1.5rem] border border-[#b9d2ff] bg-[linear-gradient(135deg,#eef5ff_0%,#f8fbff_100%)] p-6">
+              <div class="text-xs uppercase tracking-[0.25em] text-primary">Sửa điểm cấp 1</div>
+              <div class="mt-2 text-lg font-black text-primary font-display">Chấm điểm trước, rồi cập nhật Giá trị làm lợi</div>
+              <div class="mt-2 text-sm text-text-soft">Chỉ lưu được khi ý tưởng chưa được Ban cải tiến phê duyệt cấp 2.</div>
+            </section>
+            ${renderScoreForm(detail, scores)}
+            ${renderActualBenefitSection(detail, scores, { benefitKind: "dept" })}
+            ${renderScoreResultTable(scores)}
+          ` : ""}
           <section class="grid grid-cols-1 xl:grid-cols-12 gap-6">
             <div class="xl:col-span-7 rounded-[1.5rem] bg-surface-low p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -2647,12 +2758,14 @@
               <div class="mt-2 text-sm text-text-soft">Bạn có thể đổi lại kết luận cấp 2, cập nhật điểm, ghi chú và Giá trị làm lợi rồi bấm "Lưu chỉnh sửa".</div>
             </section>
           ` : ""}
-          ${!canEditIeScore ? renderActualBenefitSummary(detail) : ""}
-          ${canEditIeScore ? renderScoreForm(detail, scores) : renderScoreResultTable(scores)}
+          ${!canEditIeScore && !canEditDeptScore ? renderActualBenefitSummary(detail) : ""}
+          ${canEditDeptScore ? "" : renderDeptActualBenefitSummary(detail, { showEmpty: canSwitchToDeptEdit })}
+          ${canEditDeptScore ? "" : (canEditIeScore ? renderScoreForm(detail, scores) : renderScoreResultTable(scores))}
+          ${canEditDeptScore ? "" : ((canApprove && !isIeManager) ? renderActualBenefitSection(detail, scores, { benefitKind: "dept" }) : "")}
           ${canEditIeScore && showStandaloneActualBenefit ? renderActualBenefitSection(detail, scores, { readOnly: isIeViewMode }) : ""}
-          ${canEditIeScore ? renderScoreResultTable(scores) : renderScoreForm(detail, scores)}
+          ${canEditDeptScore ? "" : (canEditIeScore ? renderScoreResultTable(scores) : renderScoreForm(detail, scores))}
           ${
-            (canApprove || canEditIeScore)
+            (canApprove || canEditIeScore || canEditDeptScore)
               ? `
             <section class="rounded-[1.5rem] bg-white border border-slate-100 p-6">
               <label class="text-xs uppercase tracking-[0.25em] text-text-soft">${isIeManager ? "Ghi chú cấp 2" : "Ghi chú / lý do không duyệt"}</label>
@@ -2670,10 +2783,16 @@
         if (canEditIeScore) {
           actionButtons.push('<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitIeScoreEdit()">Lưu chỉnh sửa</button>');
         }
-        if (canApprove) {
+        if (canEditDeptScore) {
+          actionButtons.push('<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDeptScoreEdit()">Lưu điểm cấp 1</button>');
+        }
+        if (canSwitchToDeptEdit) {
+          actionButtons.push(`<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="openReviewModal(activeDetail.id, 'dept_edit')">Sửa điểm cấp 1</button>`);
+        }
+        if (canApprove && !canEditDeptScore) {
           actionButtons.push(`<button class="px-5 py-3 rounded-2xl bg-primary text-white font-semibold shadow-[0px_18px_36px_rgba(0,43,115,0.16)]" onclick="submitDecision('APPROVE')">${isIeManager ? "Xác nhận cấp 2" : "Duyệt phiếu"}</button>`);
         }
-        if (canApprove && !isIeManager) {
+        if (canApprove && !isIeManager && !canEditDeptScore) {
           actionButtons.push('<button class="px-5 py-3 rounded-2xl bg-[#fff3f1] text-[#a33d1b] font-semibold" onclick="submitDecision(\'REJECT\')">Không duyệt</button>');
         }
         actions.innerHTML = actionButtons.join("");
@@ -2872,7 +2991,10 @@
           unmeasurable.classList.remove("hidden");
           meta.textContent = "Mỗi tiêu chí tick được cộng 10 điểm.";
           const actualBenefitSection = document.getElementById("actualBenefitSection");
-          if (actualBenefitSection && isSecondLevelRole(currentRole) && activeDetail?.can_review) {
+          if (
+            actualBenefitSection
+            && ((isSecondLevelRole(currentRole) && activeDetail?.can_review) || isDeptBenefitEntryMode(activeDetail))
+          ) {
             actualBenefitSection.classList.add("hidden");
           }
           return;
@@ -2886,15 +3008,19 @@
         if (actualBenefitSection && isSecondLevelRole(currentRole) && activeDetail?.can_review) {
           actualBenefitSection.classList.toggle("hidden", !ieMeasuredBenefitEnabled());
         }
+        if (actualBenefitSection && isDeptBenefitEntryMode(activeDetail)) {
+          actualBenefitSection.classList.remove("hidden");
+        }
       }
 
       function applyIeScoreFormValues(detail) {
-        if (!isSecondLevelRole(currentRole)) return;
+        const deptEditMode = isDeptEditMode(detail);
+        if (!isSecondLevelRole(currentRole) && !deptEditMode) return;
         const scores = Array.isArray(detail?.scores) ? detail.scores : [];
         const reviews = Array.isArray(detail?.reviews) ? detail.reviews : [];
-        const score = latestIeScore(scores);
+        const score = deptEditMode ? latestDeptScore(scores) : latestIeScore(scores);
         const review = latestCouncilReview(reviews);
-        if (review) {
+        if (review && isSecondLevelRole(currentRole)) {
           const reviewComment = document.getElementById("reviewComment");
           if (reviewComment) reviewComment.value = review.comment || "";
           const decision = document.getElementById("ieResultDecision");
@@ -2910,6 +3036,11 @@
           }
         }
         if (!score) return;
+        if (deptEditMode) {
+          const reviewComment = document.getElementById("reviewComment");
+          const deptReview = reviews.find((item) => item.level === "DEPT_HEAD");
+          if (reviewComment && deptReview) reviewComment.value = deptReview.comment || "";
+        }
         const k1 = document.getElementById("scoreK1");
         const k1Note = document.getElementById("scoreK1Note");
         const k2Type = document.getElementById("scoreK2Type");
@@ -2960,6 +3091,10 @@
             currentIeModalMode = "view";
             showNotification("Hội đồng đã chốt điểm cho ý tưởng này, không thể sửa duyệt cấp 2 của Ban cải tiến", "error");
           }
+          if (mode === "dept_edit" && !isDeptEditMode(activeDetail)) {
+            currentIeModalMode = "view";
+            showNotification("Ban cải tiến đã phê duyệt cấp 2, không thể sửa điểm cấp 1", "error");
+          }
           renderModal(activeDetail);
           openModal();
           applyIeScoreFormValues(activeDetail);
@@ -2976,7 +3111,7 @@
       }
 
       function buildScorePayload() {
-        if (!["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole)) return null;
+        if (!(hasDeptApprovalEditRole() || isSecondLevelRole(currentRole))) return null;
         const k1Type = document.getElementById("scoreK1")?.value || "";
         const k3Type = document.getElementById("scoreK3Type")?.value || "";
         const k2Type = document.getElementById("scoreK2Type")?.value || "";
@@ -3025,6 +3160,36 @@
           labor_second_price: laborSecondPrice,
           note: document.getElementById("actualBenefitNote")?.value.trim() || null,
         };
+      }
+
+      async function submitDeptScoreEdit() {
+        if (!activeDetail) return;
+        const employeeCode = (localStorage.getItem("employee_code") || "").trim().toUpperCase();
+        let payload;
+        try {
+          const actualBenefitPayload = buildActualBenefitPayload();
+          payload = {
+            employee_code: employeeCode,
+            score: buildScorePayload(),
+            actual_benefit: actualBenefitPayload,
+            comment: document.getElementById("reviewComment")?.value.trim() || null,
+          };
+        } catch (error) {
+          showNotification(error.message, "error");
+          return;
+        }
+
+        showLoading(true);
+        try {
+          await api.updateDeptScore(activeDetail.id, payload);
+          closeModal();
+          await loadQueue();
+          showNotification("Đã cập nhật điểm cấp 1", "success");
+        } catch (error) {
+          showNotification(error.message, "error");
+        } finally {
+          showLoading(false);
+        }
       }
 
       async function submitIeScoreEdit() {
@@ -3105,6 +3270,12 @@
         }
         if (action === "APPROVE" && ["dept_manager", "sub_dept_manager", "ie_manager", "digital_manager"].includes(currentRole) && ieRequiresScore()) {
           payload.score = buildScorePayload();
+        }
+        if (action === "APPROVE" && !isSecondLevelRole(currentRole) && ["dept_manager", "sub_dept_manager"].includes(currentRole)) {
+          const actualBenefitPayload = buildActualBenefitPayload();
+          if (actualBenefitPayload) {
+            payload.actual_benefit = actualBenefitPayload;
+          }
         }
         if (action === "APPROVE" && isSecondLevelRole(currentRole) && ieMeasuredBenefitEnabled()) {
           const actualBenefitPayload = buildActualBenefitPayload();
