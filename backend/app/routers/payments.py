@@ -390,7 +390,7 @@ def _render_payment_slip_html(
         padding-right: 6px;
       }}
       .desc {{
-        min-height: calc(48px + (24px * var(--slip-scale)));
+        min-height: calc(36px + (18px * var(--slip-scale)));
         white-space: pre-wrap;
         text-align: justify;
       }}
@@ -400,7 +400,7 @@ def _render_payment_slip_html(
         font-style: italic;
       }}
       .signatures {{
-        margin-top: calc(34px * var(--slip-scale));
+        margin-top: calc(22px * var(--slip-scale));
         display: table;
         width: 100%;
         table-layout: fixed;
@@ -417,7 +417,7 @@ def _render_payment_slip_html(
         font-size: calc(13pt * var(--slip-scale));
       }}
       .signature-space {{
-        height: calc(52px + (18px * var(--slip-scale)));
+        height: calc(24px + (10px * var(--slip-scale)));
       }}
       .approved-tick {{
         font-size: calc(10pt * var(--slip-scale));
@@ -461,12 +461,12 @@ def _render_payment_slip_html(
         let scale = 1;
         root.style.setProperty('--slip-scale', scale.toFixed(2));
 
-        for (let i = 0; i < 14; i += 1) {{
+        for (let i = 0; i < 22; i += 1) {{
           const fits = content.scrollHeight <= shell.clientHeight;
           if (fits) break;
           scale -= 0.02;
-          if (scale < 0.72) {{
-            scale = 0.72;
+          if (scale < 0.58) {{
+            scale = 0.58;
             root.style.setProperty('--slip-scale', scale.toFixed(2));
             break;
           }}
