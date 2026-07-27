@@ -218,13 +218,21 @@ def _latest_approved_review_name(idea: Idea, level: ReviewLevel) -> str:
     return (reviewer.full_name or "").strip() if reviewer else ""
 
 
+def _bod_register_approver_name(db: Session, idea: Idea) -> str:
+    approver_id = getattr(idea, "bod_register_approved_by_id", None)
+    if not approver_id:
+        return ""
+    approver = db.query(User.full_name).filter(User.id == approver_id).first()
+    return (approver[0] or "").strip() if approver else ""
+
+
 def _format_short_date(value: datetime | None) -> str:
     return format_display_datetime(value, "%d/%m/%Y")
 
 
 def _build_signature_block(title: str, signer_name: str) -> str:
     approved_html = (
-        '<div class="approved-tick">&#10003; Đã duyệt</div>'
+        '<div class="approved-tick">&#10003; Đã phê duyệt</div>'
         if signer_name
         else '<div class="approved-tick-empty">&nbsp;</div>'
     )
@@ -563,7 +571,7 @@ async def list_register_bonuses(
             and _normalize_status(review.action) == ReviewAction.APPROVE.value
         ]
         approved_reviews.sort(key=lambda review: review.reviewed_at or datetime.min, reverse=True)
-        approved_at = approved_reviews[0].reviewed_at if approved_reviews else None
+        approved_at = approved_reviews[0].reviewed_at if approved_reviews else idea.bod_register_approved_at
 
         rows.append(
             {
@@ -692,7 +700,7 @@ async def print_payment_slip_for_idea(
     if status_value == IdeaStatus.APPROVED.value:
         idea.status = IdeaStatus.REWARDED
 
-    leadership_name = _latest_approved_review_name(idea, ReviewLevel.LEADERSHIP)
+    leadership_name = _latest_approved_review_name(idea, ReviewLevel.LEADERSHIP) or _bod_register_approver_name(db, idea)
     tech_name = _latest_approved_review_name(idea, ReviewLevel.COUNCIL)
     dept_name = _latest_approved_review_name(idea, ReviewLevel.DEPT_HEAD)
 
