@@ -217,7 +217,7 @@
         tr.className = `${muted} border-t border-slate-100 align-top`;
         tr.innerHTML = `
           <td class="px-6 py-5">
-            <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title || "Ý tưởng")}</div>
+            <div class="font-semibold text-text-main whitespace-normal break-words">${safeText(item.title || "Ý tưởng")}</div>
             <div class="mt-2 text-xs text-text-soft">${formatDate(item.submitted_at)}</div>
           </td>
           <td class="px-4 py-5 text-text-main">${safeText(item.unit_name || "—")}</td>

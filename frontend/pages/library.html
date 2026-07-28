@@ -1168,7 +1168,7 @@
           tr.className = index === 0 ? "" : "border-t border-surface-variant";
           tr.innerHTML = `
             <td class="px-5 py-4 align-top">
-              <div class="font-semibold text-on-surface line-clamp-2">${safeText(item.idea_title || "—")}</div>
+              <div class="font-semibold text-on-surface whitespace-normal break-words">${safeText(item.idea_title || "—")}</div>
             </td>
             <td class="px-5 py-4 align-top text-on-surface-variant">${safeText(item.source_unit_name || "—")}</td>
             <td class="px-5 py-4 align-top text-right">
@@ -1283,7 +1283,7 @@
           tr.innerHTML = `
             ${replicateCell}
             <td class="px-8 py-5 align-top">
-              <div class="font-semibold text-on-surface line-clamp-2">${safeText(r.title)}</div>
+              <div class="font-semibold text-on-surface whitespace-normal break-words">${safeText(r.title)}</div>
               <div class="text-xs text-on-surface-variant mt-2">${safeText(unit)} · ${safeText(statusLabel)}</div>
             </td>
             <td class="px-6 py-5 align-top">

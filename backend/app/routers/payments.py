@@ -139,7 +139,7 @@ def _participant_display(participants: list[dict[str, str]]) -> tuple[str, str]:
 def _idea_display_title(idea: Idea) -> str:
     title = (idea.title or "").strip()
     if title:
-        return title[:90] + ("..." if len(title) > 90 else "")
+        return title
     raw = (idea.description or "").strip()
     if raw:
         first_line = raw.splitlines()[0].strip()

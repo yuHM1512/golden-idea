@@ -666,7 +666,7 @@ def _upsert_dept_actual_benefit_record(
 def _build_title(idea: Idea) -> str:
     title = (idea.title or "").strip()
     if title:
-        return title[:80] + ("..." if len(title) > 80 else "")
+        return title
     desc = (idea.description or "").strip()
     if not desc:
         return f"Ý tưởng #{idea.id}"

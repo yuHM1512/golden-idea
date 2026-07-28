@@ -36,7 +36,7 @@ UNIT_LIBRARY_ALLOWED_ROLES = {"dept_manager", "sub_dept_manager", "unit_represen
 def _make_title(title: str | None, description: str) -> str:
     text = (title or "").strip()
     if text:
-        return text[:80] + ("..." if len(text) > 80 else "")
+        return text
     text = (description or "").strip()
     if not text:
         return "(Không có mô tả)"

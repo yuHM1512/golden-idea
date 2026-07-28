@@ -1720,7 +1720,7 @@
               <td class="px-6 py-5 align-top text-text-main font-semibold">${safeText(item.unit_name || "—")}</td>
               <td class="px-4 py-5 align-top text-text-soft">${safeText(item.unit_department || "—")}</td>
               <td class="px-4 py-5 align-top">
-                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.idea_title || "—")}</div>
+                <div class="font-semibold text-text-main whitespace-normal break-words">${safeText(item.idea_title || "—")}</div>
                 <div class="text-xs text-text-soft mt-2">${formatDate(item.apply_date)}</div>
               </td>
               <td class="px-4 py-5 align-top text-text-main">${safeText(item.source_unit_name || "—")}</td>
@@ -1748,7 +1748,7 @@
             tr.className = "hover:bg-[#f8fbff] transition-colors";
             tr.innerHTML = `
               <td class="px-6 py-5 align-top">
-                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title)}</div>
+                <div class="font-semibold text-text-main whitespace-normal break-words">${safeText(item.title)}</div>
                 <div class="text-xs text-text-soft mt-2">${formatDate(item.submitted_at)}</div>
               </td>
               <td class="px-4 py-5 align-top text-text-main">${safeText(item.unit_name || "—")}</td>
@@ -1800,7 +1800,7 @@
             tr.onclick = () => openReviewModal(item.id);
             tr.innerHTML = `
               <td class="px-6 py-5 align-top">
-                <div class="font-semibold text-text-main line-clamp-2">${safeText(item.title)}</div>
+                <div class="font-semibold text-text-main whitespace-normal break-words">${safeText(item.title)}</div>
                 <div class="text-xs text-text-soft mt-2">${formatDate(item.submitted_at)}</div>
               </td>
               <td class="px-4 py-5 align-top text-text-main">${safeText(item.unit_name || "—")}</td>
@@ -1856,7 +1856,7 @@
           }
           tr.innerHTML = `
             <td class="px-6 py-5 align-top">
-              <div class="font-semibold ${primaryTextClass} line-clamp-2">${safeText(item.title)}</div>
+              <div class="font-semibold ${primaryTextClass} whitespace-normal break-words">${safeText(item.title)}</div>
               <div class="text-xs ${secondaryTextClass} mt-2">${formatDate(item.submitted_at)}</div>
             </td>
             <td class="px-4 py-5 align-top ${primaryTextClass}">${safeText(item.unit_name || "—")}</td>
