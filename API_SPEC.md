@@ -148,7 +148,7 @@ file: <binary file>
 
 Constraints:
 - Max size: 10 MB
-- Allowed types: jpg, jpeg, png, gif, mp4, avi, mov
+- Allowed types: jpg, jpeg, png, gif, mp4, avi, mov, mts, m2ts, ts
 
 Response (201):
 ```json

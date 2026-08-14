@@ -923,7 +923,7 @@
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             ${attachments.map((file) => {
               const type = String(file.file_type || "").toLowerCase();
-              const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
+              const isVideo = ["mp4", "webm", "mov", "avi", "mkv", "mts", "m2ts", "ts"].includes(type);
               const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(type);
               if (isVideo) {
                 return `

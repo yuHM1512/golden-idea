@@ -254,7 +254,7 @@
                                     </div>
                                     <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp trước cải tiến</h4>
                                     <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video tại đây (Tối đa 300MB mỗi file)</p>
-                                    <input id="fileInputBefore" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                                    <input id="fileInputBefore" class="hidden" type="file" accept="image/*,video/*,.mts,.m2ts,.ts" multiple/>
                                 </div>
                                 <div id="fileListBefore" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
                             </div>
@@ -273,7 +273,7 @@
                                     </div>
                                     <h4 class="font-headline-md text-[18px] text-on-surface mb-2">Tải tệp sau cải tiến</h4>
                                     <p class="font-body-lg text-slate-500 max-w-xs">Kéo và thả hình ảnh hoặc video tại đây (Tối đa 300MB mỗi file)</p>
-                                    <input id="fileInputAfter" class="hidden" type="file" accept="image/*,video/*" multiple/>
+                                    <input id="fileInputAfter" class="hidden" type="file" accept="image/*,video/*,.mts,.m2ts,.ts" multiple/>
                                 </div>
                                 <div id="fileListAfter" class="mt-4 flex gap-4 overflow-x-auto pb-2"></div>
                             </div>
@@ -316,7 +316,7 @@
     <script>
         const MAX_FILE_SIZE_MB = 300;
         const MAX_FILE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-        const ALLOWED_FILE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov'];
+        const ALLOWED_FILE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov', 'mts', 'm2ts', 'ts'];
         const IDEA_DRAFT_STORAGE_PREFIX = 'ideaDraft:';
         let participantRowId = 0;
         let selectedFiles = { before: [], after: [] };

@@ -76,7 +76,7 @@ You should see:
 
 **Attachments (Optional):**
 - Drag & drop image files or click upload area
-- Supported: jpg, png, gif, mp4, avi, mov
+- Supported: jpg, png, gif, mp4, avi, mov, mts, m2ts, ts
 
 ### Step 5: Submit Form
 
@@ -150,7 +150,7 @@ console.log(formData);  // Before submitting
 ### Issue: File upload not working
 **Check:**
 - File size < 10MB
-- File type in ALLOWED_EXTENSIONS (jpg, png, gif, mp4, avi, mov)
+- File type in ALLOWED_EXTENSIONS (jpg, png, gif, mp4, avi, mov, mts, m2ts, ts)
 - Upload folder exists: `backend/uploads/`
 
 ---

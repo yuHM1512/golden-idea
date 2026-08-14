@@ -63,6 +63,21 @@ function normalizeIdeaCategory(item) {
   };
 }
 
+function inferFileContentType(file) {
+  const explicitType = String(file?.type || '').trim();
+  if (explicitType) {
+    return explicitType;
+  }
+
+  const extension = String(file?.name || '').split('.').pop().toLowerCase();
+  const fallbackTypes = {
+    mts: 'video/mp2t',
+    m2ts: 'video/mp2t',
+    ts: 'video/mp2t',
+  };
+  return fallbackTypes[extension] || 'application/octet-stream';
+}
+
 const api = {
   // Submit new idea
   async submitIdea(formData) {
@@ -90,6 +105,7 @@ const api = {
   // Upload attachment
   async uploadAttachment(ideaId, file, attachmentType = 'after') {
     try {
+      const contentType = inferFileContentType(file);
       const sessionResponse = await fetch(`${API_BASE}/ideas/${ideaId}/upload-session`, {
         method: 'POST',
         headers: {
@@ -98,7 +114,7 @@ const api = {
         body: JSON.stringify({
           original_filename: file?.name || '',
           file_size: file?.size || 0,
-          content_type: file?.type || 'application/octet-stream',
+          content_type: contentType,
           attachment_type: attachmentType || 'after',
         }),
       });
@@ -115,7 +131,7 @@ const api = {
         const uploadResponse = await fetch(session.session_url, {
           method: 'PUT',
           headers: {
-            'Content-Type': file?.type || 'application/octet-stream',
+            'Content-Type': contentType,
           },
           body: file,
         });
@@ -142,7 +158,7 @@ const api = {
           drive_file_id: driveFileId,
           original_filename: file?.name || '',
           file_size: file?.size || 0,
-          content_type: file?.type || 'application/octet-stream',
+          content_type: contentType,
           attachment_type: attachmentType || 'after',
         }),
       });

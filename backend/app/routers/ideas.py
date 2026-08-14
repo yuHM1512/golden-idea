@@ -42,6 +42,10 @@ ATTACHMENT_TYPE_BEFORE = "before"
 ATTACHMENT_TYPE_AFTER = "after"
 ALLOWED_ATTACHMENT_TYPES = {ATTACHMENT_TYPE_BEFORE, ATTACHMENT_TYPE_AFTER}
 
+mimetypes.add_type("video/mp2t", ".mts")
+mimetypes.add_type("video/mp2t", ".m2ts")
+mimetypes.add_type("video/mp2t", ".ts")
+
 
 def _truncate(value: str | None, max_length: int) -> str | None:
     if value is None:

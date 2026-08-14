@@ -2296,7 +2296,7 @@
                   const url = safeAttr(rawUrl);
                   const dataName = safeAttr(file.original_filename || "File minh hoạ");
                   const attachmentType = normalizeAttachmentType(file.attachment_type);
-                  const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(type);
+                  const isVideo = ["mp4", "webm", "mov", "avi", "mkv", "mts", "m2ts", "ts"].includes(type);
                   const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(type);
                   if (isVideo) {
                     return `

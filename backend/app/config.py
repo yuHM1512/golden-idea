@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # File Upload
     UPLOAD_DIR: str = str(_BACKEND_DIR / "uploads")
     MAX_FILE_SIZE_MB: int = 300
-    ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "gif", "mp4", "avi", "mov"]
+    ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png", "gif", "mp4", "avi", "mov", "mts", "m2ts", "ts"]
     GOOGLE_DRIVE_CREDENTIALS_FILE: str = str(_BACKEND_DIR / "credentials_m29.json")
     GOOGLE_DRIVE_ROOT_FOLDER_ID: str = ""
     HISTORICAL_IDEAS_XLSX: str = str(_BACKEND_DIR / "data" / "historical_ideas.xlsx")

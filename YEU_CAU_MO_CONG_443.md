@@ -66,7 +66,7 @@ Mặc dù `upload.hachibavn.com` không đi qua Cloudflare proxy, giải pháp �
 - Giao diện quản trị, trang đăng nhập, dữ liệu người dùng... hoàn toàn không thể truy cập qua `upload.hachibavn.com`.
 
 ### 4.3 Giới hạn loại file và kích thước
-- Backend chỉ chấp nhận các định dạng được whitelist: `jpg, jpeg, png, gif, mp4, avi, mov`.
+- Backend chỉ chấp nhận các định dạng được whitelist: `jpg, jpeg, png, gif, mp4, avi, mov, mts, m2ts, ts`.
 - Kích thước tối đa: **300MB/file**.
 - File được lưu với tên ngẫu nhiên (UUID), không phản ánh tên gốc trong hệ thống.
 
