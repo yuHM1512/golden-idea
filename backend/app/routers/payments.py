@@ -324,7 +324,7 @@ def _render_payment_slip_html(
     <meta charset="utf-8" />
     <style>
       :root {{
-        --slip-scale: 1;
+        --slip-scale: 0.92;
       }}
       @page {{
         size: A4;
@@ -341,8 +341,8 @@ def _render_payment_slip_html(
         width: 100%;
       }}
       .page-shell {{
-        height: 244mm;
-        overflow: hidden;
+        height: 238mm;
+        overflow: visible;
       }}
       .page-content {{
         width: 100%;
@@ -402,12 +402,12 @@ def _render_payment_slip_html(
         text-align: justify;
       }}
       .city-date {{
-        margin-top: calc(18px * var(--slip-scale));
+        margin-top: calc(12px * var(--slip-scale));
         text-align: right;
         font-style: italic;
       }}
       .signatures {{
-        margin-top: calc(22px * var(--slip-scale));
+        margin-top: calc(14px * var(--slip-scale));
         display: table;
         width: 100%;
         table-layout: fixed;
@@ -424,21 +424,22 @@ def _render_payment_slip_html(
         font-size: calc(13pt * var(--slip-scale));
       }}
       .signature-space {{
-        height: calc(24px + (10px * var(--slip-scale)));
+        height: calc(4px * var(--slip-scale));
       }}
       .approved-tick {{
         font-size: calc(10pt * var(--slip-scale));
         color: #0f5a2d;
         font-weight: 700;
         text-align: center;
-        margin-bottom: calc(8px * var(--slip-scale));
+        margin-top: calc(4px * var(--slip-scale));
+        margin-bottom: calc(4px * var(--slip-scale));
       }}
       .approved-tick-empty {{
-        height: calc(12px + (8px * var(--slip-scale)));
-        margin-bottom: calc(8px * var(--slip-scale));
+        height: calc(14px * var(--slip-scale));
+        margin-bottom: calc(4px * var(--slip-scale));
       }}
       .signature-name {{
-        min-height: calc(16px * var(--slip-scale));
+        min-height: calc(12px * var(--slip-scale));
         font-size: calc(9pt * var(--slip-scale));
         font-weight: 700;
         line-height: 1.15;
@@ -471,11 +472,11 @@ def _render_payment_slip_html(
         }};
         const fitsAtCurrentScale = () => content.scrollHeight <= shell.clientHeight - 8;
 
-        setScale(1);
+        setScale(0.92);
         if (fitsAtCurrentScale()) return;
 
         let low = 0.46;
-        let high = 1;
+        let high = 0.92;
         let best = low;
 
         for (let i = 0; i < 18; i += 1) {{
