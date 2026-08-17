@@ -59,11 +59,15 @@ def _can_manage_rewards(user: User) -> bool:
     return has_role(user, "admin") or has_role(user, "treasurer")
 
 
-def _has_dept_approved_review(idea: Idea) -> bool:
+def _has_approved_review(idea: Idea, level: ReviewLevel) -> bool:
     for review in idea.reviews or []:
-        if _normalize_status(review.level) == ReviewLevel.DEPT_HEAD.value and _normalize_status(review.action) == ReviewAction.APPROVE.value:
+        if _normalize_status(review.level) == level.value and _normalize_status(review.action) == ReviewAction.APPROVE.value:
             return True
     return False
+
+
+def _has_dept_approved_review(idea: Idea) -> bool:
+    return _has_approved_review(idea, ReviewLevel.DEPT_HEAD)
 
 
 def _latest_council_result_type(idea: Idea) -> str | None:
@@ -230,19 +234,19 @@ def _format_short_date(value: datetime | None) -> str:
     return format_display_datetime(value, "%d/%m/%Y")
 
 
-def _build_signature_block(title: str, signer_name: str) -> str:
+def _build_signature_block(title: str, signer_name: str, approved: bool = False) -> str:
     approved_html = (
         '<div class="approved-tick">&#10003; Đã phê duyệt</div>'
-        if signer_name
+        if approved
         else '<div class="approved-tick-empty">&nbsp;</div>'
     )
     signer_html = escape(signer_name) if signer_name else "&nbsp;"
     return f"""
       <div class="signature-col">
         <div class="signature-title">{escape(title)}</div>
-        <div class="signature-space"></div>
         {approved_html}
         <div class="signature-name">{signer_html}</div>
+        <div class="signature-space"></div>
       </div>
     """
 
@@ -295,6 +299,9 @@ def _render_payment_slip_html(
     leadership_name: str,
     tech_name: str,
     dept_name: str,
+    leadership_approved: bool | None = None,
+    tech_approved: bool | None = None,
+    dept_approved: bool | None = None,
 ) -> str:
     amount_text = "100.000 VND"
     display_printed_at = to_display_tz(printed_at) or printed_at
@@ -304,9 +311,9 @@ def _render_payment_slip_html(
 
     signatures_html = "".join(
         [
-            _build_signature_block("Lãnh đạo công ty", leadership_name),
-            _build_signature_block("P.KTCN", tech_name),
-            _build_signature_block("Trưởng bộ phận", dept_name),
+            _build_signature_block("Lãnh đạo công ty", leadership_name, bool(leadership_name) if leadership_approved is None else leadership_approved),
+            _build_signature_block("P.KTCN", tech_name, bool(tech_name) if tech_approved is None else tech_approved),
+            _build_signature_block("Trưởng bộ phận", dept_name, bool(dept_name) if dept_approved is None else dept_approved),
             _build_signature_block("Người nhận tiền", ""),
         ]
     )
@@ -714,6 +721,9 @@ async def print_payment_slip_for_idea(
     leadership_name = _latest_approved_review_name(idea, ReviewLevel.LEADERSHIP) or _bod_register_approver_name(db, idea)
     tech_name = _latest_approved_review_name(idea, ReviewLevel.COUNCIL)
     dept_name = _latest_approved_review_name(idea, ReviewLevel.DEPT_HEAD)
+    leadership_approved = bool(idea.bod_register_approved) or _has_approved_review(idea, ReviewLevel.LEADERSHIP)
+    tech_approved = _has_approved_review(idea, ReviewLevel.COUNCIL)
+    dept_approved = _has_dept_approved_review(idea)
 
     html = _render_payment_slip_html(
         register_reward_code=register_reward_code,
@@ -729,6 +739,9 @@ async def print_payment_slip_for_idea(
         leadership_name=leadership_name,
         tech_name=tech_name,
         dept_name=dept_name,
+        leadership_approved=leadership_approved,
+        tech_approved=tech_approved,
+        dept_approved=dept_approved,
     )
 
     slips_dir = Path(settings.UPLOAD_DIR) / "slips"
