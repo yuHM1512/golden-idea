@@ -334,7 +334,7 @@ def _render_payment_slip_html(
         width: 100%;
       }}
       .page-shell {{
-        height: 259mm;
+        height: 244mm;
         overflow: hidden;
       }}
       .page-content {{
@@ -434,9 +434,9 @@ def _render_payment_slip_html(
         min-height: calc(16px * var(--slip-scale));
         font-size: calc(9pt * var(--slip-scale));
         font-weight: 700;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.15;
+        white-space: normal;
+        overflow: visible;
       }}
       .inline-gap {{
         margin-left: calc(18px * var(--slip-scale));
@@ -458,20 +458,31 @@ def _render_payment_slip_html(
         const content = document.querySelector('.page-content');
         if (!shell || !content) return;
 
-        let scale = 1;
-        root.style.setProperty('--slip-scale', scale.toFixed(2));
+        const setScale = (value) => {{
+          root.style.setProperty('--slip-scale', value.toFixed(3));
+          void content.offsetHeight;
+        }};
+        const fitsAtCurrentScale = () => content.scrollHeight <= shell.clientHeight - 8;
 
-        for (let i = 0; i < 22; i += 1) {{
-          const fits = content.scrollHeight <= shell.clientHeight;
-          if (fits) break;
-          scale -= 0.02;
-          if (scale < 0.58) {{
-            scale = 0.58;
-            root.style.setProperty('--slip-scale', scale.toFixed(2));
-            break;
+        setScale(1);
+        if (fitsAtCurrentScale()) return;
+
+        let low = 0.46;
+        let high = 1;
+        let best = low;
+
+        for (let i = 0; i < 18; i += 1) {{
+          const scale = (low + high) / 2;
+          setScale(scale);
+          if (fitsAtCurrentScale()) {{
+            best = scale;
+            low = scale;
+          }} else {{
+            high = scale;
           }}
-          root.style.setProperty('--slip-scale', scale.toFixed(2));
         }}
+
+        setScale(best);
       }}
 
       window.addEventListener('load', () => {{
