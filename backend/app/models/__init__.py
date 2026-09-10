@@ -1,6 +1,7 @@
 from .user import User
 from .unit import Unit
 from .unit_idea_target import UnitIdeaTarget
+from .idea_target_group import IdeaTargetGroup, IdeaTargetGroupMember, IdeaTargetExcludedUnit
 from .app_setting import AppSetting
 from .idea import Idea
 from .score import IdeaScore

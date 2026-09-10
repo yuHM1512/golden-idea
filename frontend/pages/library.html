@@ -330,6 +330,7 @@
                   <th class="text-left px-6 py-4 font-semibold">Đơn vị</th>
                   <th class="text-left px-6 py-4 font-semibold">Khối</th>
                   <th class="text-right px-6 py-4 font-semibold">Số ý tưởng</th>
+                  <th class="text-right px-6 py-4 font-semibold">Mục tiêu năm</th>
                 </tr>
               </thead>
               <tbody id="unitChartModalBody"></tbody>
@@ -750,8 +751,8 @@
             unit_name: x.unit_name || "",
             department: x.department || "",
             idea_count: Number(x.idea_count || 0),
+            target_count: x.target_count ?? null,
           }))
-          .filter((x) => x.idea_count > 0)
           .sort((a, b) => b.idea_count - a.idea_count);
         const monthText = unitChartLastParams.month ? `Thang ${unitChartLastParams.month}` : "Tat ca thang";
         const yearText = unitChartLastParams.year ? `Nam ${unitChartLastParams.year}` : "Tat ca nam";
@@ -760,14 +761,15 @@
           { header: "Don vi", key: "unit_name", width: 36 },
           { header: "Khoi", key: "department", width: 26 },
           { header: "So y tuong", key: "idea_count", width: 14 },
+          { header: "Muc tieu nam", key: "target_count", width: 18 },
         ];
         worksheet.spliceRows(1, 1);
         worksheet.insertRow(1, [`Thong ke y tuong theo don vi - ${monthText} - ${yearText}`]);
-        worksheet.mergeCells("A1:C1");
-        worksheet.addRow(["Don vi", "Khoi", "So y tuong"]);
+        worksheet.mergeCells("A1:D1");
+        worksheet.addRow(["Don vi / Nhom", "Khoi", "So y tuong", "Muc tieu nam"]);
 
         normalized.forEach((item) => {
-          worksheet.addRow([item.unit_name, item.department, item.idea_count]);
+          worksheet.addRow([item.unit_name, item.department, item.idea_count, item.target_count]);
         });
 
         const titleCell = worksheet.getCell("A1");
@@ -829,12 +831,12 @@
             unit_name: x.unit_name || "",
             department: x.department || "",
             idea_count: Number(x.idea_count || 0),
-          }))
-          .filter((x) => x.idea_count > 0);
+            target_count: x.target_count ?? null,
+          }));
 
         if (!normalized.length) {
           tbody.innerHTML =
-            '<tr><td colspan="3" class="px-6 py-8 text-center text-on-surface-variant">Chưa có dữ liệu.</td></tr>';
+            '<tr><td colspan="4" class="px-6 py-8 text-center text-on-surface-variant">Chưa có dữ liệu.</td></tr>';
           return;
         }
 
@@ -847,6 +849,7 @@
               <td class="px-6 py-4">${safeText(row.unit_name)}</td>
               <td class="px-6 py-4 text-on-surface-variant">${safeText(row.department)}</td>
               <td class="px-6 py-4 text-right font-semibold text-primary">${row.idea_count}</td>
+              <td class="px-6 py-4 text-right font-semibold text-orange-600">${row.target_count ?? 'Chưa thiết lập'}</td>
             `;
             tbody.appendChild(tr);
           });

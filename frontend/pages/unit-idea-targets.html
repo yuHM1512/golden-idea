@@ -36,100 +36,28 @@
 
     <main class="max-w-6xl mx-auto px-4 md:px-8 py-10 space-y-6">
       <a href="/pages/settings" class="inline-flex items-center gap-2 font-semibold text-[#002b73]" id="backToSettings"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Quay lại Cài đặt</a>
-      <div id="ideaTargetContent"></div>
+      <section class="rounded-3xl bg-white p-6 shadow-sm">
+        <h1 class="text-2xl font-bold text-[#002b73]">Mục tiêu ý tưởng vàng theo nhóm đơn vị</h1>
+        <p class="mt-2 text-sm text-slate-600">Mỗi nhóm có một mục tiêu cả năm. Dashboard cộng số ý tưởng của các đơn vị thành viên và hiển thị chung một cột.</p>
+        <label class="block mt-5 max-w-xs text-sm font-semibold">Năm<input id="ideaTargetYear" type="number" min="2000" max="2100" required class="mt-2 w-full rounded-xl border-slate-200" onchange="loadUnitIdeaTargets()" /></label>
+        <p id="targetTotals" class="mt-5 font-semibold text-[#002b73]" aria-live="polite"></p>
+        <p id="targetExclusions" class="mt-2 text-sm text-slate-500"></p>
+        <div class="overflow-x-auto mt-4"><table class="w-full text-sm text-left"><thead class="bg-slate-50"><tr><th class="p-4">Nhóm</th><th class="p-4">Đơn vị thành viên</th><th class="p-4">LĐTT</th><th class="p-4">Mục tiêu</th><th class="p-4">Tỷ lệ</th><th class="p-4">Thao tác</th></tr></thead><tbody id="targetGroupRows"></tbody></table></div>
+      </section>
+      <section class="rounded-3xl bg-white p-6 shadow-sm">
+        <h2 id="targetFormTitle" class="text-xl font-bold text-[#002b73]">Thêm mục tiêu</h2>
+        <form onsubmit="saveUnitIdeaTarget(event)">
+          <fieldset id="targetFields" disabled class="mt-5 grid gap-4 md:grid-cols-2 disabled:opacity-60">
+            <label class="text-sm font-semibold">Tên nhóm hiển thị<input id="ideaTargetName" maxlength="255" required class="mt-2 w-full rounded-xl border-slate-200" placeholder="Ví dụ: YTE+Lab" /></label>
+            <label class="text-sm font-semibold md:row-span-3">Đơn vị thành viên<select id="ideaTargetUnit" multiple size="8" required class="mt-2 w-full rounded-xl border-slate-200" aria-describedby="targetUnitHelp"></select><span id="targetUnitHelp" class="block mt-2 text-xs text-slate-500">Giữ Ctrl (hoặc Command) để chọn nhiều đơn vị. Một đơn vị chỉ thuộc một nhóm trong cùng năm.</span></label>
+            <label class="text-sm font-semibold">Số lượng mục tiêu<input id="ideaTargetCount" type="number" min="0" max="2147483647" step="1" required class="mt-2 w-full rounded-xl border-slate-200" /></label>
+            <div class="grid grid-cols-2 gap-4"><label class="text-sm font-semibold">LĐTT<input id="ideaTargetHeadcount" type="number" min="0" max="2147483647" step="1" class="mt-2 w-full rounded-xl border-slate-200" /></label><label class="text-sm font-semibold">Tỷ lệ (%)<input id="ideaTargetPercent" type="number" min="0" max="100" step="0.01" class="mt-2 w-full rounded-xl border-slate-200" /></label></div>
+            <div class="flex gap-3"><button id="ideaTargetSave" class="rounded-xl bg-[#002b73] px-5 py-3 text-white font-semibold" type="submit">Lưu mục tiêu</button><button class="rounded-xl bg-slate-100 px-5 py-3 font-semibold" type="button" onclick="resetTargetForm()">Thêm mới</button></div>
+          </fieldset>
+        </form>
+      </section>
     </main>
-    <script src="../js/api.js?v=20260909-unit-idea-targets"></script>
-    <script>
-      let currentUser = null;
-      function logout() {
-        localStorage.removeItem("is_logged_in");
-        localStorage.removeItem("employee_code");
-        window.location.href = "/pages/login";
-      }
-      function getCurrentTimeZoneYear() {
-        return Number(new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Bangkok", year: "numeric"}).format(new Date()));
-      }
-      let unitIdeaTargets = [];
-      let targetLoadVersion = 0;
-
-      function showSelectedUnitTarget() {
-        const unitId = Number(document.getElementById("ideaTargetUnit").value);
-        const row = unitIdeaTargets.find(item => item.unit_id === unitId);
-        document.getElementById("ideaTargetCount").value = row?.target_count ?? "";
-      }
-
-      async function loadUnitIdeaTargets() {
-        const version = ++targetLoadVersion;
-        const year = Number(document.getElementById("ideaTargetYear").value);
-        const button = document.getElementById("ideaTargetSave");
-        button.disabled = true;
-        unitIdeaTargets = [];
-        showSelectedUnitTarget();
-        if (!Number.isInteger(year) || year < 2000 || year > 2100) return;
-        try {
-          const result = await api.getUnitIdeaTargets(currentUser.employee_code, year);
-          if (version !== targetLoadVersion) return;
-          unitIdeaTargets = result.items;
-          showSelectedUnitTarget();
-          button.disabled = false;
-        } catch (error) {
-          if (version === targetLoadVersion) showNotification(error.message, "error");
-        }
-      }
-
-      async function saveUnitIdeaTarget(event) {
-        event.preventDefault();
-        const year = Number(document.getElementById("ideaTargetYear").value);
-        const unitId = Number(document.getElementById("ideaTargetUnit").value);
-        const input = document.getElementById("ideaTargetCount");
-        const count = Number(input.value);
-        if (!input.value.trim() || !Number.isInteger(count) || count < 0 || count > 2147483647) return;
-        const button = document.getElementById("ideaTargetSave");
-        button.disabled = true;
-        try {
-          await api.updateUnitIdeaTarget(currentUser.employee_code, year, unitId, count);
-          showNotification("Đã lưu mục tiêu ý tưởng vàng", "success");
-          await loadUnitIdeaTargets();
-        } catch (error) {
-          showNotification(error.message, "error");
-          button.disabled = false;
-        }
-      }
-
-      async function initUnitIdeaTargets() {
-        const card = document.createElement("section");
-        card.className = "md:col-span-2 rounded-3xl bg-white p-6 shadow-sm";
-        card.innerHTML = `
-          <h1 class="text-2xl font-bold text-[#002b73]">Mục tiêu ý tưởng vàng theo đơn vị</h1>
-          <p class="mt-2 text-sm text-slate-600">Thiết lập số lượng mục tiêu cho từng đơn vị, từng năm. Mục tiêu cả năm được hiển thị trên biểu đồ Ý tưởng theo đơn vị trong Kho ý tưởng.</p>
-          <form onsubmit="saveUnitIdeaTarget(event)" class="mt-5 grid gap-4 md:grid-cols-4 items-end">
-            <label class="text-sm font-semibold">Năm<input id="ideaTargetYear" type="number" min="2000" max="2100" required class="mt-2 w-full rounded-xl border-slate-200" onchange="loadUnitIdeaTargets()" /></label>
-            <label class="text-sm font-semibold">Đơn vị<select id="ideaTargetUnit" required class="mt-2 w-full rounded-xl border-slate-200" onchange="showSelectedUnitTarget()"></select></label>
-            <label class="text-sm font-semibold">Số lượng mục tiêu<input id="ideaTargetCount" type="number" min="0" max="2147483647" step="1" required placeholder="Chưa thiết lập" class="mt-2 w-full rounded-xl border-slate-200" /></label>
-            <button id="ideaTargetSave" type="submit" disabled class="rounded-xl bg-[#002b73] px-4 py-3 text-white font-semibold disabled:opacity-50">Lưu mục tiêu</button>
-          </form>`;
-        document.getElementById("ideaTargetContent").appendChild(card);
-        document.getElementById("ideaTargetYear").value = getCurrentTimeZoneYear();
-        const units = await api.getUnits();
-        const select = document.getElementById("ideaTargetUnit");
-        units.forEach(unit => select.add(new Option(unit.department ? `${unit.department} • ${unit.name}` : unit.name, unit.id)));
-        await loadUnitIdeaTargets();
-      }
-
-      async function init() {
-        if (localStorage.getItem("is_logged_in") !== "true") {
-          window.location.href = "/pages/login";
-          return;
-        }
-        const code = (localStorage.getItem("employee_code") || "").trim();
-        currentUser = await api.getUserByCode(code);
-        if (!currentUser || !["admin", "ie_manager"].includes(currentUser.role)) {
-          window.location.href = "/pages/menu";
-          return;
-        }
-        await initUnitIdeaTargets();
-      }
-      init().catch(error => showNotification(error.message, "error"));
-    </script>
+    <script src="../js/api.js?v=20260910-groups"></script>
+    <script src="../js/unit-idea-targets.js?v=20260910-groups"></script>
   </body>
 </html>

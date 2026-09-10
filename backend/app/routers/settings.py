@@ -14,6 +14,8 @@ from app.models.labor_second_price import LaborSecondPrice
 from app.models.unit import Unit
 from app.models.unit_idea_target import UnitIdeaTarget
 from app.schemas.settings import UnitIdeaTargetUpdateRequest
+from app.services.idea_targets import list_groups, save_group
+from app.models.idea_target_group import IdeaTargetExcludedUnit, IdeaTargetGroup, IdeaTargetGroupMember
 from app.models.payment import PaymentSlip
 from app.models.reward_batch import RewardBatch
 from app.models.score import IdeaScore
@@ -305,23 +307,29 @@ def _delete_single_idea(db: Session, idea: Idea) -> IdeaHardDeleteResponse:
 @router.get("/admin/unit-idea-targets")
 async def get_unit_idea_targets(employee_code: str, year: int = Query(ge=2000, le=2100), db: Session = Depends(get_db)):
     _require_settings_manager(db, employee_code)
-    rows = db.query(UnitIdeaTarget).filter(UnitIdeaTarget.year == year).all()
-    return {"items": [{"year": row.year, "unit_id": row.unit_id, "target_count": row.target_count} for row in rows]}
+    return {"items": list_groups(db, year), "excluded_unit_ids": [r.unit_id for r in db.query(IdeaTargetExcludedUnit).filter_by(year=year).all()]}
 
 
 @router.put("/admin/unit-idea-targets")
 async def update_unit_idea_target(payload: UnitIdeaTargetUpdateRequest, db: Session = Depends(get_db)):
     user = _require_settings_manager(db, payload.employee_code)
-    if db.get(Unit, payload.unit_id) is None:
-        raise HTTPException(status_code=404, detail="Đơn vị không tồn tại")
-    row = db.get(UnitIdeaTarget, (payload.year, payload.unit_id))
-    if row is None:
-        row = UnitIdeaTarget(year=payload.year, unit_id=payload.unit_id)
-        db.add(row)
-    row.target_count = payload.target_count
-    row.updated_by = user.employee_code
+    row = save_group(db, payload, user.employee_code)
     db.commit()
-    return {"year": row.year, "unit_id": row.unit_id, "target_count": row.target_count}
+    return next(item for item in list_groups(db, row.year) if item["id"] == row.id)
+
+
+@router.delete("/admin/unit-idea-targets/{group_id}")
+async def delete_unit_idea_target(group_id: int, employee_code: str, db: Session = Depends(get_db)):
+    _require_settings_manager(db, employee_code)
+    group = db.get(IdeaTargetGroup, group_id)
+    if group is None:
+        raise HTTPException(404, "Nhóm mục tiêu không tồn tại")
+    unit_ids = [m.unit_id for m in db.query(IdeaTargetGroupMember).filter_by(group_id=group_id).all()]
+    db.query(UnitIdeaTarget).filter(UnitIdeaTarget.year == group.year, UnitIdeaTarget.unit_id.in_(unit_ids)).delete(synchronize_session=False)
+    db.query(IdeaTargetGroupMember).filter_by(group_id=group_id).delete(synchronize_session="fetch")
+    db.delete(group)
+    db.commit()
+    return {"deleted": True}
 
 
 @router.get("/admin", response_model=AdminSettingsResponse)

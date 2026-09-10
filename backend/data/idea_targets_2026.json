@@ -1,0 +1,22 @@
+{
+  "year": 2026,
+  "expected_headcount": 2452,
+  "expected_target_count": 123,
+  "excluded_units": ["XN4"],
+  "groups": [
+    {"name":"XN1+V1","units":["XN1-V1"],"headcount":427,"target_count":21,"target_percent":5},
+    {"name":"XN2","units":["XN2"],"headcount":309,"target_count":15,"target_percent":5},
+    {"name":"XN3","units":["XN3"],"headcount":350,"target_count":18,"target_percent":5},
+    {"name":"XNDT","units":["XNDT"],"headcount":655,"target_count":33,"target_percent":5},
+    {"name":"XNV2","units":["XNV2"],"headcount":425,"target_count":21,"target_percent":5},
+    {"name":"PKTCN","units":["P. KTCN"],"headcount":49,"target_count":2,"target_percent":5},
+    {"name":"PQLCL","units":["P. QLCL"],"headcount":17,"target_count":1,"target_percent":5},
+    {"name":"PTH","units":["P. Tổng hợp"],"headcount":32,"target_count":2,"target_percent":5},
+    {"name":"KẾ TOÁN","units":["P. KT"],"headcount":8,"target_count":1,"target_percent":5},
+    {"name":"PKDXNK","units":["P. KDXNK"],"headcount":107,"target_count":5,"target_percent":5},
+    {"name":"PQTĐS","units":["P. QTĐS"],"headcount":27,"target_count":1,"target_percent":null},
+    {"name":"YTE+Lab","units":["Y tế","Phòng Lab"],"headcount":10,"target_count":1,"target_percent":5},
+    {"name":"PKTCĐ","units":["P. KTCĐ & ĐTMT"],"headcount":27,"target_count":1,"target_percent":5},
+    {"name":"BTB","units":["Ban Thiết bị"],"headcount":9,"target_count":1,"target_percent":5}
+  ]
+}

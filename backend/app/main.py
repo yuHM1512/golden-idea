@@ -74,6 +74,8 @@ async def lifespan(app: FastAPI):
     migrate_app_settings_table()
     migrate_labor_second_prices_table()
     migrate_unit_idea_targets_table()
+    from app.services.idea_targets import migrate_target_groups
+    migrate_target_groups(engine)
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:

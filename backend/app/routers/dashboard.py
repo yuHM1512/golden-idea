@@ -6,6 +6,8 @@ from typing import List, Dict, Any
 from app.database import get_db
 from app.models.unit import Unit
 from app.models.unit_idea_target import UnitIdeaTarget
+from app.models.idea_target_group import IdeaTargetGroup
+from app.services.idea_targets import aggregate_targets
 from app.models.idea import Idea, IdeaStatus
 from app.models.actual_benefit import ActualBenefitEvaluation
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
@@ -47,20 +49,15 @@ async def ideas_by_unit(
         .all()
     )
 
-    targets = {
-        row.unit_id: row.target_count
-        for row in db.query(UnitIdeaTarget).filter(UnitIdeaTarget.year == year).all()
-    } if year is not None else {}
-    return [
+    return aggregate_targets(db, [
         {
             "unit_id": r.unit_id,
             "unit_name": r.unit_name,
             "department": r.department,
             "idea_count": int(r.idea_count or 0),
-            "target_count": targets.get(r.unit_id),
         }
         for r in rows
-    ]
+    ], year)
 
 
 @router.get("/idea-metrics", response_model=Dict[str, Any])
@@ -136,7 +133,7 @@ async def idea_years(db: Session = Depends(get_db)):
         .all()
     )
     years = {int(row.year) for row in rows if row.year is not None}
-    years.update(row.year for row in db.query(UnitIdeaTarget.year).distinct().all())
+    years.update(row.year for row in db.query(IdeaTargetGroup.year).distinct().all())
     return sorted(years, reverse=True)
 
 

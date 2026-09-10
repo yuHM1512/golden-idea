@@ -845,6 +845,21 @@ const api = {
     return response.json();
   },
 
+  async updateIdeaTargetGroup(payload) {
+    const response = await fetch(`${API_BASE}/settings/admin/unit-idea-targets`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(formatApiError(await response.json(), 'Không lưu được nhóm mục tiêu'));
+    return response.json();
+  },
+
+  async deleteIdeaTargetGroup(employeeCode, groupId) {
+    const params = new URLSearchParams({ employee_code: employeeCode });
+    const response = await fetch(`${API_BASE}/settings/admin/unit-idea-targets/${groupId}?${params}`, {method:'DELETE'});
+    if (!response.ok) throw new Error(formatApiError(await response.json(), 'Không xóa được nhóm mục tiêu'));
+    return response.json();
+  },
+
   async getAdminSettings(employeeCode) {
     try {
       const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });

@@ -18,3 +18,5 @@ AI images/
 claude_process/
 Bài tập/
 Quy trình hoá/
+# Local database target backups
+backend/data/target_backups/

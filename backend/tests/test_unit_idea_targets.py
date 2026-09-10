@@ -11,6 +11,8 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.models import Idea, Unit, User, UnitIdeaTarget
 from app.models.idea import IdeaStatus
+from app.models.idea_target_group import IdeaTargetGroup, IdeaTargetGroupMember, IdeaTargetExcludedUnit
+from app.services.idea_targets import migrate_target_groups
 from app.routers import dashboard, settings
 from app.seed import migrate_unit_idea_targets_table
 
@@ -39,13 +41,13 @@ class UnitIdeaTargetTests(unittest.TestCase):
     def test_update_preserves_other_units_and_years_and_zero(self):
         for values in ({}, {"unit_id": 2}, {"year": 2025}, {"target_count": 0}):
             self.assertEqual(self.save(**values).status_code, 200)
-        self.assertEqual(self.db.query(UnitIdeaTarget).count(), 3)
+        self.assertEqual(self.db.query(IdeaTargetGroup).count(), 3)
         response = self.client.get("/settings/admin/unit-idea-targets", params={"employee_code": "ADMIN", "year": 2026})
-        self.assertEqual({x["unit_id"]: x["target_count"] for x in response.json()["items"]}, {1: 0, 2: 12})
+        self.assertEqual({x["unit_ids"][0]: x["target_count"] for x in response.json()["items"]}, {1: 0, 2: 12})
         with patch("app.seed.engine", self.engine):
             migrate_unit_idea_targets_table()
             migrate_unit_idea_targets_table()
-        self.assertEqual(self.db.query(UnitIdeaTarget).count(), 3)
+        self.assertEqual(self.db.query(IdeaTargetGroup).count(), 3)
 
     def test_permissions_and_validation(self):
         self.assertEqual(self.save(employee_code="EMP").status_code, 403)
@@ -54,7 +56,7 @@ class UnitIdeaTargetTests(unittest.TestCase):
             self.assertEqual(self.save(target_count=invalid).status_code, 422)
         self.assertEqual(self.save(year=1999).status_code, 422)
         self.assertEqual(self.save(unit_id=999).status_code, 404)
-        self.assertEqual(self.db.query(UnitIdeaTarget).count(), 0)
+        self.assertEqual(self.db.query(IdeaTargetGroup).count(), 0)
 
     def test_ie_manager_can_read_and_update_targets(self):
         self.db.add(User(employee_code="IE", full_name="IE Manager", role="ie_manager"))
@@ -62,14 +64,73 @@ class UnitIdeaTargetTests(unittest.TestCase):
         self.assertEqual(self.save(employee_code="IE").status_code, 200)
         response = self.client.get("/settings/admin/unit-idea-targets?employee_code=IE&year=2026")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["items"], [{"year": 2026, "unit_id": 1, "target_count": 12}])
+        self.assertEqual(response.json()["items"][0]["unit_ids"], [1])
+        self.assertEqual(response.json()["items"][0]["target_count"], 12)
         self.assertEqual(self.save(employee_code="IE", target_count=20).status_code, 200)
-        self.assertEqual(self.db.get(UnitIdeaTarget, (2026, 1)).target_count, 20)
-        self.assertEqual(self.db.get(UnitIdeaTarget, (2026, 1)).updated_by, "IE")
+        self.assertEqual(self.db.query(IdeaTargetGroup).filter_by(year=2026).one().target_count, 20)
+        self.assertEqual(self.db.query(IdeaTargetGroup).filter_by(year=2026).one().updated_by, "IE")
 
     def test_target_year_available_without_ideas(self):
         self.save(year=2027)
         self.assertEqual(self.client.get("/dashboard/idea-years").json(), [2027])
+
+    def test_grouped_chart_sums_members_once_and_excludes_closed_unit(self):
+        self.db.add(Unit(id=3, name="Closed"))
+        self.db.add(IdeaTargetExcludedUnit(year=2026, unit_id=3, reason="Closed"))
+        for uid in (1, 1, 2, 2, 2, 3):
+            self.db.add(Idea(unit_id=uid, full_name="User", title="Idea", category="PROCESS", description="Test", status=IdeaStatus.APPROVED, submitted_at=datetime(2026, 1, 15)))
+        self.db.commit()
+        response = self.save(unit_id=None, unit_ids=[1, 2], name="Combined", target_count=1)
+        self.assertEqual(response.status_code, 200, response.text)
+        rows = self.client.get("/dashboard/ideas-by-unit?year=2026").json()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["unit_name"], rows[0]["idea_count"], rows[0]["target_count"]), ("Combined", 5, 1))
+        self.assertEqual(self.save(unit_id=None, unit_ids=[2], name="Duplicate").status_code, 409)
+        self.assertEqual(self.save(unit_id=1).status_code, 409)
+        self.assertEqual(self.save(unit_id=3).status_code, 409)
+        self.assertEqual(len(self.client.get("/dashboard/ideas-by-unit").json()), 3)
+        january = self.client.get("/dashboard/ideas-by-unit?year=2026&month=2").json()
+        self.assertEqual((january[0]["idea_count"], january[0]["target_count"]), (0, 1))
+
+    def test_migration_preserves_legacy_and_does_not_restore_removed_members(self):
+        self.db.add(UnitIdeaTarget(year=2025, unit_id=1, target_count=7))
+        self.db.commit()
+        migrate_target_groups(self.engine)
+        migrate_target_groups(self.engine)
+        group = self.db.query(IdeaTargetGroup).filter_by(year=2025).one()
+        self.assertEqual(group.target_count, 7)
+        self.assertEqual(self.save(year=2025, group_id=group.id, unit_id=None, unit_ids=[2], name="Moved").status_code, 200)
+        migrate_target_groups(self.engine)
+        self.assertEqual(self.db.query(IdeaTargetGroup).count(), 1)
+        self.assertIsNone(self.db.get(IdeaTargetGroupMember, (2025, 1)))
+
+    def test_delete_group_releases_members_without_deleting_ideas(self):
+        group = self.save(unit_id=None, unit_ids=[1, 2], name="Combined").json()
+        url = f'/settings/admin/unit-idea-targets/{group["id"]}'
+        self.assertEqual(self.client.delete(url, params={"employee_code": "EMP"}).status_code, 403)
+        self.assertEqual(self.client.delete(url, params={"employee_code": "ADMIN"}).status_code, 200)
+        self.assertEqual(self.db.query(IdeaTargetGroupMember).count(), 0)
+        self.assertEqual(self.db.query(Unit).count(), 2)
+        self.assertEqual(self.save().status_code, 200)
+
+    def test_import_totals_idempotence_and_other_year_preserved(self):
+        import json
+        from pathlib import Path
+        from import_idea_targets import apply_import
+        source = json.loads((Path(__file__).parents[1] / "data" / "idea_targets_2026.json").read_text(encoding="utf-8"))
+        names = [n for g in source["groups"] for n in g["units"]] + source["excluded_units"]
+        self.db.add_all([Unit(name=n) for n in names])
+        self.db.commit()
+        self.save(year=2025)
+        for _ in range(2):
+            groups = apply_import(self.db, source)
+            self.db.commit()
+            self.assertEqual(len(groups), 14)
+            self.assertEqual(sum(g["target_count"] for g in groups), 123)
+            self.assertEqual(sum(g["headcount"] for g in groups), 2452)
+            self.assertEqual(len(next(g for g in groups if g["name"] == "YTE+Lab")["unit_ids"]), 2)
+        self.assertEqual(self.db.query(IdeaTargetGroupMember).filter_by(year=2026).count(), 15)
+        self.assertEqual(self.db.query(IdeaTargetGroup).filter_by(year=2025).count(), 1)
 
     def test_chart_counts_and_annual_targets_with_month_filter(self):
         self.save()
