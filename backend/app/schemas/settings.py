@@ -1,4 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class UnitIdeaTargetUpdateRequest(BaseModel):
+    employee_code: str
+    year: int = Field(ge=2000, le=2100)
+    unit_id: int = Field(gt=0)
+    target_count: int = Field(strict=True, ge=0, le=2147483647)
 
 
 class IdeaCategoryOption(BaseModel):

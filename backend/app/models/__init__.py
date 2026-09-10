@@ -1,5 +1,6 @@
 from .user import User
 from .unit import Unit
+from .unit_idea_target import UnitIdeaTarget
 from .app_setting import AppSetting
 from .idea import Idea
 from .score import IdeaScore
@@ -17,6 +18,7 @@ from .standardized_idea_replication import StandardizedIdeaReplication
 __all__ = [
     "User",
     "Unit",
+    "UnitIdeaTarget",
     "AppSetting",
     "Idea",
     "IdeaScore",

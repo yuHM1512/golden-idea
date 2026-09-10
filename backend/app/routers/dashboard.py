@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 
 from app.database import get_db
 from app.models.unit import Unit
+from app.models.unit_idea_target import UnitIdeaTarget
 from app.models.idea import Idea, IdeaStatus
 from app.models.actual_benefit import ActualBenefitEvaluation
 from app.models.standardized_idea_replication import StandardizedIdeaReplication
@@ -46,12 +47,17 @@ async def ideas_by_unit(
         .all()
     )
 
+    targets = {
+        row.unit_id: row.target_count
+        for row in db.query(UnitIdeaTarget).filter(UnitIdeaTarget.year == year).all()
+    } if year is not None else {}
     return [
         {
             "unit_id": r.unit_id,
             "unit_name": r.unit_name,
             "department": r.department,
             "idea_count": int(r.idea_count or 0),
+            "target_count": targets.get(r.unit_id),
         }
         for r in rows
     ]
@@ -129,7 +135,9 @@ async def idea_years(db: Session = Depends(get_db)):
         .order_by(func.extract("year", Idea.submitted_at).desc())
         .all()
     )
-    return [int(row.year) for row in rows if row.year is not None]
+    years = {int(row.year) for row in rows if row.year is not None}
+    years.update(row.year for row in db.query(UnitIdeaTarget.year).distinct().all())
+    return sorted(years, reverse=True)
 
 
 @router.get("/replications-by-unit", response_model=List[Dict[str, Any]])

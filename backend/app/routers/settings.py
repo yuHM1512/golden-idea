@@ -12,6 +12,8 @@ from app.models.attachment import FileAttachment
 from app.models.idea import Idea
 from app.models.labor_second_price import LaborSecondPrice
 from app.models.unit import Unit
+from app.models.unit_idea_target import UnitIdeaTarget
+from app.schemas.settings import UnitIdeaTargetUpdateRequest
 from app.models.payment import PaymentSlip
 from app.models.reward_batch import RewardBatch
 from app.models.score import IdeaScore
@@ -298,6 +300,28 @@ def _delete_single_idea(db: Session, idea: Idea) -> IdeaHardDeleteResponse:
         removed_local_files=removed_local_files,
         cleanup_warnings=cleanup_warnings,
     )
+
+
+@router.get("/admin/unit-idea-targets")
+async def get_unit_idea_targets(employee_code: str, year: int = Query(ge=2000, le=2100), db: Session = Depends(get_db)):
+    _require_settings_manager(db, employee_code)
+    rows = db.query(UnitIdeaTarget).filter(UnitIdeaTarget.year == year).all()
+    return {"items": [{"year": row.year, "unit_id": row.unit_id, "target_count": row.target_count} for row in rows]}
+
+
+@router.put("/admin/unit-idea-targets")
+async def update_unit_idea_target(payload: UnitIdeaTargetUpdateRequest, db: Session = Depends(get_db)):
+    user = _require_settings_manager(db, payload.employee_code)
+    if db.get(Unit, payload.unit_id) is None:
+        raise HTTPException(status_code=404, detail="Đơn vị không tồn tại")
+    row = db.get(UnitIdeaTarget, (payload.year, payload.unit_id))
+    if row is None:
+        row = UnitIdeaTarget(year=payload.year, unit_id=payload.unit_id)
+        db.add(row)
+    row.target_count = payload.target_count
+    row.updated_by = user.employee_code
+    db.commit()
+    return {"year": row.year, "unit_id": row.unit_id, "target_count": row.target_count}
 
 
 @router.get("/admin", response_model=AdminSettingsResponse)

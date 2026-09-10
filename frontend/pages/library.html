@@ -377,7 +377,7 @@
       </div>
     </div>
 
-    <script src="../js/api.js?v=20260525-library-replication-window"></script>
+    <script src="../js/api.js?v=20260909-unit-idea-targets"></script>
     <script>
       const CATEGORY_LABELS = {
         TOOLS: "Công cụ",
@@ -1059,48 +1059,63 @@
 
       function renderUnitChart(data) {
         const wrap = document.getElementById("unitChartWrap");
-        wrap.innerHTML = "";
-
-        const normalized = (data || [])
-          .map((x) => ({
-            label: x.unit_name || "Chưa có đơn vị",
-            count: x.idea_count || x.count || 0,
-          }))
-          .filter((x) => x.count > 0);
-        if (normalized.length === 0) {
-          wrap.innerHTML =
-            '<div class="w-full h-full flex items-center justify-center text-on-surface-variant">Chưa có dữ liệu theo đơn vị.</div>';
+        wrap.replaceChildren();
+        if (!data?.length) {
+          wrap.textContent = "Chưa có dữ liệu theo đơn vị.";
           return;
         }
-        const max = Math.max(1, ...normalized.map((x) => x.count));
-        const plot = document.createElement("div");
-        plot.className = "min-w-max mx-auto";
-        const barRow = document.createElement("div");
-        barRow.className = "h-44 flex items-end justify-center gap-7 px-4";
-        const labelRow = document.createElement("div");
-        labelRow.className = "mt-3 flex items-start justify-center gap-7 px-4";
-
-        normalized.slice(0, 16).forEach((item) => {
-          const height = Math.round((item.count / max) * 100);
-          const bar = document.createElement("div");
-          bar.className = "flex-none w-14 h-44 flex flex-col items-center justify-end gap-2";
-          bar.innerHTML = `
-            <div class="text-xs text-on-surface-variant">${item.count}</div>
-            <div class="w-9 rounded-2xl bg-surface-container-low overflow-hidden flex items-end h-40">
-              <div class="w-full bg-signature-gradient" style="height:${height}%"></div>
-            </div>
-          `;
-          barRow.appendChild(bar);
-
-          const label = document.createElement("div");
-          label.className = "flex-none w-14 text-[10px] text-on-surface-variant uppercase tracking-widest text-center leading-snug line-clamp-2";
-          label.textContent = item.label;
-          labelRow.appendChild(label);
+        const note = document.createElement("p");
+        note.className = "mb-4 text-sm text-on-surface-variant";
+        note.textContent = unitChartLastParams.year
+          ? `Cột xanh: ý tưởng vàng • Đường cam: mục tiêu cả năm ${unitChartLastParams.year} (không chia theo tháng). Đơn vị chưa cài mục tiêu không có điểm mục tiêu.`
+          : "Cột xanh: ý tưởng vàng • Chọn một năm để xem mục tiêu.";
+        wrap.appendChild(note);
+        const ns = "http://www.w3.org/2000/svg";
+        const width = Math.max(640, data.length * 100 + 60);
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", 330);
+        svg.setAttribute("role", "img");
+        svg.setAttribute("aria-label", "Số ý tưởng vàng và mục tiêu năm theo đơn vị");
+        const add = (tag, attrs, text) => {
+          const el = document.createElementNS(ns, tag);
+          Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+          if (text !== undefined) el.textContent = text;
+          svg.appendChild(el);
+          return el;
+        };
+        const max = Math.max(1, ...data.map(x => Math.max(x.idea_count || 0, x.target_count || 0)));
+        const ceiling = Math.max(4, Math.ceil(max / 4) * 4);
+        const y = value => 230 - value / ceiling * 190;
+        for (let i = 0; i <= 4; i++) {
+          const value = ceiling * i / 4;
+          add("line", { x1: 40, x2: width, y1: y(value), y2: y(value), stroke: "#e2e8f0" });
+          add("text", { x: 32, y: y(value) + 4, "text-anchor": "end", "font-size": 11, fill: "#64748b" }, value);
+        }
+        let previous = null;
+        data.forEach((item, i) => {
+          const x = 40 + (i + 0.5) * (width - 40) / data.length;
+          const count = Number(item.idea_count || 0);
+          const target = item.target_count;
+          const bar = add("rect", { x: x - 18, y: y(count), width: 36, height: 230 - y(count), rx: 5, fill: "#002b73" });
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${item.unit_name}: ${count} ý tưởng; mục tiêu: ${target ?? "chưa cài"}`;
+          bar.appendChild(title);
+          add("text", { x, y: y(count) - 8, "text-anchor": "middle", "font-size": 12, fill: "#002b73" }, count);
+          const label = add("text", { x, y: 250, "text-anchor": "end", transform: `rotate(-25 ${x} 250)`, "font-size": 11, fill: "#475569" }, item.unit_name);
+          const labelTitle = document.createElementNS(ns, "title");
+          labelTitle.textContent = item.unit_name;
+          label.appendChild(labelTitle);
+          if (target !== null && target !== undefined) {
+            if (previous) add("line", { x1: previous.x, y1: previous.y, x2: x, y2: y(target), stroke: "#ea580c", "stroke-width": 2, "stroke-dasharray": "5 3" });
+            add("circle", { cx: x, cy: y(target), r: 4, fill: "#ea580c" });
+            add("text", { x: x + 7, y: y(target) - 9, "font-size": 11, fill: "#c2410c" }, target);
+            previous = { x, y: y(target) };
+          } else {
+            previous = null;
+          }
         });
-
-        plot.appendChild(barRow);
-        plot.appendChild(labelRow);
-        wrap.appendChild(plot);
+        wrap.appendChild(svg);
       }
 
       function renderReplicationUnitChart(data) {
@@ -1383,6 +1398,26 @@
           });
         });
 
+        const monthSel = document.getElementById("unitChartMonth");
+        for (let i = 1; i <= 12; i += 1) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = String(i);
+          monthSel.appendChild(opt);
+        }
+        const yearSel = document.getElementById("unitChartYear");
+        const dashboardYears = await api.getIdeaYears().catch(() => []);
+        const fallbackYears = [getTimeZoneYear()];
+        const years = [...fallbackYears, ...dashboardYears].filter((year, index, arr) => arr.indexOf(year) === index).sort((a, b) => b - a);
+        years.forEach((y) => {
+          const opt = document.createElement("option");
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearSel.appendChild(opt);
+        });
+        monthSel.value = "";
+        yearSel.value = String(getTimeZoneYear());
+
         try {
           const [metrics, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
             api.getIdeaMetrics(),
@@ -1398,24 +1433,6 @@
         }
 
         await loadIdeas(true);
-
-        const monthSel = document.getElementById("unitChartMonth");
-        for (let i = 1; i <= 12; i += 1) {
-          const opt = document.createElement("option");
-          opt.value = String(i);
-          opt.textContent = String(i);
-          monthSel.appendChild(opt);
-        }
-        const yearSel = document.getElementById("unitChartYear");
-        const dashboardYears = await api.getIdeaYears().catch(() => []);
-        const fallbackYears = [getTimeZoneYear()];
-        const years = (dashboardYears.length ? dashboardYears : fallbackYears).filter((year, index, arr) => arr.indexOf(year) === index);
-        years.forEach((y) => {
-          const opt = document.createElement("option");
-          opt.value = String(y);
-          opt.textContent = String(y);
-          yearSel.appendChild(opt);
-        });
       }
 
       init().catch((e) => {

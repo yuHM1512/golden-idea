@@ -36,6 +36,7 @@ from app.seed import (
     migrate_k3_cost_saved_criteria_codes,
     migrate_app_settings_table,
     migrate_labor_second_prices_table,
+    migrate_unit_idea_targets_table,
     normalize_sample_idea_categories,
 )
 
@@ -72,6 +73,7 @@ async def lifespan(app: FastAPI):
     migrate_k3_cost_saved_criteria_codes()
     migrate_app_settings_table()
     migrate_labor_second_prices_table()
+    migrate_unit_idea_targets_table()
     normalize_sample_idea_categories()
     inserted = seed_units()
     if inserted:

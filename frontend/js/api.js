@@ -828,6 +828,23 @@ const api = {
     }
   },
 
+  async getUnitIdeaTargets(employeeCode, year) {
+    const params = new URLSearchParams({ employee_code: employeeCode, year });
+    const response = await fetch(`${API_BASE}/settings/admin/unit-idea-targets?${params}`);
+    if (!response.ok) throw new Error(formatApiError(await response.json(), 'Không tải được mục tiêu'));
+    return response.json();
+  },
+
+  async updateUnitIdeaTarget(employeeCode, year, unitId, targetCount) {
+    const response = await fetch(`${API_BASE}/settings/admin/unit-idea-targets`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employee_code: employeeCode, year, unit_id: unitId, target_count: targetCount }),
+    });
+    if (!response.ok) throw new Error(formatApiError(await response.json(), 'Không lưu được mục tiêu'));
+    return response.json();
+  },
+
   async getAdminSettings(employeeCode) {
     try {
       const qs = new URLSearchParams({ employee_code: (employeeCode || '').trim().toUpperCase() });

@@ -1187,6 +1187,12 @@ def migrate_app_settings_table() -> None:
         )
 
 
+def migrate_unit_idea_targets_table() -> None:
+    """Idempotent migration for annual targets; preserves all existing data."""
+    from app.models.unit_idea_target import UnitIdeaTarget
+    UnitIdeaTarget.__table__.create(bind=engine, checkfirst=True)
+
+
 def migrate_labor_second_prices_table() -> None:
     with engine.begin() as conn:
         conn.execute(

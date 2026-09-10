@@ -176,6 +176,14 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a id="cardUnitIdeaTargets" href="/pages/unit-idea-targets" class="hidden block bg-white rounded-[1.5rem] p-7 shadow-[0px_20px_40px_rgba(25,28,29,0.05)] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#002b73]">
+          <div class="flex items-center justify-between gap-4">
+            <h2 class="text-xl font-black font-['Manrope'] text-[#002b73]">Mục tiêu ý tưởng vàng</h2>
+            <span class="material-symbols-outlined text-[#002b73]" aria-hidden="true">arrow_forward</span>
+          </div>
+          <p class="mt-2 text-slate-600">Thiết lập số lượng mục tiêu theo năm và đơn vị.</p>
+          <span class="mt-5 inline-flex items-center rounded-xl bg-[#002b73] px-4 py-2 text-sm font-semibold text-white">Cài đặt mục tiêu</span>
+        </a>
         <a
           id="cardUsers"
           href="/pages/admin-users"
@@ -528,7 +536,7 @@
       </div>
     </div>
 
-    <script src="../js/api.js?v=20260526-labor-second-price-table"></script>
+    <script src="../js/api.js?v=20260909-unit-idea-targets"></script>
     <script>
       let currentUser = null;
       let criteriaSets = [];
@@ -1777,6 +1785,7 @@
 
         await loadCriteriaSets();
         await loadLaborSecondPrices();
+        document.getElementById("cardUnitIdeaTargets").classList.remove("hidden");
         if (isAdmin) {
           await loadAdminSettings();
         }
