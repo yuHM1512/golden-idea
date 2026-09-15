@@ -158,7 +158,7 @@
                     <option value="">Tất cả</option>
                   </select>
                 </label>
-                <button class="px-4 py-2 rounded-lg bg-signature-gradient text-sm text-white font-semibold hover:opacity-95 whitespace-nowrap" onclick="refreshUnitChart()">
+                <button id="unitChartDataButton" class="px-4 py-2 rounded-lg bg-signature-gradient text-sm text-white font-semibold hover:opacity-95 whitespace-nowrap disabled:cursor-wait disabled:opacity-60" onclick="openUnitChartModal()">
                   Xem dữ liệu
                 </button>
               </div>
@@ -439,6 +439,7 @@
       let activeIdeaDetail = null;
       let unitChartLastData = [];
       let unitChartLastParams = { month: "", year: "" };
+      let dashboardChartRequestVersion = 0;
       let categoryChartLastData = [];
       let currentUser = null;
       let currentLibraryTab = "standardization";
@@ -862,18 +863,17 @@
         };
       }
 
-      async function refreshDashboardCharts(params = {}, options = {}) {
-        const { openModal = false } = options;
+      async function refreshDashboardCharts(params = {}, requestVersion = ++dashboardChartRequestVersion) {
         const monthText = params.month ? `Tháng ${params.month}` : "Tất cả tháng";
         const yearText = params.year ? `Năm ${params.year}` : "Tất cả năm";
-
-        unitChartLastParams = { month: params.month || "", year: params.year || "" };
 
         const [unitData, categoryData] = await Promise.all([
           api.getIdeasByUnit(params),
           api.getIdeasByCategory(params),
         ]);
+        if (requestVersion !== dashboardChartRequestVersion) return;
 
+        unitChartLastParams = { month: params.month || "", year: params.year || "" };
         unitChartLastData = unitData || [];
         categoryChartLastData = categoryData || [];
         renderUnitChart(unitChartLastData);
@@ -883,11 +883,20 @@
         meta.textContent = `${monthText} • ${yearText}`;
         renderUnitChartTable(unitChartLastData);
 
-        if (openModal) openUnitChartModal();
       }
 
-      async function refreshUnitChart() {
-        await refreshDashboardCharts(getUnitChartFilters(), { openModal: true });
+      async function applyUnitChartFilters() {
+        const button = document.getElementById("unitChartDataButton");
+        const requestVersion = ++dashboardChartRequestVersion;
+        button.disabled = true;
+        try {
+          await refreshDashboardCharts(getUnitChartFilters(), requestVersion);
+        } catch (error) {
+          console.error("Không lọc được biểu đồ ý tưởng theo đơn vị:", error);
+          alert(`Không lọc được dữ liệu biểu đồ: ${error?.message || "Lỗi không xác định"}`);
+        } finally {
+          if (requestVersion === dashboardChartRequestVersion) button.disabled = false;
+        }
       }
 
       function formatFileSize(size) {
@@ -1420,6 +1429,8 @@
         });
         monthSel.value = "";
         yearSel.value = String(getTimeZoneYear());
+        monthSel.addEventListener("change", applyUnitChartFilters);
+        yearSel.addEventListener("change", applyUnitChartFilters);
 
         try {
           const [metrics, replicationUnitChart, topReplicatedIdeas] = await Promise.all([
