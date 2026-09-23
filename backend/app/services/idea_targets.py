@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.models.idea_target_group import IdeaTargetGroup, IdeaTargetGroupMember, IdeaTargetExcludedUnit
 from app.models.unit import Unit
 from app.models.unit_idea_target import UnitIdeaTarget
@@ -19,6 +19,63 @@ def migrate_target_groups(engine):
             db.add(group)
             db.flush()
             db.add(IdeaTargetGroupMember(year=old.year, unit_id=old.unit_id, group_id=group.id))
+    create_idea_kpi_view(engine)
+
+
+def create_idea_kpi_view(engine):
+    """Create the replacement data source for KPI 222.
+
+    Approved totals for 2025 are a fixed historical snapshot. From 2026 onward
+    the view follows the live dashboard rule: APPROVED + REWARDED, grouped by
+    the year of submitted_at.
+    """
+    if engine.dialect.name != "postgresql":
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE OR REPLACE VIEW public.idea_kpi_by_unit_year AS
+                WITH approved_ideas AS (
+                    SELECT
+                        m.year,
+                        m.group_id,
+                        COUNT(i.id)::bigint AS ytv_duyet
+                    FROM public.idea_target_group_members m
+                    JOIN public.ideas i
+                      ON i.unit_id = m.unit_id
+                     AND EXTRACT(YEAR FROM i.submitted_at)::integer = m.year
+                     AND i.status::text IN ('APPROVED', 'REWARDED')
+                    GROUP BY m.year, m.group_id
+                ),
+                approved_2025(don_vi, ytv_duyet) AS (
+                    VALUES
+                        ('XN1-V1'::varchar, 16::bigint),
+                        ('XN2'::varchar, 15::bigint),
+                        ('XN3'::varchar, 15::bigint),
+                        ('XNDT'::varchar, 32::bigint),
+                        ('XNV2'::varchar, 5::bigint)
+                )
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY g.year, g.name) AS stt,
+                    g.year AS nam,
+                    g.name AS don_vi,
+                    g.target_count AS muc_tieu_ytv,
+                    CASE
+                        WHEN g.year = 2025 THEN COALESCE(h.ytv_duyet, 0::bigint)
+                        ELSE COALESCE(a.ytv_duyet, 0::bigint)
+                    END AS ytv_duyet
+                FROM public.idea_target_groups g
+                LEFT JOIN approved_ideas a
+                  ON a.year = g.year
+                 AND a.group_id = g.id
+                LEFT JOIN approved_2025 h
+                  ON g.year = 2025
+                 AND h.don_vi = g.name
+                """
+            )
+        )
 
 
 def list_groups(db, year):

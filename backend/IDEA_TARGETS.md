@@ -24,3 +24,7 @@ Lệnh đầu chỉ đối chiếu tên đơn vị và tổng. `--apply` sao lư
 Script dùng `DATABASE_URL` từ môi trường hoặc `.env` của backend. Không lưu thông tin đăng nhập server trong source code.
 
 Sau khi database đã được migrate/import, máy chạy ứng dụng chỉ cần pull code và restart backend; startup không tự nhập lại bảng 2026.
+
+## View KPI 222
+
+`public.idea_kpi_by_unit_year` thay thế nguồn `xnm222` cũ với các cột `stt`, `nam`, `don_vi`, `muc_tieu_ytv`, `ytv_duyet`. Số `ytv_duyet` năm 2025 là snapshot cố định ghi trong `data/idea_targets_2025.json`; từ năm 2026 trở đi được đếm tự động từ ý tưởng có trạng thái `APPROVED` hoặc `REWARDED` theo năm của `submitted_at`, giống bảng "Ý tưởng theo đơn vị".
