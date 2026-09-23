@@ -1,0 +1,10 @@
+{
+  "year": 2025,
+  "groups": [
+    {"name":"XN1-V1","units":["XN1-V1"],"target_count":26},
+    {"name":"XN2","units":["XN2"],"target_count":16},
+    {"name":"XN3","units":["XN3"],"target_count":17},
+    {"name":"XNDT","units":["XNDT"],"target_count":33},
+    {"name":"XNV2","units":["XNV2"],"target_count":22}
+  ]
+}
