@@ -4,7 +4,7 @@
   "expected_target_count": 123,
   "excluded_units": ["XN4"],
   "groups": [
-    {"name":"XN1+V1","units":["XN1-V1"],"headcount":427,"target_count":21,"target_percent":5},
+    {"name":"XN1-V1","units":["XN1-V1"],"headcount":427,"target_count":21,"target_percent":5},
     {"name":"XN2","units":["XN2"],"headcount":309,"target_count":15,"target_percent":5},
     {"name":"XN3","units":["XN3"],"headcount":350,"target_count":18,"target_percent":5},
     {"name":"XNDT","units":["XNDT"],"headcount":655,"target_count":33,"target_percent":5},
