@@ -13,7 +13,7 @@ from app.models.standardized_idea_replication import StandardizedIdeaReplication
 from app.models.unit import Unit
 from app.models.user import User
 from app.routers.ideas import build_attachment_file_url, sync_idea_attachments_from_drive
-from app.services.roles import has_role, primary_role, user_roles
+from app.services.roles import has_role
 from app.schemas.library import (
     IdeaLibraryAttachment,
     IdeaLibraryDetail,
@@ -58,10 +58,6 @@ def _attachment_to_view(attachment: FileAttachment) -> IdeaLibraryAttachment:
     )
 
 
-def _normalize_role(user: User | None) -> str:
-    return primary_role(user_roles(user)) if user else ""
-
-
 def _resolve_user(db: Session, employee_code: str | None) -> User | None:
     code = (employee_code or "").strip().upper()
     if not code:
@@ -77,9 +73,15 @@ def _resolve_library_type(value: str | None) -> str:
 
 
 def _can_view_unit_library(user: User | None) -> bool:
-    if user is None or user.unit_id is None:
+    if user is None:
         return False
-    return _normalize_role(user) in UNIT_LIBRARY_ALLOWED_ROLES
+    if has_role(user, "admin"):
+        return True
+    return user.unit_id is not None and any(has_role(user, role) for role in UNIT_LIBRARY_ALLOWED_ROLES)
+
+
+def _can_view_all_unit_libraries(user: User | None) -> bool:
+    return has_role(user, "admin")
 
 
 def _subtract_12_months(value: date) -> date:
@@ -222,7 +224,12 @@ async def list_library_ideas(
     if current_library_type == LIBRARY_TYPE_UNIT:
         if not _can_view_unit_library(user):
             raise HTTPException(status_code=403, detail="Bạn không có quyền xem Kho Đơn vị")
-        query = query.filter(Idea.unit_id == user.unit_id, Idea.status != IdeaStatus.DRAFT)
+        query = query.filter(Idea.status != IdeaStatus.DRAFT)
+        if _can_view_all_unit_libraries(user):
+            if unit_id is not None:
+                query = query.filter(Idea.unit_id == unit_id)
+        else:
+            query = query.filter(Idea.unit_id == user.unit_id)
     elif current_library_type == LIBRARY_TYPE_STANDARDIZATION:
         query = query.filter(latest_council.c.council_result_type.in_(STANDARDIZATION_RESULT_TYPES))
     else:
@@ -295,7 +302,10 @@ async def get_library_idea_detail(
 
     latest_result_type = _latest_council_result_type(idea)
     if current_library_type == LIBRARY_TYPE_UNIT:
-        if not _can_view_unit_library(user) or idea.unit_id != user.unit_id or idea.status == IdeaStatus.DRAFT:
+        can_view_idea = user is not None and (
+            _can_view_all_unit_libraries(user) or idea.unit_id == user.unit_id
+        )
+        if not _can_view_unit_library(user) or not can_view_idea or idea.status == IdeaStatus.DRAFT:
             raise HTTPException(status_code=403, detail="Bạn không có quyền xem ý tưởng này trong Kho Đơn vị")
     elif current_library_type == LIBRARY_TYPE_STANDARDIZATION:
         if latest_result_type not in STANDARDIZATION_RESULT_TYPES:

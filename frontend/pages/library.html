@@ -462,6 +462,12 @@
         return Boolean(currentUser?.id) && currentLibraryTab !== "unit";
       }
 
+      function currentUserIsAdmin() {
+        const roles = Array.isArray(currentUser?.roles) ? currentUser.roles : [];
+        return (currentUser?.role || "").trim().toLowerCase() === "admin"
+          || roles.some((role) => String(role || "").trim().toLowerCase() === "admin");
+      }
+
       function subtractTwelveMonthsParts(parts) {
         if (!parts) return null;
         const year = Number(parts.year) - 1;
@@ -510,7 +516,9 @@
         if (!heading || !desc) return;
         heading.textContent = LIBRARY_TAB_LABELS[currentLibraryTab] || "Bảng ý tưởng";
         if (currentLibraryTab === "unit") {
-          desc.textContent = "Kho đơn vị hiển thị toàn bộ ý tưởng của đơn vị bạn trên hệ thống, bao gồm mọi trạng thái xử lý.";
+          desc.textContent = currentUserIsAdmin()
+            ? "Kho đơn vị hiển thị toàn bộ ý tưởng của các đơn vị trên hệ thống, bao gồm mọi trạng thái xử lý."
+            : "Kho đơn vị hiển thị toàn bộ ý tưởng của đơn vị bạn trên hệ thống, bao gồm mọi trạng thái xử lý.";
         } else {
           desc.textContent = "Tên ý tưởng (tóm tắt), lĩnh vực, người gửi, mô tả, minh hoạ.";
         }
@@ -543,8 +551,8 @@
         renderLibraryTableHead();
         const unitSelect = document.getElementById("filterUnitId");
         if (unitSelect) {
-          unitSelect.disabled = currentLibraryTab === "unit";
-          if (currentLibraryTab === "unit") {
+          unitSelect.disabled = currentLibraryTab === "unit" && !currentUserIsAdmin();
+          if (currentLibraryTab === "unit" && !currentUserIsAdmin()) {
             unitSelect.value = "";
           }
         }
@@ -1374,7 +1382,8 @@
 
         currentUser = await api.getUserByCode(currentEmployeeCode()).catch(() => null);
         const role = (currentUser?.role || "").trim().toLowerCase();
-        canViewUnitLibrary = Boolean(currentUser?.unit_id) && ["dept_manager", "sub_dept_manager", "unit_represent", "admin"].includes(role);
+        canViewUnitLibrary = currentUserIsAdmin()
+          || (Boolean(currentUser?.unit_id) && ["dept_manager", "sub_dept_manager", "unit_represent"].includes(role));
         if (!canViewUnitLibrary) {
           currentLibraryTab = "standardization";
         }
@@ -1399,7 +1408,7 @@
           opt.textContent = c.label;
           catSel.appendChild(opt);
         });
-        unitSel.disabled = currentLibraryTab === "unit";
+        unitSel.disabled = currentLibraryTab === "unit" && !currentUserIsAdmin();
         ["q", "filterProductCode"].forEach((id) => {
           const input = document.getElementById(id);
           if (!input) return;
