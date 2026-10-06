@@ -652,12 +652,11 @@
       let laborSecondPriceByYear = {};
       let currentDualRoleTab = "dept"; // "dept" | "digital" – chỉ dùng khi user có cả dept + digital role
 
-      function hasCurrentRole(role) {
-        return currentRole === role || currentRoles.includes(role);
-      }
-
       function hasDeptApprovalEditRole() {
-        return hasCurrentRole("dept_manager") || hasCurrentRole("sub_dept_manager");
+        // Chỉ xét vai trò của tab đang hoạt động. Tài khoản kiêm nhiệm
+        // digital_manager vẫn có role trưởng/phó đơn vị trong currentRoles,
+        // nhưng ở tab Số hoá phải thao tác cấp 2, không sửa điểm cấp 1.
+        return currentRole === "dept_manager" || currentRole === "sub_dept_manager";
       }
 
       function isDigitizationCategory(category) {
