@@ -7,7 +7,23 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined&display=swap" rel="stylesheet" />
-  <style>.material-symbols-outlined{font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 24}body{font-family:Inter,sans-serif}.number{font-variant-numeric:tabular-nums}th{white-space:nowrap}</style>
+  <style>
+    .material-symbols-outlined{font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 24}
+    body{font-family:Inter,sans-serif}.number{font-variant-numeric:tabular-nums}th{white-space:nowrap}
+    @media print {
+      @page { size: landscape; margin: 10mm; }
+      body * { visibility: hidden !important; }
+      #previewModal, #previewModal * { visibility: visible !important; }
+      #previewModal { display:block !important; position:absolute; inset:0; overflow:visible !important; padding:0 !important; background:white !important; }
+      #previewModal > div { width:100% !important; max-width:none !important; max-height:none !important; overflow:visible !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; }
+      #previewToolbar { display:none !important; }
+      #previewContent { max-height:none !important; overflow:visible !important; padding:0 !important; }
+      #previewContent table { width:100% !important; min-width:0 !important; border-collapse:collapse; font-size:7pt !important; }
+      #previewContent th, #previewContent td { border:1px solid #94a3b8 !important; padding:3px 4px !important; white-space:normal !important; }
+      #previewContent thead { display:table-header-group; }
+      #previewContent tr { break-inside:avoid; }
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-[#f7f9fc] text-slate-800">
   <header class="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur">
@@ -38,16 +54,26 @@
     </div>
 
     <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 1</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Tổng hợp theo đơn vị</h2><p class="mt-1 text-xs text-slate-500">Kế hoạch lấy từ mục tiêu năm đã nhập. Số thực hiện và điểm lấy từ bảng chi tiết bên dưới.</p></div><button id="exportSummary" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 1</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Tổng hợp theo đơn vị</h2><p class="mt-1 text-xs text-slate-500">Kế hoạch lấy từ mục tiêu năm đã nhập. Số thực hiện và điểm lấy từ bảng chi tiết bên dưới.</p></div><div class="flex gap-2"><button id="previewSummary" class="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-[#002b73] hover:bg-blue-100">Xem trước</button><button id="exportSummary" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div></div>
       <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-5 py-3 text-left">Đơn vị / nhóm</th><th class="px-4 py-3 text-right">Kế hoạch năm (LĐTT / YTV)</th><th class="px-4 py-3 text-right">YTV trong quý</th><th class="px-4 py-3 text-right">Đơn vị tự xét</th><th class="px-4 py-3 text-right">Công ty xét</th><th class="px-4 py-3 text-right">Điểm Công ty</th><th class="px-5 py-3 text-right">Hiệu quả thực tế (VND)</th></tr></thead><tbody id="summaryBody" class="divide-y divide-slate-100"></tbody><tfoot id="summaryFoot" class="bg-blue-50 font-bold text-[#002b73]"></tfoot></table></div>
     </section>
 
     <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 2</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Bảng chi tiết điểm</h2><p class="mt-1 text-xs text-slate-500">Các cột A, B, C thể hiện từng điểm con của K1, K2, K3. Kỳ xét duyệt kế thừa từ màn hình Hội đồng.</p></div><div class="flex flex-wrap gap-2"><a href="/pages/approvals" class="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-[#002b73] hover:bg-blue-100">Mở Duyệt Hội đồng</a><input id="search" type="search" placeholder="Tìm mã, tên, ý tưởng, đơn vị" class="w-64 rounded-xl border-slate-200 text-sm" /><button id="exportDetail" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div></div>
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 2</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Bảng chi tiết điểm</h2><p class="mt-1 text-xs text-slate-500">Các cột A, B, C thể hiện từng điểm con của K1, K2, K3. Kỳ xét duyệt kế thừa từ màn hình Hội đồng.</p></div><div class="flex flex-wrap gap-2"><a href="/pages/approvals" class="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-[#002b73] hover:bg-blue-100">Mở Duyệt Hội đồng</a><input id="search" type="search" placeholder="Tìm mã, tên, ý tưởng, đơn vị" class="w-64 rounded-xl border-slate-200 text-sm" /><button id="previewDetail" class="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-[#002b73] hover:bg-blue-100">Xem trước</button><button id="exportDetail" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div></div>
       <div class="overflow-x-auto"><table class="min-w-[3100px] w-full text-xs"><thead class="bg-slate-50 text-slate-600"><tr><th rowspan="2" class="px-4 py-3 text-left">Ngày gửi</th><th rowspan="2" class="px-3 py-3 text-left">Mã / ý tưởng</th><th rowspan="2" class="px-3 py-3 text-left">Người đề xuất</th><th rowspan="2" class="px-3 py-3 text-left">Đơn vị</th><th rowspan="2" class="px-3 py-3 text-left">Phân loại</th><th colspan="3" class="border-l border-white/70 bg-blue-100 px-3 py-2 text-center text-blue-900">K1 · Tính sáng tạo</th><th colspan="6" class="border-l border-white/70 bg-cyan-100 px-3 py-2 text-center text-cyan-900">K2 · Khả năng áp dụng</th><th colspan="14" class="border-l border-white/70 bg-amber-100 px-3 py-2 text-center text-amber-900">K3 · Hiệu quả, giá trị làm lợi</th><th rowspan="2" class="px-3 py-3 text-right">Điểm BCT</th><th rowspan="2" class="px-3 py-3 text-right">Điểm Công ty</th><th rowspan="2" class="px-3 py-3 text-right">Hiệu quả (VND)</th><th rowspan="2" class="px-4 py-3 text-left">Kỳ xét duyệt</th></tr><tr id="criteriaHeaderCodes"></tr></thead><tbody id="detailBody" class="divide-y divide-slate-100"></tbody></table></div>
-      <p id="detailCount" class="border-t border-slate-100 px-6 py-3 text-xs text-slate-500"></p>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-3"><p id="detailCount" class="text-xs text-slate-500"></p><div id="detailPagination" class="flex items-center gap-2"></div></div>
     </section>
   </main>
+
+  <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="previewTitle" onclick="closeReportPreview()">
+    <div class="flex max-h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" onclick="event.stopPropagation()">
+      <div id="previewToolbar" class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+        <div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Bản xem trước khi in</p><h2 id="previewTitle" class="mt-1 text-lg font-extrabold text-[#002b73]"></h2></div>
+        <div class="flex gap-2"><button id="printPreview" class="rounded-xl bg-[#002b73] px-4 py-2 text-sm font-bold text-white hover:bg-blue-900">In báo cáo</button><button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold" onclick="closeReportPreview()">Đóng</button></div>
+      </div>
+      <div id="previewContent" class="overflow-auto p-6"></div>
+    </div>
+  </div>
 
   <script src="../js/api.js?v=20261016-quarterly-report"></script>
   <script src="../js/quarterly-report.js?v=20261016-quarterly-report"></script>

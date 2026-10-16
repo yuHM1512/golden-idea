@@ -1,5 +1,7 @@
 let report = { summary: [], items: [] };
 let currentUser = null;
+let detailPage = 1;
+let detailPageSize = 20;
 const K1_CODES = ['A1', 'A2', 'A3'];
 const K2_CODES = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'];
 const K3_CODES = Array.from({ length: 14 }, (_, index) => `C${index + 1}`);
@@ -51,12 +53,73 @@ function criteriaCells(item) {
   }).join('');
 }
 
-function renderDetail() {
+function filteredDetailItems() {
   const term = byId('search').value.trim().toLocaleLowerCase('vi-VN');
-  const rows = (report.items || []).filter((item) => [item.idea_id, item.title, item.full_name, item.employee_code, item.unit_name].some((value) => String(value ?? '').toLocaleLowerCase('vi-VN').includes(term)));
-  byId('detailBody').innerHTML = rows.length ? rows.map((item) => `
-    <tr class="hover:bg-blue-50/50"><td class="whitespace-nowrap px-4 py-3">${safe(dateLabel(item.submitted_at))}</td><td class="max-w-[320px] px-3 py-3"><span class="font-bold text-[#002b73]">#${item.idea_id}</span><span class="ml-2 text-slate-500">${safe(item.product_code || '')}</span><div class="mt-1 line-clamp-2 font-semibold">${safe(item.title)}</div></td><td class="px-3 py-3">${safe(item.full_name)}<div class="text-slate-500">${safe(item.employee_code || '')}</div></td><td class="px-3 py-3">${safe(item.unit_name)}</td><td class="px-3 py-3">${classificationLabel(item.classification)}</td>${criteriaCells(item)}<td class="number px-3 py-3 text-right font-semibold">${optionalNumber(item.ie_score)}</td><td class="number px-3 py-3 text-right font-semibold">${optionalNumber(item.council_score)}</td><td class="number px-3 py-3 text-right">${optionalNumber(item.benefit_value)}</td><td class="px-4 py-3"><span class="font-bold">${safe(periodLabel(item.report_quarter, item.report_year))}</span>${item.period_note ? `<div class="mt-1 max-w-40 break-words text-slate-500" title="${safe(item.period_note)}">${safe(item.period_note)}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="32" class="px-5 py-8 text-center text-slate-500">Không tìm thấy ý tưởng phù hợp.</td></tr>';
-  byId('detailCount').textContent = `Hiển thị ${rows.length} / ${(report.items || []).length} ý tưởng`;
+  return (report.items || []).filter((item) => [item.idea_id, item.title, item.full_name, item.employee_code, item.unit_name].some((value) => String(value ?? '').toLocaleLowerCase('vi-VN').includes(term)));
+}
+
+function detailRow(item, rowClass = '') {
+  return `<tr class="${rowClass}"><td class="whitespace-nowrap px-4 py-3">${safe(dateLabel(item.submitted_at))}</td><td class="max-w-[320px] px-3 py-3"><span class="font-bold text-[#002b73]">#${item.idea_id}</span><span class="ml-2 text-slate-500">${safe(item.product_code || '')}</span><div class="mt-1 line-clamp-2 font-semibold">${safe(item.title)}</div></td><td class="px-3 py-3">${safe(item.full_name)}<div class="text-slate-500">${safe(item.employee_code || '')}</div></td><td class="px-3 py-3">${safe(item.unit_name)}</td><td class="px-3 py-3">${classificationLabel(item.classification)}</td>${criteriaCells(item)}<td class="number px-3 py-3 text-right font-semibold">${optionalNumber(item.ie_score)}</td><td class="number px-3 py-3 text-right font-semibold">${optionalNumber(item.council_score)}</td><td class="number px-3 py-3 text-right">${optionalNumber(item.benefit_value)}</td><td class="px-4 py-3"><span class="font-bold">${safe(periodLabel(item.report_quarter, item.report_year))}</span>${item.period_note ? `<div class="mt-1 max-w-40 break-words text-slate-500" title="${safe(item.period_note)}">${safe(item.period_note)}</div>` : ''}</td></tr>`;
+}
+
+function renderPagination(total) {
+  const pageCount = Math.max(1, Math.ceil(total / detailPageSize));
+  detailPage = Math.min(detailPage, pageCount);
+  const start = total ? (detailPage - 1) * detailPageSize + 1 : 0;
+  const end = Math.min(detailPage * detailPageSize, total);
+  byId('detailCount').textContent = `Hiển thị ${start}–${end} / ${total} ý tưởng`;
+  byId('detailPagination').innerHTML = `
+    <label class="flex items-center gap-2 text-xs text-slate-500">Mỗi trang
+      <select id="detailPageSize" class="rounded-lg border-slate-200 py-1 pl-2 pr-7 text-xs text-slate-700"><option value="20" ${detailPageSize === 20 ? 'selected' : ''}>20</option><option value="50" ${detailPageSize === 50 ? 'selected' : ''}>50</option><option value="100" ${detailPageSize === 100 ? 'selected' : ''}>100</option></select>
+    </label>
+    <button id="detailPrev" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40" ${detailPage <= 1 ? 'disabled' : ''}>Trước</button>
+    <span class="min-w-16 text-center text-xs font-semibold text-slate-600">${detailPage} / ${pageCount}</span>
+    <button id="detailNext" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40" ${detailPage >= pageCount ? 'disabled' : ''}>Sau</button>`;
+  byId('detailPageSize').addEventListener('change', (event) => { detailPageSize = Number(event.target.value); detailPage = 1; renderDetail(); });
+  byId('detailPrev').addEventListener('click', () => { if (detailPage > 1) { detailPage -= 1; renderDetail(); } });
+  byId('detailNext').addEventListener('click', () => { if (detailPage < pageCount) { detailPage += 1; renderDetail(); } });
+}
+
+function renderDetail() {
+  const rows = filteredDetailItems();
+  const pageCount = Math.max(1, Math.ceil(rows.length / detailPageSize));
+  detailPage = Math.min(detailPage, pageCount);
+  const start = (detailPage - 1) * detailPageSize;
+  const visibleRows = rows.slice(start, start + detailPageSize);
+  byId('detailBody').innerHTML = visibleRows.length ? visibleRows.map((item) => detailRow(item, 'hover:bg-blue-50/50')).join('') : '<tr><td colspan="32" class="px-5 py-8 text-center text-slate-500">Không tìm thấy ý tưởng phù hợp.</td></tr>';
+  renderPagination(rows.length);
+}
+
+function openReportPreview(kind) {
+  const quarter = Number(byId('quarter').value);
+  const year = Number(byId('year').value);
+  const isSummary = kind === 'summary';
+  byId('previewTitle').textContent = `${isSummary ? 'Tổng hợp theo đơn vị' : 'Bảng chi tiết điểm'} · Quý ${quarter}/${year}`;
+  if (isSummary) {
+    const table = document.querySelector('#summaryBody').closest('table');
+    byId('previewContent').innerHTML = `
+      <div class="preview-sheet">
+        <div class="mb-5 text-center"><p class="text-xs font-bold uppercase tracking-[.2em] text-slate-500">Ban cải tiến · Khen thưởng</p><h1 class="mt-2 text-2xl font-extrabold text-[#002b73]">BÁO CÁO KHEN THƯỞNG QUÝ ${quarter} NĂM ${year}</h1><p class="mt-1 text-sm text-slate-600">Tổng hợp theo đơn vị · Kế hoạch năm và kết quả thực hiện trong quý</p></div>
+        <table class="w-full border-collapse text-sm"><thead>${table.querySelector('thead').innerHTML}</thead><tbody>${table.querySelector('tbody').innerHTML}</tbody><tfoot>${table.querySelector('tfoot').innerHTML}</tfoot></table>
+      </div>`;
+  } else {
+    const rows = filteredDetailItems();
+    const table = document.querySelector('#detailBody').closest('table');
+    byId('previewContent').innerHTML = `
+      <div class="preview-sheet">
+        <div class="mb-5 text-center"><p class="text-xs font-bold uppercase tracking-[.2em] text-slate-500">Ban cải tiến · Khen thưởng</p><h1 class="mt-2 text-2xl font-extrabold text-[#002b73]">BẢNG CHI TIẾT ĐIỂM · QUÝ ${quarter}/${year}</h1><p class="mt-1 text-sm text-slate-600">${rows.length} ý tưởng${byId('search').value.trim() ? ' · theo điều kiện tìm kiếm hiện tại' : ''}</p></div>
+        <div class="overflow-x-auto"><table class="min-w-[2900px] w-full border-collapse text-[10px]"><thead>${table.querySelector('thead').innerHTML}</thead><tbody>${rows.map((item) => detailRow(item)).join('') || '<tr><td colspan="32" class="p-5 text-center">Không có dữ liệu.</td></tr>'}</tbody></table></div>
+      </div>`;
+  }
+  const modal = byId('previewModal');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+  document.body.classList.add('overflow-hidden');
+}
+
+function closeReportPreview() {
+  const modal = byId('previewModal');
+  modal.classList.add('hidden'); modal.classList.remove('flex');
+  document.body.classList.remove('overflow-hidden');
 }
 
 async function loadReport() {
@@ -66,6 +129,7 @@ async function loadReport() {
   byId('refresh').disabled = true;
   try {
     report = await api.getQuarterlyReport(quarter, year, currentUser.employee_code);
+    detailPage = 1;
     renderSummary(); renderDetail(); byId('message').classList.add('hidden');
   } catch (error) { notify(error.message || 'Không tải được báo cáo.', true); }
   finally { byId('refresh').disabled = false; }
@@ -143,7 +207,15 @@ async function init() {
     byId('whoami').textContent = `${currentUser.employee_code} · ${currentUser.full_name || ''}`; const now = new Date();
     const month = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', month: 'numeric' }).format(now)); const year = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric' }).format(now));
     byId('quarter').innerHTML = [1, 2, 3, 4].map(q => `<option value="${q}">Quý ${q}</option>`).join(''); byId('quarter').value = Math.floor((month - 1) / 3) + 1; byId('year').value = year; renderCriteriaHeaders();
-    byId('refresh').addEventListener('click', loadReport); byId('search').addEventListener('input', renderDetail); byId('exportSummary').addEventListener('click', () => exportExcel('summary')); byId('exportDetail').addEventListener('click', () => exportExcel('detail')); await loadReport();
+    byId('refresh').addEventListener('click', loadReport);
+    byId('search').addEventListener('input', () => { detailPage = 1; renderDetail(); });
+    byId('exportSummary').addEventListener('click', () => exportExcel('summary'));
+    byId('exportDetail').addEventListener('click', () => exportExcel('detail'));
+    byId('previewSummary').addEventListener('click', () => openReportPreview('summary'));
+    byId('previewDetail').addEventListener('click', () => openReportPreview('detail'));
+    byId('printPreview').addEventListener('click', () => window.print());
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !byId('previewModal').classList.contains('hidden')) closeReportPreview(); });
+    await loadReport();
   } catch (error) { notify(error.message || 'Không mở được báo cáo.', true); }
 }
 init();
