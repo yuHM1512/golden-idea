@@ -190,6 +190,12 @@ class ApprovalIdeaItem(BaseModel):
     dept_benefit_value: Optional[float] = None
     council_is_featured: bool = False
     council_reward_multiplier: Optional[float] = None
+    default_report_quarter: Optional[int] = None
+    default_report_year: Optional[int] = None
+    report_quarter: Optional[int] = None
+    report_year: Optional[int] = None
+    report_period_note: Optional[str] = None
+    report_period_verified_at: Optional[datetime] = None
     dept_score: Optional["ApprovalScoreView"] = None
     ie_score: Optional["ApprovalScoreView"] = None
     latest_review: Optional["ApprovalReviewView"] = None

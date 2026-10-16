@@ -724,6 +724,29 @@ const api = {
     }
   },
 
+  async getQuarterlyReport(quarter, year, employeeCode) {
+    const qs = new URLSearchParams({ quarter: String(quarter), year: String(year), employee_code: employeeCode });
+    const response = await fetch(`${API_BASE}/quarterly-reports/?${qs}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Không tải được báo cáo quý');
+    }
+    return response.json();
+  },
+
+  async verifyIdeaReportPeriod(ideaId, payload) {
+    const response = await fetch(`${API_BASE}/quarterly-reports/ideas/${ideaId}/period`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(Array.isArray(error.detail) ? error.detail.map(item => item.msg).join(', ') : error.detail || 'Không xác nhận được kỳ báo cáo');
+    }
+    return response.json();
+  },
+
   async getRewardBatchReport(batchId) {
     try {
       const response = await fetch(`${API_BASE}/reward-batches/${batchId}/report`);

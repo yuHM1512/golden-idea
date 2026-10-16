@@ -106,6 +106,7 @@
           <a id="navLibrary" class="text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/library">Kho Ý tưởng</a>
           <a id="navMyIdeas" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/my-ideas">Kho Ý tưởng cá nhân</a>
           <a id="navApprovals" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/approvals">Phê duyệt</a>
+          <a id="navQuarterlyReport" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/quarterly-report">Báo cáo quý</a>
           <a id="navSettings" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/settings">Cài đặt</a>
           <a id="navRewards" class="hidden text-slate-500 hover:text-blue-700 font-manrope transition-colors" href="/pages/rewards">Chi thưởng</a>
         </nav>
@@ -240,6 +241,14 @@
         </a>
 
         <!-- Card 4: Rewards -->
+        <a id="cardQuarterlyReport" href="/pages/quarterly-report" class="group relative hidden flex w-full max-w-[26rem] md:w-[22rem] xl:w-[24rem] min-h-[22rem] flex-col rounded-[1.5rem] bg-surface-container-lowest p-9 shadow-[0px_20px_40px_rgba(25,28,29,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary hover:shadow-[0px_20px_40px_rgba(0,43,115,0.18)]">
+          <div class="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-primary group-hover:bg-white/15 group-hover:text-white"><span class="material-symbols-outlined text-[34px]">analytics</span></div>
+          <h3 class="mb-4 font-headline-md text-[1.85rem] font-bold text-primary group-hover:text-white">Báo cáo quý</h3>
+          <p class="mb-10 text-base text-on-surface-variant group-hover:text-white/80">Tổng hợp khen thưởng theo đơn vị, xem bảng điểm chi tiết và xác nhận quý cho từng ý tưởng.</p>
+          <div class="mt-auto font-semibold text-primary group-hover:text-white">Mở báo cáo <span class="material-symbols-outlined align-middle text-sm">arrow_forward</span></div>
+        </a>
+
+        <!-- Card 4: Rewards -->
         <a
           id="cardRewards"
           href="/pages/rewards"
@@ -297,6 +306,13 @@
         return role === "admin" || role === "treasurer";
       }
 
+      const QUARTERLY_REPORT_ROLES = new Set(["admin", "ie_manager", "digital_manager", "bod_manager"]);
+
+      function canAccessQuarterlyReport(user) {
+        const roles = new Set([user?.role, ...(Array.isArray(user?.roles) ? user.roles : [])].filter(Boolean));
+        return [...roles].some((role) => QUARTERLY_REPORT_ROLES.has(role));
+      }
+
       async function init() {
         if (localStorage.getItem("is_logged_in") !== "true") {
           window.location.href = "/pages/login";
@@ -332,8 +348,15 @@
         const navSettings = document.getElementById("navSettings");
         const navLibrary = document.getElementById("navLibrary");
         const navMyIdeas = document.getElementById("navMyIdeas");
+        const quarterlyReport = document.getElementById("cardQuarterlyReport");
+        const navQuarterlyReport = document.getElementById("navQuarterlyReport");
         const approvalsDesc = document.getElementById("approvalsDesc");
         const isEmployeeOnly = !role || (!isManagerRole(role) && role !== "admin" && role !== "ie_manager" && role !== "unit_represent" && role !== "treasurer");
+
+        if (canAccessQuarterlyReport(user)) {
+          quarterlyReport.classList.remove("hidden");
+          navQuarterlyReport.classList.remove("hidden");
+        }
 
         if (isEmployeeOnly) {
           library.classList.add("hidden");

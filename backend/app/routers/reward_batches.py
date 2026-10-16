@@ -8,7 +8,6 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import extract
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -19,6 +18,7 @@ from app.models.user import User
 from app.routers.payments import _render_pdf_via_browser
 from app.services.email_notifications import send_reward_batch_summary_emails
 from app.services.roles import has_role
+from app.services.report_period import report_period_predicate
 from app.time_utils import now_display_tz
 
 router = APIRouter(prefix="/reward-batches", tags=["reward-batches"])
@@ -149,8 +149,7 @@ def _special_reward_map(raw_value: str | None) -> dict[int, float]:
 
 
 def _load_eligible_ideas(db: Session, year: int, quarter: int) -> list[Idea]:
-    month_start, month_end = QUARTER_MONTHS[int(quarter)]
-    return (
+    ideas = (
         db.query(Idea)
         .options(
             joinedload(Idea.unit),
@@ -158,14 +157,13 @@ def _load_eligible_ideas(db: Session, year: int, quarter: int) -> list[Idea]:
         )
         .filter(
             Idea.status.in_([IdeaStatus.APPROVED, IdeaStatus.REWARDED]),
-            Idea.approved_at.isnot(None),
-            extract("year", Idea.approved_at) == int(year),
-            extract("month", Idea.approved_at) >= int(month_start),
-            extract("month", Idea.approved_at) <= int(month_end),
+            Idea.submitted_at.isnot(None),
+            report_period_predicate(Idea, year, quarter, db.bind.dialect.name),
         )
-        .order_by(Idea.approved_at, Idea.id)
+        .order_by(Idea.submitted_at, Idea.id)
         .all()
     )
+    return ideas
 
 
 def _serialize_batch(batch: RewardBatch) -> dict:

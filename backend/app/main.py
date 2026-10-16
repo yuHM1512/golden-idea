@@ -3,9 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import mimetypes
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 import os
 from pathlib import Path
+from sqlalchemy import text
 from app.config import settings
 from app.database import Base, engine
 from app.seed import (
@@ -37,6 +38,7 @@ from app.seed import (
     migrate_app_settings_table,
     migrate_labor_second_prices_table,
     migrate_unit_idea_targets_table,
+    migrate_idea_report_period_columns,
     normalize_sample_idea_categories,
 )
 
@@ -45,10 +47,26 @@ def init_db():
     import app.models
     Base.metadata.create_all(bind=engine)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
+@contextmanager
+def _startup_schema_lock():
+    """Serialize schema initialization across workers sharing a PostgreSQL DB."""
+    if engine.dialect.name != "postgresql":
+        yield
+        return
+
+    lock_key = 1196379204  # Stable application-specific PostgreSQL advisory lock key.
+    with engine.connect() as connection:
+        lock_connection = connection.execution_options(isolation_level="AUTOCOMMIT")
+        lock_connection.execute(text("SELECT pg_advisory_lock(:lock_key)"), {"lock_key": lock_key})
+        try:
+            yield
+        finally:
+            lock_connection.execute(text("SELECT pg_advisory_unlock(:lock_key)"), {"lock_key": lock_key})
+
+
+def initialize_database():
     init_db()
+    migrate_idea_report_period_columns()
     migrate_user_role_column()
     migrate_user_roles_json_column()
     migrate_users_unit_nullable()
@@ -86,6 +104,14 @@ async def lifespan(app: FastAPI):
     if seed_admin_user():
         print("OK: Seeded admin user (employee_code=admin)")
     print("OK: Database tables initialized")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Keep the existing idempotent startup migrations, but do not let multiple
+    # app workers run their ALTER TABLE sequences at the same time.
+    with _startup_schema_lock():
+        initialize_database()
     yield
     # Shutdown
     print("OK: Shutting down...")
@@ -109,7 +135,7 @@ app.add_middleware(
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 # Include routers FIRST (before static files)
-from app.routers import ideas, units, users, dashboard, library, reviews, scores, payments, reward_batches, settings as admin_settings
+from app.routers import ideas, units, users, dashboard, library, reviews, scores, payments, reward_batches, quarterly_reports, settings as admin_settings
 app.include_router(ideas.router, prefix="/api", tags=["ideas"])
 app.include_router(units.router, prefix="/api", tags=["units"])
 app.include_router(users.router, prefix="/api", tags=["users"])
@@ -118,6 +144,7 @@ app.include_router(library.router, prefix="/api", tags=["library"])
 app.include_router(reviews.router, prefix="/api", tags=["reviews"])
 app.include_router(scores.router, prefix="/api", tags=["scores"])
 app.include_router(reward_batches.router, prefix="/api", tags=["reward-batches"])
+app.include_router(quarterly_reports.router, prefix="/api", tags=["quarterly-reports"])
 app.include_router(payments.router, prefix="/api", tags=["payments"])
 app.include_router(admin_settings.router, prefix="/api", tags=["settings"])
 

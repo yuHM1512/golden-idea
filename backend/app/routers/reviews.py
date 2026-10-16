@@ -24,6 +24,7 @@ from app.routers.payments import _assign_register_reward_code, _get_or_create_pa
 from app.services.app_settings import get_json_setting
 from app.services.email_notifications import send_approval_stage_email
 from app.services.roles import has_role, is_digitization_category, primary_role, user_roles
+from app.services.report_period import default_report_period, effective_report_period
 from app.time_utils import now_utc, to_display_tz
 from app.schemas import (
     ActualBenefitInput,
@@ -803,6 +804,8 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
     slip = idea.payment_slip
     ie_result_type = _display_ie_result_type(idea)
     eligible_register_reward = _is_register_slip_eligible(idea)
+    default_period = default_report_period(idea)
+    effective_period = effective_report_period(idea)
     return ApprovalIdeaItem(
         id=idea.id,
         title=_build_title(idea),
@@ -829,6 +832,12 @@ def _idea_to_item(idea: Idea, can_review: bool) -> ApprovalIdeaItem:
         dept_benefit_value=idea.dept_actual_benefit.benefit_value if idea.dept_actual_benefit else None,
         council_is_featured=bool(getattr(idea, "council_is_featured", False)),
         council_reward_multiplier=idea.council_reward_multiplier,
+        default_report_year=default_period[0] if default_period else None,
+        default_report_quarter=default_period[1] if default_period else None,
+        report_year=effective_period[0] if effective_period else None,
+        report_quarter=effective_period[1] if effective_period else None,
+        report_period_note=idea.report_period_note,
+        report_period_verified_at=idea.report_period_verified_at,
         dept_score=dept_score,
         ie_score=ie_score,
         latest_review=latest_review,

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum as SQLEnum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -29,6 +29,10 @@ class IdeaCategory(str, Enum):
 
 class Idea(Base):
     __tablename__ = "ideas"
+    __table_args__ = (
+        Index("ix_ideas_report_period", "report_year", "report_quarter"),
+        Index("ix_ideas_submitted_at", "submitted_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -61,6 +65,11 @@ class Idea(Base):
     council_final_note = Column(Text, nullable=True)
     council_is_featured = Column(Boolean, default=False, nullable=False)
     council_reward_multiplier = Column(Float, nullable=True)
+    report_quarter = Column(Integer, nullable=True)
+    report_year = Column(Integer, nullable=True)
+    report_period_note = Column(Text, nullable=True)
+    report_period_verified_at = Column(DateTime(timezone=True), nullable=True)
+    report_period_verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     # Workflow tracking
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())

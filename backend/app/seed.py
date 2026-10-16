@@ -949,6 +949,27 @@ def migrate_reward_batch_special_coefficients_column() -> None:
         conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN special_coefficients text"))
 
 
+def migrate_idea_report_period_columns() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("ideas"):
+        return
+    existing = {column["name"] for column in inspector.get_columns("ideas")}
+    table_name = "public.ideas" if engine.dialect.name == "postgresql" else "ideas"
+    columns = {
+        "report_quarter": "integer",
+        "report_year": "integer",
+        "report_period_note": "text",
+        "report_period_verified_at": "timestamp with time zone" if engine.dialect.name == "postgresql" else "datetime",
+        "report_period_verified_by_id": "integer",
+    }
+    with engine.begin() as conn:
+        for name, type_name in columns.items():
+            if name not in existing:
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {name} {type_name}"))
+        conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_ideas_report_period ON {table_name} (report_year, report_quarter)"))
+        conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_ideas_submitted_at ON {table_name} (submitted_at)"))
+
+
 def migrate_ie_review_logic_columns() -> None:
     with engine.begin() as conn:
         idea_columns = {

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Báo cáo khen thưởng theo quý</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined&display=swap" rel="stylesheet" />
+  <style>.material-symbols-outlined{font-variation-settings:"FILL" 0,"wght" 400,"GRAD" 0,"opsz" 24}body{font-family:Inter,sans-serif}.number{font-variant-numeric:tabular-nums}th{white-space:nowrap}</style>
+</head>
+<body class="min-h-screen bg-[#f7f9fc] text-slate-800">
+  <header class="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-5 py-3 lg:px-8">
+      <a href="/pages/menu" class="inline-flex items-center gap-2 font-semibold text-[#002b73]"><span class="material-symbols-outlined">arrow_back</span>Menu</a>
+      <img src="../static/Marex.png" alt="Marex" class="h-10 w-40 object-contain" />
+      <span id="whoami" class="hidden text-sm text-slate-500 md:block"></span>
+    </div>
+  </header>
+  <main class="mx-auto max-w-[1500px] space-y-6 px-5 py-8 lg:px-8">
+    <section class="rounded-[28px] bg-gradient-to-r from-[#002b73] to-[#0a4aad] p-7 text-white shadow-xl shadow-blue-950/10 md:p-9">
+      <p class="text-xs font-bold uppercase tracking-[.22em] text-blue-200">Ban cải tiến · Khen thưởng</p>
+      <div class="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div><h1 class="font-[Manrope] text-3xl font-extrabold md:text-4xl">Báo cáo ý tưởng theo quý</h1><p class="mt-2 max-w-2xl text-sm leading-relaxed text-blue-100">Tổng hợp theo đơn vị và bảng điểm chi tiết. Kế hoạch hiển thị theo năm; quý của từng ý tưởng được xác nhận tại bảng chi tiết.</p></div>
+        <div class="flex flex-wrap items-end gap-3 rounded-2xl bg-white/10 p-3">
+          <label class="text-xs font-semibold">Quý<select id="quarter" class="mt-1 block rounded-xl border-0 bg-white px-4 py-2 text-sm font-bold text-[#002b73]"></select></label>
+          <label class="text-xs font-semibold">Năm<input id="year" type="number" min="2020" max="2100" class="mt-1 block w-28 rounded-xl border-0 bg-white px-3 py-2 text-sm font-bold text-[#002b73]" /></label>
+          <button id="refresh" class="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[#002b73] hover:bg-blue-50">Xem báo cáo</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="message" class="hidden rounded-2xl px-5 py-3 text-sm font-semibold" role="status" aria-live="polite"></div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-slate-500">Ý tưởng trong quý</p><p id="totalIdeas" class="number mt-2 text-3xl font-extrabold text-[#002b73]">—</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-slate-500">Công ty xét duyệt</p><p id="companyIdeas" class="number mt-2 text-3xl font-extrabold text-[#002b73]">—</p></div>
+      <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-slate-500">Điểm Công ty</p><p id="companyScore" class="number mt-2 text-3xl font-extrabold text-[#002b73]">—</p></div>
+    </div>
+
+    <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 1</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Tổng hợp theo đơn vị</h2><p class="mt-1 text-xs text-slate-500">Kế hoạch lấy từ mục tiêu năm đã nhập. Số thực hiện và điểm lấy từ bảng chi tiết bên dưới.</p></div><button id="exportSummary" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div>
+      <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-50 text-slate-600"><tr><th class="px-5 py-3 text-left">Đơn vị / nhóm</th><th class="px-4 py-3 text-right">Kế hoạch năm (LĐTT / YTV)</th><th class="px-4 py-3 text-right">YTV trong quý</th><th class="px-4 py-3 text-right">Đơn vị tự xét</th><th class="px-4 py-3 text-right">Công ty xét</th><th class="px-4 py-3 text-right">Điểm Công ty</th><th class="px-5 py-3 text-right">Hiệu quả thực tế (VND)</th></tr></thead><tbody id="summaryBody" class="divide-y divide-slate-100"></tbody><tfoot id="summaryFoot" class="bg-blue-50 font-bold text-[#002b73]"></tfoot></table></div>
+    </section>
+
+    <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-widest text-blue-700">Mẫu 2</p><h2 class="mt-1 font-[Manrope] text-xl font-extrabold text-[#002b73]">Bảng chi tiết điểm</h2><p class="mt-1 text-xs text-slate-500">Các cột A, B, C thể hiện từng điểm con của K1, K2, K3. Kỳ xét duyệt kế thừa từ màn hình Hội đồng.</p></div><div class="flex flex-wrap gap-2"><a href="/pages/approvals" class="rounded-xl bg-blue-50 px-4 py-2 text-sm font-semibold text-[#002b73] hover:bg-blue-100">Mở Duyệt Hội đồng</a><input id="search" type="search" placeholder="Tìm mã, tên, ý tưởng, đơn vị" class="w-64 rounded-xl border-slate-200 text-sm" /><button id="exportDetail" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Xuất Excel</button></div></div>
+      <div class="overflow-x-auto"><table class="min-w-[3100px] w-full text-xs"><thead class="bg-slate-50 text-slate-600"><tr><th rowspan="2" class="px-4 py-3 text-left">Ngày gửi</th><th rowspan="2" class="px-3 py-3 text-left">Mã / ý tưởng</th><th rowspan="2" class="px-3 py-3 text-left">Người đề xuất</th><th rowspan="2" class="px-3 py-3 text-left">Đơn vị</th><th rowspan="2" class="px-3 py-3 text-left">Phân loại</th><th colspan="3" class="border-l border-white/70 bg-blue-100 px-3 py-2 text-center text-blue-900">K1 · Tính sáng tạo</th><th colspan="6" class="border-l border-white/70 bg-cyan-100 px-3 py-2 text-center text-cyan-900">K2 · Khả năng áp dụng</th><th colspan="14" class="border-l border-white/70 bg-amber-100 px-3 py-2 text-center text-amber-900">K3 · Hiệu quả, giá trị làm lợi</th><th rowspan="2" class="px-3 py-3 text-right">Điểm BCT</th><th rowspan="2" class="px-3 py-3 text-right">Điểm Công ty</th><th rowspan="2" class="px-3 py-3 text-right">Hiệu quả (VND)</th><th rowspan="2" class="px-4 py-3 text-left">Kỳ xét duyệt</th></tr><tr id="criteriaHeaderCodes"></tr></thead><tbody id="detailBody" class="divide-y divide-slate-100"></tbody></table></div>
+      <p id="detailCount" class="border-t border-slate-100 px-6 py-3 text-xs text-slate-500"></p>
+    </section>
+  </main>
+
+  <script src="../js/api.js?v=20261016-quarterly-report"></script>
+  <script src="../js/quarterly-report.js?v=20261016-quarterly-report"></script>
+</body>
+</html>
